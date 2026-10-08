@@ -18,7 +18,8 @@ PROJECT
   |          +----< DOCUMENT >---- DOCUMENT_TYPE
   |          |
   |          +----< PERSON_SNAPSHOT
-  |          +----< PROPERTY_SNAPSHOT
+  |          +----< PROJECT_PROPERTY >---- PROPERTY
+  +----< PROJECT_PERSON >---- PERSON_SNAPSHOT
   |          +----< OPERATION_VERSION
   |          +----< AUDIT_EVENT
   |          +----< CUSTOM_FIELD_VALUE
@@ -39,6 +40,8 @@ PROJECT
 - Project 1:N Operation
 - OperationType N:N Project through ProjectOperationType
 - Operation N:N Person through OperationParty
+- Project N:N Property through ProjectProperty
+- Project N:N Person through ProjectPerson
 - Operation 0:1 Contract
 - Contract N:1 Property, with one Property per Contract
 - Operation 1:N Document
@@ -53,3 +56,13 @@ Master Person/Property records may change. Finalized OperationVersion plus Perso
 
 ## Deletion rule
 Business records are normally archived rather than deleted. Referential integrity must protect finalized history.
+
+## V1 Frozen scope rules
+
+Person and Property are central masters. Project-specific access/context is represented through ProjectPerson and ProjectProperty rather than project ownership on the master rows.
+
+Users have explicit ProjectAccess independently from Role assignment. Roles may be global or project-scoped.
+
+Critical Operation Type configuration is represented by explicit configuration relations for required roles, required documents and workflow. Opaque JSON is not the source of truth for critical business rules.
+
+Registration numbering uses NumberingPolicy plus NumberingState with transactional allocation.
