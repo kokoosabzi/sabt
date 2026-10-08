@@ -253,7 +253,7 @@ UI visibility is only a usability optimization.
 
 ## 10. Role Assignment
 
-A user may have multiple roles.
+A user may have multiple roles. Roles may be global or project-scoped.
 
 Recommended relations:
 
@@ -287,12 +287,12 @@ A user may be:
 - restricted to one Project
 - allowed to work in several Projects
 
-Conceptual user_project_access entity:
+Conceptual project_access entity:
 
 - user_id
 - project_id
 - active
-- access_level or scope metadata
+- active
 - granted_by
 - granted_at
 - revoked_at
@@ -302,6 +302,7 @@ Project access is not the same thing as a Role.
 
 Role says what a user may do.
 Project access says where that capability may be exercised.
+A project-scoped role is effective only when the user has active Project access.
 
 ## 12. Global vs Project Permissions
 
