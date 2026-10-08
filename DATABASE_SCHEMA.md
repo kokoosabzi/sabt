@@ -28,6 +28,7 @@ Columns:
 - name
 - description
 - status
+- timezone
 - branding_config_id (nullable)
 - created_at
 - updated_at
@@ -80,7 +81,6 @@ Columns:
 - is_active
 
 Indexes:
-- project_id
 - unit_number
 - unit_code
 - plaque_number
