@@ -1,5 +1,5 @@
-from fastapi import Depends, FastAPI
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 from app.auth.dependencies import current_user, get_db
 from app.auth.service import authenticate, create_session, revoke_session
@@ -15,12 +15,16 @@ def health() -> dict[str, str]:
 def login(credentials: HTTPBasicCredentials = Depends(basic), db: Session = Depends(get_db)):
     user = authenticate(db, credentials.username, credentials.password)
     if user is None:
-        from fastapi import HTTPException, status
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
     return {'access_token': create_session(db, user), 'token_type': 'bearer', 'expires_in': 28800}
 
 @app.post('/auth/logout', tags=['auth'])
-def logout(user=Depends(current_user), db: Session = Depends(get_db)):
+def logout(credentials: HTTPAuthorizationCredentials = Depends(), db: Session = Depends(get_db)):
+    if credentials.scheme.lower() != 'bearer':
+        raise HTTPException(status_code=401, detail='Authentication required')
+    if current_user is None:
+        raise HTTPException(status_code=401, detail='Invalid session')
+    revoke_session(db, credentials.credentials)
     return {'status': 'ok'}
 
 @app.get('/auth/me', tags=['auth'])
