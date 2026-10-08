@@ -9,8 +9,8 @@ class Project(Base):
     code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text())
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default='ACTIVE')
-    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default='Asia/Tehran')
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="Asia/Tehran")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -48,16 +48,16 @@ class Property(Base):
 
 class ProjectPerson(Base):
     __tablename__ = "project_persons"
-    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id', ondelete='RESTRICT'), primary_key=True)
-    person_id: Mapped[int] = mapped_column(ForeignKey('persons.id', ondelete='RESTRICT'), primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), primary_key=True)
+    person_id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"), primary_key=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 class ProjectProperty(Base):
     __tablename__ = "project_properties"
-    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id', ondelete='RESTRICT'), primary_key=True)
-    property_id: Mapped[int] = mapped_column(ForeignKey('properties.id', ondelete='RESTRICT'), primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), primary_key=True)
+    property_id: Mapped[int] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"), primary_key=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     context_json: Mapped[str | None] = mapped_column(Text())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -92,15 +92,15 @@ class Permission(Base):
 
 class RolePermission(Base):
     __tablename__ = "role_permissions"
-    role_id: Mapped[int] = mapped_column(ForeignKey('roles.id', ondelete='RESTRICT'), primary_key=True)
-    permission_id: Mapped[int] = mapped_column(ForeignKey('permissions.id', ondelete='RESTRICT'), primary_key=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"), primary_key=True)
+    permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id", ondelete="RESTRICT"), primary_key=True)
 
 class ProjectAccess(Base):
     __tablename__ = "project_access"
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'), primary_key=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id', ondelete='RESTRICT'), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), primary_key=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    granted_by: Mapped[int | None] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'))
+    granted_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     granted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -108,16 +108,127 @@ class ProjectAccess(Base):
 class UserRole(Base):
     __tablename__ = "user_roles"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'), nullable=False)
-    role_id: Mapped[int] = mapped_column(ForeignKey('roles.id', ondelete='RESTRICT'), nullable=False)
-    project_id: Mapped[int | None] = mapped_column(ForeignKey('projects.id', ondelete='RESTRICT'))
-    __table_args__ = (UniqueConstraint('user_id', 'role_id', 'project_id', name='uq_user_role_scope'),)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False)
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"))
+    __table_args__ = (UniqueConstraint("user_id", "role_id", "project_id", name="uq_user_role_scope"),)
 
 class Session(Base):
     __tablename__ = "sessions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='RESTRICT'), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class OperationType(Base):
+    __tablename__ = "operation_types"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text())
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    system_defined: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class ProjectOperationType(Base):
+    __tablename__ = "project_operation_types"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False)
+    operation_type_id: Mapped[int] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    config_json: Mapped[str | None] = mapped_column(Text())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __table_args__ = (UniqueConstraint("project_id", "operation_type_id", name="uq_project_operation_type"),)
+
+class PartyRole(Base):
+    __tablename__ = "party_roles"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text())
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    system_defined: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class Operation(Base):
+    __tablename__ = "operations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False)
+    operation_type_id: Mapped[int] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"), nullable=False)
+    appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id", ondelete="RESTRICT"))
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    current_workflow_state: Mapped[str] = mapped_column(String(64), nullable=False)
+    property_id: Mapped[int | None] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"))
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    finalized_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    current_version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+class OperationParty(Base):
+    __tablename__ = "operation_parties"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
+    person_id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"), nullable=False)
+    role_id: Mapped[int] = mapped_column(ForeignKey("party_roles.id", ondelete="RESTRICT"), nullable=False)
+    sequence_no: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    notes: Mapped[str | None] = mapped_column(Text())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __table_args__ = (UniqueConstraint("operation_id","role_id","sequence_no",name="uq_operation_party_role_seq"),)
+
+class Contract(Base):
+    __tablename__ = "contracts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False, unique=True)
+    contract_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    registration_number: Mapped[str | None] = mapped_column(String(100))
+    property_id: Mapped[int] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+class OperationVersion(Base):
+    __tablename__ = "operation_versions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text())
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    snapshot_json: Mapped[str] = mapped_column(Text(), nullable=False)
+    hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    __table_args__ = (UniqueConstraint("operation_id","version_number",name="uq_operation_version"),)
+
+class PersonSnapshot(Base):
+    __tablename__ = "person_snapshots"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
+    person_id: Mapped[int | None] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"))
+    party_id: Mapped[int | None] = mapped_column(ForeignKey("operation_parties.id", ondelete="RESTRICT"))
+    snapshot_data_json: Mapped[str] = mapped_column(Text(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+class PropertySnapshot(Base):
+    __tablename__ = "property_snapshots"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
+    property_id: Mapped[int | None] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"))
+    snapshot_data_json: Mapped[str] = mapped_column(Text(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
