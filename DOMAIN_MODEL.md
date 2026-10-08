@@ -5,7 +5,7 @@ Version: 0.1
 ## Entity map
 Project -> Appointments, Operations, enabled Operation Types
 Person -> reusable master data; referenced by Operation Parties
-Property -> reusable master data; referenced by Contracts
+Property -> reusable master data; project association/context is separate; referenced by Contracts
 Appointment -> 0..N Operations
 Operation -> 0..1 Contract, N Parties, 1 Property context, N Documents, N Custom Field values, N Audit events
 Contract -> exactly 1 Property and manual Contract Number
@@ -51,3 +51,27 @@ V1 restrictions are Contract-oriented. Rules can match contract numbers and defi
 
 ## Registration Number
 Generated business identifier with Admin-configurable scope, prefix, sequence, formatting, reset policy and collision handling. Internal DB ID remains independent.
+
+
+## V1 Frozen Decisions
+
+### Person and Property scope
+Person and Property are central master records and are not owned by a single Project. Project-specific visibility/context is represented through explicit project association/access structures.
+
+### Operation Type configuration
+Global base definitions are separated from Project activation/configuration. Critical behavior such as workflow, numbering, required documents and permissions is represented explicitly rather than relying only on opaque configuration JSON.
+
+### Party roles
+Party roles are dynamic. Multiple people may occupy the same role. Operation Type configuration defines required roles and cardinality. Used roles are retired/deactivated rather than deleted.
+
+### Numbering
+Registration numbers are allocated transactionally from explicit numbering policy/state and never through MAX()+1. Allocation occurs at successful finalization when the operation type requires it.
+
+### Contract numbers
+Contract-number uniqueness is an explicit policy: GLOBAL, PROJECT, OPERATION_TYPE, or NONE. The policy is enforced transactionally and is not represented by one unconditional database UNIQUE constraint.
+
+### Snapshots
+The immutable final business truth is the finalized OperationVersion snapshot. It includes the operation core, parties and role assignments, property context, contract data when present, relevant custom-field values, workflow state, business identifiers, and references to the exact template/branding inputs required for reproducibility.
+
+### Project roles
+Users may have global roles and project-scoped roles. Project access is separate from role assignment and is required for project-scoped actions.
