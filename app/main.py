@@ -1,8 +1,28 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from sqlalchemy.orm import Session
+from app.auth.dependencies import current_user, get_db
+from app.auth.service import authenticate, create_session, revoke_session
 
-app = FastAPI(title="SABT", version="0.1.0")
+app = FastAPI(title='SABT', version='0.1.0')
+basic = HTTPBasic()
 
-
-@app.get("/health", tags=["system"])
+@app.get('/health', tags=['system'])
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {'status': 'ok'}
+
+@app.post('/auth/login', tags=['auth'])
+def login(credentials: HTTPBasicCredentials = Depends(basic), db: Session = Depends(get_db)):
+    user = authenticate(db, credentials.username, credentials.password)
+    if user is None:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
+    return {'access_token': create_session(db, user), 'token_type': 'bearer', 'expires_in': 28800}
+
+@app.post('/auth/logout', tags=['auth'])
+def logout(user=Depends(current_user), db: Session = Depends(get_db)):
+    return {'status': 'ok'}
+
+@app.get('/auth/me', tags=['auth'])
+def me(user=Depends(current_user)):
+    return {'id': user.id, 'username': user.username, 'display_name': user.display_name}
