@@ -58,7 +58,7 @@ def upgrade() -> None:
     op.create_table("operations",
         sa.Column("id", sa.Integer(), primary_key=True), sa.Column("project_id", sa.Integer(), sa.ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False),
         sa.Column("operation_type_id", sa.Integer(), sa.ForeignKey("operation_types.id", ondelete="RESTRICT"), nullable=False),
-        sa.Column("appointment_id", sa.Integer(), sa.ForeignKey("appointments.id", ondelete="RESTRICT")),
+        sa.Column("appointment_id", sa.Integer()),
         sa.Column("status", sa.String(32), nullable=False), sa.Column("current_workflow_state", sa.String(64), nullable=False),
         sa.Column("property_id", sa.Integer(), sa.ForeignKey("properties.id", ondelete="RESTRICT")),
         sa.Column("created_by", sa.Integer(), sa.ForeignKey("users.id", ondelete="RESTRICT"), nullable=False),
