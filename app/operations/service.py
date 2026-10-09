@@ -32,15 +32,19 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
         if db.get(Property, property_id) is None: raise NotFoundError("property_not_found")
         association = db.get(ProjectProperty, (project_id, property_id))
         if association is None or not association.active: raise ValidationError("property_not_associated_with_project")
+    # Validate all external references before the first write so a validation
+    # failure cannot leave a partially-created Operation in the caller's unit of work.
+    appointment = None
+    if appointment_id is not None:
+        appointment = db.get(Appointment, appointment_id)
+        if appointment is None: raise NotFoundError("appointment_not_found")
+        if appointment.project_id != project_id: raise ValidationError("appointment_project_mismatch")
     now = _now()
     op = Operation(project_id=project_id, operation_type_id=operation_type_id,
                    property_id=property_id, status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
                    created_at=now, updated_at=now, version=1, current_version_number=0)
     db.add(op); db.flush()
-    if appointment_id is not None:
-        appointment = db.get(Appointment, appointment_id)
-        if appointment is None: raise NotFoundError("appointment_not_found")
-        if appointment.project_id != project_id: raise ValidationError("appointment_project_mismatch")
+    if appointment is not None:
         db.add(OperationAppointment(appointment_id=appointment.id, operation_id=op.id, created_at=now))
         db.flush()
     return op
