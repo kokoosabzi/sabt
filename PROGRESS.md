@@ -87,12 +87,12 @@
 - [ ] ORM/migration parity check: **Not run in this session.**
 
 ## Known review items
-- [ ] Operation creation currently creates/flushed the Operation before validating a supplied Appointment; validate first or ensure rollback is guaranteed by the caller.
+- [x] Operation creation now validates a supplied Appointment before the first Operation write (commit `2e50f55`); regression/integration verification is still pending.
 - [ ] Registration-number allocation exists but is not yet integrated into finalization.
 - [ ] Finalization currently lacks required party/document/workflow/restriction validation.
 - [ ] Snapshot at operation creation is not yet implemented.
 - [ ] Finalization snapshot currently does not include Contract data.
-- [ ] Numbering policy scope values and policy precedence need explicit tests and documented allowed values.
+- [ ] Numbering scope-key unit tests were added (`tests/test_numbering_unit.py`, commit `b2ad999`); tests have not been executed. Policy precedence and allowed persisted values still need tests/documentation.
 - [ ] OperationTypeWorkflow uniqueness with nullable project_id needs review for SQLite NULL uniqueness behavior.
 - [ ] Migration 0006 downgrade adds the legacy appointment_id column without restoring its former foreign-key behavior.
 - [ ] Runtime database URL is currently hard-coded and should move to validated configuration before deployment.
