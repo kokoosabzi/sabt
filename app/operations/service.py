@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.auth.authorization import AuthorizationContext, authorize
 from app.db.models import (
-    Contract, Operation, OperationParty, OperationType, OperationVersion,
-    PartyRole, Person, PersonSnapshot, ProjectOperationType, Property, PropertySnapshot, User,
+    Appointment, Contract, Operation, OperationAppointment, OperationParty, OperationType, OperationVersion,
+    PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectProperty, Property, PropertySnapshot, User,
 )
 
 class OperationError(Exception): pass
@@ -28,12 +28,22 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
     pot = db.scalar(select(ProjectOperationType).where(ProjectOperationType.project_id == project_id,
         ProjectOperationType.operation_type_id == operation_type_id, ProjectOperationType.enabled.is_(True)))
     if pot is None: raise ValidationError("operation_type_not_enabled_for_project")
-    if property_id is not None and db.get(Property, property_id) is None: raise NotFoundError("property_not_found")
+    if property_id is not None:
+        if db.get(Property, property_id) is None: raise NotFoundError("property_not_found")
+        association = db.get(ProjectProperty, (project_id, property_id))
+        if association is None or not association.active: raise ValidationError("property_not_associated_with_project")
     now = _now()
-    op = Operation(project_id=project_id, operation_type_id=operation_type_id, appointment_id=appointment_id,
+    op = Operation(project_id=project_id, operation_type_id=operation_type_id,
                    property_id=property_id, status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
                    created_at=now, updated_at=now, version=1, current_version_number=0)
-    db.add(op); db.flush(); return op
+    db.add(op); db.flush()
+    if appointment_id is not None:
+        appointment = db.get(Appointment, appointment_id)
+        if appointment is None: raise NotFoundError("appointment_not_found")
+        if appointment.project_id != project_id: raise ValidationError("appointment_project_mismatch")
+        db.add(OperationAppointment(appointment_id=appointment.id, operation_id=op.id, created_at=now))
+        db.flush()
+    return op
 
 def add_party(db: Session, user: User, operation_id: int, person_id: int, role_id: int,
               sequence_no: int = 1, expected_version: int | None = None) -> OperationParty:
