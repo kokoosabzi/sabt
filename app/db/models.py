@@ -163,7 +163,6 @@ class Operation(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False)
     operation_type_id: Mapped[int] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"), nullable=False)
-    appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id", ondelete="RESTRICT"))
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     current_workflow_state: Mapped[str] = mapped_column(String(64), nullable=False)
     property_id: Mapped[int | None] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"))
@@ -232,3 +231,110 @@ class PropertySnapshot(Base):
     snapshot_data_json: Mapped[str] = mapped_column(Text(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class DocumentType(Base):
+    __tablename__ = "document_types"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text())
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    allowed_mime_types: Mapped[str | None] = mapped_column(Text())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class OperationTypeRequiredRole(Base):
+    __tablename__ = "operation_type_required_roles"
+    operation_type_id: Mapped[int] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"), primary_key=True)
+    party_role_id: Mapped[int] = mapped_column(ForeignKey("party_roles.id", ondelete="RESTRICT"), primary_key=True)
+    min_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_count: Mapped[int | None] = mapped_column(Integer)
+    sequence_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+class OperationTypeRequiredDocument(Base):
+    __tablename__ = "operation_type_required_documents"
+    operation_type_id: Mapped[int] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"), primary_key=True)
+    document_type_id: Mapped[int] = mapped_column(ForeignKey("document_types.id", ondelete="RESTRICT"), primary_key=True)
+    required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    min_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    max_count: Mapped[int | None] = mapped_column(Integer)
+
+class OperationTypeWorkflow(Base):
+    __tablename__ = "operation_type_workflows"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    operation_type_id: Mapped[int] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"), nullable=False)
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"))
+    state_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    sequence_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    config_json: Mapped[str | None] = mapped_column(Text())
+    __table_args__ = (UniqueConstraint("operation_type_id", "project_id", "state_code", name="uq_operation_type_workflow_state"),)
+
+class NumberingPolicy(Base):
+    __tablename__ = "numbering_policies"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"))
+    operation_type_id: Mapped[int | None] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"))
+    identifier_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    scope: Mapped[str] = mapped_column(String(32), nullable=False)
+    prefix: Mapped[str | None] = mapped_column(String(64))
+    sequence_width: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    reset_policy: Mapped[str] = mapped_column(String(32), nullable=False, default="NEVER")
+    format_template: Mapped[str] = mapped_column(String(200), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class NumberingState(Base):
+    __tablename__ = "numbering_states"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    numbering_policy_id: Mapped[int] = mapped_column(ForeignKey("numbering_policies.id", ondelete="RESTRICT"), nullable=False)
+    scope_key: Mapped[str] = mapped_column(String(200), nullable=False)
+    current_value: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __table_args__ = (UniqueConstraint("numbering_policy_id", "scope_key", name="uq_numbering_state_scope"),)
+
+class ContractNumberPolicy(Base):
+    __tablename__ = "contract_number_policies"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"))
+    operation_type_id: Mapped[int | None] = mapped_column(ForeignKey("operation_types.id", ondelete="RESTRICT"))
+    uniqueness_scope: Mapped[str] = mapped_column(String(32), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class AppointmentType(Base):
+    __tablename__ = "appointment_types"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text())
+    attendance_behavior: Mapped[str] = mapped_column(String(64), nullable=False)
+    default_duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False)
+    appointment_type_id: Mapped[int] = mapped_column(ForeignKey("appointment_types.id", ondelete="RESTRICT"), nullable=False)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text())
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+class OperationAppointment(Base):
+    __tablename__ = "operation_appointments"
+    appointment_id: Mapped[int] = mapped_column(ForeignKey("appointments.id", ondelete="RESTRICT"), primary_key=True)
+    operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    __table_args__ = (UniqueConstraint("appointment_id", "operation_id", name="uq_appointment_operation_link"),)
