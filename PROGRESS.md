@@ -5,7 +5,7 @@
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** Foundation baseline has a green CI run on branch `codex/foundation-audit`; implementation is still incomplete and the pull request is intentionally not merged.
+- **Overall status:** Foundation baseline has a green CI run on branch `codex/foundation-audit`; latest verified run `38468577088` passed 36 tests and the SQLite migration upgrade/downgrade/re-upgrade checks. Implementation is still incomplete and the pull request is intentionally not merged.
 - **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
@@ -18,7 +18,9 @@
 - [ ] Compare ORM metadata against migrations for tables, columns, nullability, foreign keys, and indexes/constraints.
 - [x] Add CI for tests and fresh-database migration round-trip.
 - [x] Add regression tests for authorization, session expiry/revocation, numbering behavior, operation project isolation, and ORM/migration parity.
-- [ ] Update this file with further verified findings and exact CI evidence.
+- [x] Require active ProjectPerson membership before adding an OperationParty; reject missing, inactive, or cross-project membership before writes.
+- [x] Require an expected operation version for party edits and finalization; reject stale party edits without side effects.
+- [x] Record the verified findings and exact CI evidence in this progress ledger.
 
 ### Phase 1 — Complete operation lifecycle
 - [ ] Define and implement working snapshots at operation creation.
@@ -107,6 +109,7 @@
 - 2026-10-13: Added CI and expanded foundation regression tests on `codex/foundation-audit`.
 - 2026-10-13: CI run `38343582096` passed for branch head `014e868cf88bd0e10332986abf081f2c25165319`.
 - 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
+- 2026-10-13: CI run `38468577088` passed with 36 tests and SQLite migration upgrade/downgrade/re-upgrade checks. Added project-membership validation for OperationParty writes and mandatory optimistic version checks for party edits/finalization.
 - 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
 
 ## Parent Contract transfer-chain design update — 2026-10-13
