@@ -92,6 +92,7 @@ def seed_operation_context(db: Session):
     )
     role = Role(code="creator", name="Creator", active=True)
     permission = Permission(code="operation.create", name="Create operation")
+    edit_permission = Permission(code="operation.edit", name="Edit operation")
     finalize_permission = Permission(code="operation.finalize", name="Finalize operation")
     appointment_type = AppointmentType(
         code="CONSULT",
@@ -102,11 +103,12 @@ def seed_operation_context(db: Session):
         created_at=now,
         updated_at=now,
     )
-    db.add_all([user, project, other_project, operation_type, property_record, role, permission, finalize_permission, appointment_type])
+    db.add_all([user, project, other_project, operation_type, property_record, role, permission, edit_permission, finalize_permission, appointment_type])
     db.flush()
     db.add_all(
         [
             RolePermission(role_id=role.id, permission_id=permission.id),
+            RolePermission(role_id=role.id, permission_id=edit_permission.id),
             RolePermission(role_id=role.id, permission_id=finalize_permission.id),
             UserRole(user_id=user.id, role_id=role.id, project_id=None),
             ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
