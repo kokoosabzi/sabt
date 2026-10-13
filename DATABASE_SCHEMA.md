@@ -820,3 +820,71 @@ Every schema change must have:
 - downgrade strategy where practical
 - data migration if required
 - test coverage for critical constraints
+
+
+## Proposed schema extension — Parent Contract transfer chains (not implemented yet)
+
+The following is a design proposal for the next schema review. It is not part of the current ORM/migrations yet.
+
+### projects.code
+For the proposed numbering convention, Project code is displayed as a two-character numeric string (for example `10` or `01`). Keep it as a string to preserve leading zeroes. Whether exactly two digits are mandatory and whether uniqueness is global must be decided before adding a strict database constraint. A Project code change must never silently rewrite historical Parent Contract numbers.
+
+### parent_contracts
+Stable root for the ownership/transfer history.
+
+Proposed columns:
+- id — internal primary key
+- project_id — required Project reference
+- parent_number — six-character business identifier, stored as text to preserve formatting
+- property_id — Property reference, subject to project-property association validation
+- status — lifecycle/active state, to be specified
+- created_at, updated_at, version
+- created_by / source_import_id where needed for traceability
+
+Proposed constraints and indexes:
+- unique parent_number within the agreed numbering namespace (likely global, but confirm before migration)
+- index project_id + parent_number
+- do not use parent_number as a primary key
+
+Initial owner(s) and other parent-level members should use a dedicated role/party association or another normalized structure if parent-level membership differs from operation parties. Do not assume that the initial owner can be reconstructed from mutable Person master data; preserve an immutable initial-owner snapshot.
+
+### parent_contract_parties (proposed)
+- id
+- parent_contract_id
+- person_id (nullable if imported legacy person cannot yet be resolved)
+- role_code / party_role_id, according to the final role model
+- sequence_no
+- snapshot_data_json for imported or legally relevant initial-owner details where appropriate
+- created_at
+
+The exact cardinality of initial owners and the policy for unresolved imported persons remain open.
+
+### operations — proposed transfer-chain fields
+Add:
+- parent_contract_id (nullable for non-transfer Operations; required for transfer Operation Types)
+- transfer_sequence (nullable for non-transfer Operations)
+- child_business_number (nullable for non-transfer Operations; for example `109876/1`)
+
+Proposed constraints:
+- unique (parent_contract_id, transfer_sequence) when transfer_sequence is not null
+- unique child_business_number when populated, unless a confirmed namespace rule requires a scoped unique constraint
+- validate that the Parent Contract, Operation, Property, and Project are consistent
+- transfer_sequence is allocated transactionally from explicit per-parent state; never use `MAX()+1`
+- retain allocated numbers after cancellation/rejection; never reuse them
+
+The exact nullable/partial-index syntax and migration must be chosen for SQLite and tested against the supported SQLite version.
+
+### transfer_sequence_states (proposed)
+A per-parent transactional counter with one row per Parent Contract:
+- parent_contract_id — unique reference
+- current_value
+- updated_at
+- version
+
+Allocate within the same transaction as creating/finalizing the transfer according to the policy selected for number allocation. The allocation timing is intentionally not frozen yet.
+
+### Search/query shape
+Search by `parent_number` resolves the root record, then fetches linked transfer Operations ordered by `transfer_sequence`. Each child's display label can be formatted as `parent_number/transfer_sequence`, but storing a stable child business number is useful for audit, imports, and direct lookup. Index the root number and child number; do not require a recursive tree unless transfers can branch. Under the current proposal, the default visualization is a chronological/sequence list or linear history, not a branching ownership graph.
+
+### Import staging
+Bulk Excel/CSV import should use staging/validation records or an equivalent temporary batch layer before writing Parent Contracts, people/party associations, and properties. A batch needs an id, source filename/hash, actor, timestamp, row counts, and row-level validation results. Confirmation must be explicit, authorized, transactional, and auditable. Importing a parent should not automatically invent historical transfer children unless the source data includes enough information to map them safely.
