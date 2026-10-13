@@ -48,8 +48,8 @@ Normal edits use optimistic concurrency. Sensitive forms may use short-lived app
 ## Parent Contract and transfer workflow — proposed
 
 ### Create/import Parent Contract
-1. Select the Project and enter or import the stable six-digit Parent Contract number, initial owner/member information, and Property reference.
-2. Validate Project code/number consistency, duplicate parent numbers, required fields, and links to existing people/properties.
+1. Select the Project (its two-digit code must be from `10` onward; `01`–`09` are invalid). Enter the four-digit member/contract suffix manually, or import a six-digit Parent Contract number from Excel/CSV. The two-digit Project code is shared by all members/contracts in that Project. The import file may also include optional unit/property details and initial owner/member information.
+2. Validate that the six-digit number begins with the selected Project's two-digit code, the suffix is four digits, numbers are unique, required fields are present, and any supplied people/property/unit references are resolvable.
 3. Preview all rows and errors before confirmation. On confirmation, persist the accepted batch transactionally and record an import/audit report.
 4. Preserve imported business numbers; do not silently renumber historical records.
 
