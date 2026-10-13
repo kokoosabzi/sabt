@@ -35,7 +35,9 @@ Columns:
 - version
 
 Constraints:
-- code should be unique.
+- code is stored as a two-character numeric string for Parent Contract numbering; valid values start at `10`, and `01`–`09` are invalid.
+- the same Project code prefixes every member/Parent Contract in that Project.
+- code should be unique (global uniqueness and immutability after use remain a business decision).
 - name should be indexed.
 
 ### persons
