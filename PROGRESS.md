@@ -111,9 +111,11 @@
 ## Parent Contract transfer-chain design update — 2026-10-13
 
 - [x] Recorded the proposed stable six-digit Parent Contract root and per-transfer child business number convention in architecture/domain/workflow/schema documents.
+- [x] Confirmed Project codes are two numeric digits starting at `10`; `01`–`09` are not used. The code is shared by all members/contracts in a Project.
+- [x] Confirmed the four-digit parent suffix may be entered manually or imported from Excel/CSV; imports may also include optional unit/property details.
 - [x] Distinguished a genuine transfer (new Operation) from a correction to an existing finalized transfer (OperationVersion/correction workflow).
 - [x] Documented parent-number search/history, current-owner derivation, transactional child numbering, and staged Excel/CSV import as design targets.
-- [ ] Resolve the remaining business decisions: two-digit Project code uniqueness, four-digit parent suffix assignment, child-number gaps/width, ownership-effective state, and legacy import ordering.
+- [ ] Resolve the remaining business decisions: global uniqueness/immutability of Project codes, child-number gaps/width, ownership-effective state, legacy import ordering, and exact import columns/person duplicate matching.
 - [ ] Implement and test schema/migrations only after those policies are confirmed. The design documents do not mean these features are already implemented.
 
 ## Next task
