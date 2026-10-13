@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.auth.authorization import AuthorizationContext, authorize
 from app.db.models import (
     Appointment, Contract, Operation, OperationAppointment, OperationParty, OperationType, OperationVersion,
-    PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectProperty, Property, PropertySnapshot, User,
+    PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User,
 )
 
 class OperationError(Exception): pass
@@ -56,8 +56,12 @@ def add_party(db: Session, user: User, operation_id: int, person_id: int, role_i
     _require_project_access(db, user, op.project_id, "operation.edit")
     if op.status == "FINALIZED": raise ConflictError("operation_finalized")
     if expected_version is not None and op.version != expected_version: raise ConflictError("stale_operation")
+    if sequence_no < 1: raise ValidationError("party_sequence_invalid")
     person, role = db.get(Person, person_id), db.get(PartyRole, role_id)
     if person is None or not person.is_active: raise ValidationError("person_invalid")
+    project_person = db.get(ProjectPerson, (op.project_id, person_id))
+    if project_person is None or not project_person.active:
+        raise ValidationError("person_not_associated_with_project")
     if role is None or not role.active or role.retired_at is not None: raise ValidationError("party_role_invalid")
     now = _now()
     party = OperationParty(operation_id=op.id, person_id=person_id, role_id=role_id, sequence_no=sequence_no,
