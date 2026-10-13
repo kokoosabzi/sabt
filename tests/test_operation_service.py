@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
+import json
 
 import pytest
 from sqlalchemy import create_engine, func, select
@@ -24,7 +26,7 @@ from app.db.models import (
     User,
     UserRole,
 )
-from app.operations.service import ValidationError, create_operation, finalize_operation
+from app.operations.service import ConflictError, ValidationError, create_operation, finalize_operation
 
 
 @pytest.fixture()
@@ -225,4 +227,44 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
     assert operation.status == "DRAFT"
     assert operation.finalized_at is None
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
+
+
+def test_finalize_with_property_persists_hashed_snapshot_and_rejects_repeat(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(
+        db,
+        user,
+        project.id,
+        operation_type.id,
+        property_id=property_record.id,
+    )
+    original_version = operation.version
+
+    version_record = finalize_operation(
+        db,
+        user,
+        operation.id,
+        expected_version=original_version,
+        reason="Foundation test",
+    )
+
+    db.refresh(operation)
+    assert operation.status == "FINALIZED"
+    assert operation.current_workflow_state == "FINALIZED"
+    assert operation.finalized_at is not None
+    assert operation.current_version_number == 1
+    assert operation.version == original_version + 1
+
+    snapshot = json.loads(version_record.snapshot_json)
+    assert snapshot["operation"]["id"] == operation.id
+    assert snapshot["property"]["property_id"] == property_record.id
+    assert version_record.hash == hashlib.sha256(
+        version_record.snapshot_json.encode("utf-8")
+    ).hexdigest()
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 1
+
+    with pytest.raises(ConflictError, match="operation_already_finalized"):
+        finalize_operation(db, user, operation.id, expected_version=operation.version)
+
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 1
 
