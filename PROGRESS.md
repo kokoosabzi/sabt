@@ -1,32 +1,31 @@
 # SABT Development Progress
 
-> This file is the living execution ledger. A checked item means it is completed at the stated verification level, not merely planned. Never record tests as passing unless they were actually run.
+> This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** In progress; repository implementation has not yet been verified by a local test run in this work session.
-- **Current working rule:** Stabilize the existing foundation before adding more business features.
+- **Overall status:** Foundation baseline has a green CI run on branch `codex/foundation-audit`; implementation is still incomplete and the pull request is intentionally not merged.
+- **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
 
 ### Phase 0 — Foundation audit and stabilization
-- [ ] Run the existing test suite and record the real output.
-- [ ] Verify that all Alembic migrations upgrade a fresh SQLite database successfully.
-- [ ] Compare ORM metadata against migrations, including constraints, foreign keys, indexes, and nullability.
-- [ ] Fix migration/model drift and add regression tests.
-- [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization.
+- [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization beyond the current unit coverage.
 - [ ] Verify project isolation for every service and resource lookup.
-- [ ] Test registration-number allocation for policy selection, ambiguity, scope, rollback, and concurrency assumptions.
+- [ ] Test registration-number allocation concurrency assumptions.
 - [ ] Review operation creation/finalization transaction boundaries and validation order.
-- [ ] Update this file with verified findings and exact test commands.
+- [ ] Compare ORM metadata against migrations for tables, columns, nullability, foreign keys, and indexes/constraints.
+- [x] Add CI for tests and fresh-database migration round-trip.
+- [x] Add regression tests for authorization, session expiry/revocation, numbering behavior, operation project isolation, and ORM/migration parity.
+- [ ] Update this file with further verified findings and exact CI evidence.
 
 ### Phase 1 — Complete operation lifecycle
 - [ ] Define and implement working snapshots at operation creation.
 - [ ] Validate required parties, documents, fields, and workflow before finalization.
 - [ ] Integrate registration-number allocation into finalization with safe rollback semantics.
 - [ ] Include optional Contract and required historical data in operation snapshots.
-- [ ] Add optimistic-locking checks to all mutating operation services.
+- [ ] Make optimistic-locking guarantees mandatory for mutating operation services where required.
 - [ ] Add tests for finalization failures, success, idempotency/conflict, and immutable version snapshots.
 
 ### Phase 2 — Contracts and restrictions
@@ -71,43 +70,42 @@
 
 ## Verified baseline
 
-### Repository work already committed
-- [x] Architecture and domain documentation established.
-- [x] FastAPI/SQLAlchemy/Alembic foundation files added.
-- [x] Authentication, password hashing, session, and authorization foundation added.
-- [x] Operation core service and version/snapshot structures added.
-- [x] Appointment/Operation many-to-many model and migration added; redundant direct operation appointment column removed.
-- [x] Initial transactional registration-number allocator added; currently supports only reset policy NEVER.
+### Implemented foundation components
+- [x] Architecture/domain documentation and coding-agent guidance.
+- [x] FastAPI, SQLAlchemy, Alembic model/migration foundation.
+- [x] Password hashing, bearer sessions, and authorization foundation.
+- [x] Operation create/party/finalize service skeleton and snapshot structures.
+- [x] Operation–Appointment many-to-many association; redundant direct appointment FK removed.
+- [x] Transactional registration-number allocator with policy/scope checks; currently supports reset policy `NEVER` only.
+- [x] CI workflow runs pytest and Alembic upgrade/downgrade/re-upgrade checks on pushes and pull requests.
 
-### Verification status
-- [x] Python test suite on commit `a1ded9b`: **25 passed, 2 warnings** (`pytest`, Python 3.12.15, GitHub Actions, commit `e5a8824`). This includes numbering scope/transactions, password hashing, session token hashing/expiry/revocation, authorization, operation creation, project isolation, and ORM/migration table/column/foreign-key parity.
-- [x] Fresh-database Alembic upgrade on commit `a1ded9b`: passed; current revision reported `0006_remove_operation_appointment_id (head)`.
-- [x] Alembic downgrade/upgrade round trip: passed on commit `ed3f4e2` and again on `02ae064`: `alembic downgrade base`, `alembic upgrade head`, and `alembic current` completed successfully.
-- [ ] Numbering concurrency test: **Not run in this session.**
-- [x] ORM/migration parity: `tests/test_migration_schema.py` passed against a fresh migrated database, confirming ORM and migration table/column names match on commit `2d1ce47`.
+### Verified on GitHub Actions
+- [x] On commit `e5a882401f62c1f68c302ea94c89783bff5ef73e`: **25 passed, 2 warnings**; Python test suite passed.
+- [x] Fresh SQLite Alembic upgrade reached `0006_remove_operation_appointment_id (head)`.
+- [x] Alembic downgrade to base and re-upgrade to head passed.
+- [x] ORM/migration parity test passed for table names, column names, and foreign keys.
+- [x] Latest branch head `014e868cf88bd0e10332986abf081f2c25165319`: GitHub Actions run **38343582096 completed successfully**. This commit only updates progress documentation; the run verifies the current branch's CI workflow.
+- [ ] The new nullability parity assertions in `tests/test_migration_schema.py` have not yet run; await CI on the next commit before marking them verified.
 
-## Known review items
-- [x] Operation creation now validates a supplied Appointment before the first Operation write (commit `2e50f55`); regression/integration verification is still pending.
-- [ ] Registration-number allocation exists but is not yet integrated into finalization.
-- [ ] Finalization currently lacks required party/document/workflow/restriction validation.
-- [ ] Snapshot at operation creation is not yet implemented.
-- [ ] Finalization snapshot currently does not include Contract data.
-- [ ] Numbering scope-key unit tests were added (`tests/test_numbering_unit.py`, commit `b2ad999`); tests have not been executed. Policy precedence and allowed persisted values still need tests/documentation.
-- [ ] OperationTypeWorkflow uniqueness with nullable project_id needs review for SQLite NULL uniqueness behavior.
-- [ ] Migration 0006 downgrade adds the legacy appointment_id column without restoring its former foreign-key behavior.
-- [ ] Runtime database URL is currently hard-coded and should move to validated configuration before deployment.
+## Known implementation gaps and risks
+
+- [ ] Registration-number allocation is not integrated into finalization.
+- [ ] Finalization does not yet validate required party/document/workflow/restriction rules.
+- [ ] Working snapshot at operation creation is not implemented.
+- [ ] Finalization snapshot does not include Contract data.
+- [ ] Numbering concurrency has not been tested in this workstream.
+- [ ] `OperationTypeWorkflow` uniqueness with nullable `project_id` needs review because SQLite permits multiple NULL values in unique keys.
+- [ ] Migration 0006 downgrade re-adds legacy `appointment_id` without restoring the former foreign-key behavior.
+- [ ] Runtime database URL is hard-coded as `sqlite:///./sabt.db`; validated environment configuration is still needed.
+- [ ] Authorization guard currently accepts a fixed `project_id`; it does not yet resolve project scope dynamically from a request path/body.
+- [ ] Optimistic locking is optional in current operation-service calls when `expected_version` is omitted.
 
 ## Decision log
-- 2026-10-09: Added SKILL.md as the coding-agent operating contract and AGENTS.md as the repository entry point.
-- 2026-10-09: Added this progress ledger. Test status remains explicitly unverified until a runner executes the commands.
 
-## Latest phase entry
+- 2026-10-09: Added `SKILL.md`, `AGENTS.md`, and initial progress tracking.
+- 2026-10-13: Added CI and expanded foundation regression tests on `codex/foundation-audit`.
+- 2026-10-13: CI run `38343582096` passed for branch head `014e868cf88bd0e10332986abf081f2c25165319`.
 
-### Phase 0 — In progress (updated 2026-10-13)
-**Delivered:** agent guidance and progress tracking files.
+## Next task
 
-**Verification evidence:** GitHub file creation commits only; no Python tests or migration commands were executed in this session.
-
-**Remaining risks:** foundation correctness, migration parity, and service transaction boundaries remain unverified.
-
-**Next task:** run the audit prompt in Codex against a separate branch, fix the highest-risk test/migration failures, and update this ledger with exact output.
+Continue Phase 0 by strengthening migration parity checks and testing the highest-risk operation lifecycle guarantees before starting broad feature development. Keep the pull request open and unmerged until the new checks and risks are reviewed.
