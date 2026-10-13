@@ -12,6 +12,7 @@ from app.db.models import (
     Operation,
     OperationAppointment,
     OperationType,
+    OperationVersion,
     Permission,
     Project,
     ProjectAccess,
@@ -23,7 +24,7 @@ from app.db.models import (
     User,
     UserRole,
 )
-from app.operations.service import ValidationError, create_operation
+from app.operations.service import ValidationError, create_operation, finalize_operation
 
 
 @pytest.fixture()
@@ -86,6 +87,7 @@ def seed_operation_context(db: Session):
     )
     role = Role(code="creator", name="Creator", active=True)
     permission = Permission(code="operation.create", name="Create operation")
+    finalize_permission = Permission(code="operation.finalize", name="Finalize operation")
     appointment_type = AppointmentType(
         code="CONSULT",
         name="Consultation",
@@ -95,11 +97,12 @@ def seed_operation_context(db: Session):
         created_at=now,
         updated_at=now,
     )
-    db.add_all([user, project, other_project, operation_type, property_record, role, permission, appointment_type])
+    db.add_all([user, project, other_project, operation_type, property_record, role, permission, finalize_permission, appointment_type])
     db.flush()
     db.add_all(
         [
             RolePermission(role_id=role.id, permission_id=permission.id),
+            RolePermission(role_id=role.id, permission_id=finalize_permission.id),
             UserRole(user_id=user.id, role_id=role.id, project_id=None),
             ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
             ProjectOperationType(
@@ -204,3 +207,22 @@ def test_property_must_be_associated_with_target_project(db: Session) -> None:
         )
 
     assert db.scalar(select(func.count()).select_from(Operation)) == 0
+
+
+def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> None:
+    user, project, operation_type, _, _, _ = seed_operation_context(db)
+    operation = create_operation(
+        db,
+        user,
+        project.id,
+        operation_type.id,
+    )
+
+    with pytest.raises(ValidationError, match="property_required"):
+        finalize_operation(db, user, operation.id, expected_version=operation.version)
+
+    db.refresh(operation)
+    assert operation.status == "DRAFT"
+    assert operation.finalized_at is None
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
+
