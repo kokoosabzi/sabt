@@ -80,11 +80,11 @@
 - [x] Initial transactional registration-number allocator added; currently supports only reset policy NEVER.
 
 ### Verification status
-- [x] Python test suite on commit `a1ded9b`: **17 passed, 1 warning** (`pytest`, Python 3.12.15, GitHub Actions, commit `c6701ac`). This includes numbering scope, allocation increment, caller rollback, ambiguous policy, unsupported reset, and invalid format tests.
+- [x] Python test suite on commit `a1ded9b`: **18 passed, 2 warnings** (`pytest`, Python 3.12.15, GitHub Actions, commit `2d1ce47`). This includes numbering scope, allocation increment, caller rollback, ambiguous policy, unsupported reset, invalid format, and ORM/migration table+column parity.
 - [x] Fresh-database Alembic upgrade on commit `a1ded9b`: passed; current revision reported `0006_remove_operation_appointment_id (head)`.
 - [ ] Alembic downgrade/upgrade round trip: passed on commit `ed3f4e2`: `alembic downgrade base`, `alembic upgrade head`, and `alembic current` completed successfully.
 - [ ] Numbering concurrency test: **Not run in this session.**
-- [ ] ORM/migration parity check: not implemented yet; `Base.metadata.create_all` succeeds as part of the authorization test fixture.
+- [x] ORM/migration parity: `tests/test_migration_schema.py` passed against a fresh migrated database, confirming ORM and migration table/column names match on commit `2d1ce47`.
 
 ## Known review items
 - [x] Operation creation now validates a supplied Appointment before the first Operation write (commit `2e50f55`); regression/integration verification is still pending.
