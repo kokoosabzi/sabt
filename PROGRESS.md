@@ -80,7 +80,7 @@
 - [x] Initial transactional registration-number allocator added; currently supports only reset policy NEVER.
 
 ### Verification status
-- [x] Python test suite on commit `a1ded9b`: **22 passed, 2 warnings** (`pytest`, Python 3.12.15, GitHub Actions, commit `02ae064`). This includes numbering scope, allocation increment, caller rollback, ambiguous policy, unsupported reset, invalid format, password hashing, session token hashing, expiry, and revocation. The migration schema test checks table/column and foreign-key parity; all checks passed in CI on commit `59c6fdb`.
+- [x] Python test suite on commit `a1ded9b`: **25 passed, 2 warnings** (`pytest`, Python 3.12.15, GitHub Actions, commit `e5a8824`). This includes numbering scope/transactions, password hashing, session token hashing/expiry/revocation, authorization, operation creation, project isolation, and ORM/migration table/column/foreign-key parity.
 - [x] Fresh-database Alembic upgrade on commit `a1ded9b`: passed; current revision reported `0006_remove_operation_appointment_id (head)`.
 - [x] Alembic downgrade/upgrade round trip: passed on commit `ed3f4e2` and again on `02ae064`: `alembic downgrade base`, `alembic upgrade head`, and `alembic current` completed successfully.
 - [ ] Numbering concurrency test: **Not run in this session.**
