@@ -229,6 +229,34 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
 
+def test_finalize_rejects_stale_version_without_side_effects(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(
+        db,
+        user,
+        project.id,
+        operation_type.id,
+        property_id=property_record.id,
+    )
+    original_version = operation.version
+
+    with pytest.raises(ConflictError, match="stale_operation"):
+        finalize_operation(
+            db,
+            user,
+            operation.id,
+            expected_version=original_version - 1,
+            reason="Stale client version",
+        )
+
+    db.refresh(operation)
+    assert operation.status == "DRAFT"
+    assert operation.finalized_at is None
+    assert operation.version == original_version
+    assert operation.current_version_number == 0
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
+
+
 def test_finalize_with_property_persists_hashed_snapshot_and_rejects_repeat(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(
