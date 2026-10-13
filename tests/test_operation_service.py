@@ -15,6 +15,7 @@ from app.db.models import (
     Person,
     Operation,
     OperationAppointment,
+    OperationParty,
     OperationType,
     OperationVersion,
     Permission,
