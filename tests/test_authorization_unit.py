@@ -154,3 +154,47 @@ def test_global_permission_check_does_not_accept_project_only_role(db: Session):
     db.flush()
 
     assert not has_permission(db, user, permission.code)
+
+def test_inactive_role_is_denied_even_when_user_has_project_access(db: Session):
+    user, project, role, permission, now = seed_identity(db)
+    role.active = False
+    db.add_all(
+        [
+            UserRole(user_id=user.id, role_id=role.id, project_id=None),
+            ProjectAccess(
+                user_id=user.id,
+                project_id=project.id,
+                active=True,
+                granted_at=now,
+                version=1,
+            ),
+        ]
+    )
+    db.flush()
+
+    assert not has_permission(db, user, permission.code, project.id)
+    with pytest.raises(PermissionError, match="forbidden"):
+        authorize(db, user, permission.code, AuthorizationContext(project_id=project.id))
+
+
+def test_revoked_project_access_denies_permission(db: Session):
+    user, project, role, permission, now = seed_identity(db)
+    db.add_all(
+        [
+            UserRole(user_id=user.id, role_id=role.id, project_id=None),
+            ProjectAccess(
+                user_id=user.id,
+                project_id=project.id,
+                active=False,
+                granted_at=now,
+                revoked_at=now,
+                version=2,
+            ),
+        ]
+    )
+    db.flush()
+
+    assert not has_permission(db, user, permission.code, project.id)
+    with pytest.raises(PermissionError, match="forbidden"):
+        authorize(db, user, permission.code, AuthorizationContext(project_id=project.id))
+
