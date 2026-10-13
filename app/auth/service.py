@@ -26,7 +26,15 @@ def create_session(db: Session, user: User) -> str:
 def get_user_by_token(db: Session, token: str) -> User | None:
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     row = db.scalar(select(AuthSession).where(AuthSession.token_hash == token_hash))
-    if row is None or row.revoked_at is not None or row.expires_at <= datetime.now(timezone.utc):
+    if row is None or row.revoked_at is not None:
+        return None
+    # SQLite does not preserve timezone metadata for DateTime columns. Our
+    # persisted timestamps represent UTC, so normalize a naive value to UTC
+    # before comparing it with the current aware UTC instant.
+    expires_at = row.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= datetime.now(timezone.utc):
         return None
     return db.get(User, row.user_id)
 
