@@ -29,3 +29,8 @@ jobs:
           alembic upgrade head
       - name: Verify Alembic head
         run: alembic current
+      - name: Verify downgrade and re-upgrade
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+          alembic current
