@@ -397,3 +397,19 @@ def test_add_party_persists_valid_project_member_and_increments_operation_versio
     assert db.get(OperationParty, party.id) is not None
     db.refresh(operation)
     assert operation.version == 2
+
+
+def test_add_party_rejects_stale_version_without_side_effects(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    person, party_role = _make_party_records(db, project.id)
+
+    with pytest.raises(ConflictError, match="stale_operation"):
+        add_party(
+            db, user, operation.id, person.id, party_role.id,
+            expected_version=operation.version - 1,
+        )
+
+    assert db.scalar(select(func.count()).select_from(OperationParty)) == 0
+    db.refresh(operation)
+    assert operation.version == 1
