@@ -80,11 +80,11 @@
 - [x] Initial transactional registration-number allocator added; currently supports only reset policy NEVER.
 
 ### Verification status
-- [ ] Python test suite: **Not run in this session.**
-- [ ] Fresh-database Alembic upgrade: **Not run in this session.**
-- [ ] Alembic downgrade/upgrade round trip: **Not run in this session.**
+- [x] Python test suite on commit `a1ded9b`: **12 passed, 1 warning** (`pytest`, Python 3.12.15, GitHub Actions). The expanded numbering tests added afterward are awaiting CI verification.
+- [x] Fresh-database Alembic upgrade on commit `a1ded9b`: passed; current revision reported `0006_remove_operation_appointment_id (head)`.
+- [ ] Alembic downgrade/upgrade round trip: newly added to CI; awaiting run result.
 - [ ] Numbering concurrency test: **Not run in this session.**
-- [ ] ORM/migration parity check: **Not run in this session.**
+- [ ] ORM/migration parity check: not implemented yet; `Base.metadata.create_all` succeeds as part of the authorization test fixture.
 
 ## Known review items
 - [x] Operation creation now validates a supplied Appointment before the first Operation write (commit `2e50f55`); regression/integration verification is still pending.
@@ -103,7 +103,7 @@
 
 ## Latest phase entry
 
-### Phase 0 — In progress (2026-10-09)
+### Phase 0 — In progress (updated 2026-10-13)
 **Delivered:** agent guidance and progress tracking files.
 
 **Verification evidence:** GitHub file creation commits only; no Python tests or migration commands were executed in this session.
