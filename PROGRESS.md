@@ -106,7 +106,8 @@
 - 2026-10-09: Added `SKILL.md`, `AGENTS.md`, and initial progress tracking.
 - 2026-10-13: Added CI and expanded foundation regression tests on `codex/foundation-audit`.
 - 2026-10-13: CI run `38343582096` passed for branch head `014e868cf88bd0e10332986abf081f2c25165319`.
-- 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.\n- 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
+- 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
+- 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
 
 ## Parent Contract transfer-chain design update — 2026-10-13
 
