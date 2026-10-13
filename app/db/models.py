@@ -7,6 +7,7 @@ class Project(Base):
     __tablename__ = "projects"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    contract_code: Mapped[str | None] = mapped_column(String(2), unique=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text())
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
@@ -173,6 +174,9 @@ class Operation(Base):
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     current_version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    parent_contract_id: Mapped[int | None] = mapped_column(ForeignKey("parent_contracts.id", ondelete="RESTRICT"))
+    transfer_sequence: Mapped[int | None] = mapped_column(Integer)
+    child_contract_number: Mapped[str | None] = mapped_column(String(32), unique=True)
 
 class OperationParty(Base):
     __tablename__ = "operation_parties"
@@ -199,6 +203,24 @@ class Contract(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+class ParentContract(Base):
+    """Stable six-digit business root for a member's transfer history."""
+    __tablename__ = "parent_contracts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False)
+    contract_number: Mapped[str] = mapped_column(String(6), unique=True, nullable=False)
+    suffix: Mapped[str] = mapped_column(String(4), nullable=False)
+    initial_person_id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"), nullable=False)
+    property_id: Mapped[int | None] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"))
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __table_args__ = (
+        UniqueConstraint("project_id", "suffix", name="uq_parent_contract_project_suffix"),
+    )
+
 
 class OperationVersion(Base):
     __tablename__ = "operation_versions"
