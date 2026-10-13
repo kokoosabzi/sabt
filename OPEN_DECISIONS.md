@@ -1,23 +1,25 @@
 # SABT — Remaining Design Decisions
 
-Version: 0.2
+Version: 0.3
 
-These points remain intentionally open. Resolved V1 decisions are recorded below.
+This file tracks genuinely unresolved product/security decisions. The Parent Contract defaults below are frozen for the first additive schema implementation; they do not mean the feature is already implemented.
 
-1. Contract lifecycle: exact creation/detachment/correction rules remain open. Architecture direction agreed for design: a stable six-digit Parent Contract anchors a chain of transfer Operations, each with its own child business number (for example `109876/1`, `109876/2`). This is not yet implemented; finalize the edge cases listed under “Parent/child transfer-chain proposal” before schema migration.
-2. Exact Registration Number policy values: scope, prefix, sequence width, reset behavior and allocation timing.
-3. Complete permission matrix and exact global/project scope of each permission.
-4. Storage retention for temporary files, generated PDFs, archived documents, physical deletions and backups.
-5. Reminder delivery mechanism and retry/deduplication policy in V1.
-6. Search fields, filters and ranking.
-7. Backup encryption/key management and secret recovery.
-8. Exact authentication/session mechanism and password/account policy.
-9. Template asset revision storage and exact PDF reproducibility manifest.
-10. Exact custom-field scope precedence where global, project and Operation-Type definitions overlap.
+## Open decisions
 
-## Resolved V1 decisions — 2026 architecture freeze batch
+1. Exact Registration Number policy values: scope, prefix, sequence width, reset behavior and allocation timing.
+2. Complete permission matrix and exact global/project scope of each permission.
+3. Storage retention for temporary files, generated PDFs, archived documents, physical deletions and backups.
+4. Reminder delivery mechanism and retry/deduplication policy in V1.
+5. Search fields, filters and ranking.
+6. Backup encryption/key management and secret recovery.
+7. Exact authentication/session mechanism and password/account policy.
+8. Template asset revision storage and exact PDF reproducibility manifest.
+9. Exact custom-field scope precedence where global, project and Operation-Type definitions overlap.
+10. Legacy transfer import: what source fields prove historical order and how ambiguous or tied records are handled. Never guess ordering from import row order unless the user explicitly confirms that rule.
+11. Import matching policy for existing people and properties, including how duplicate candidates are resolved. Never silently merge master records.
+12. Exact import template columns and required/optional fields. Keep the first import implementation narrow and versioned; optional property details must not make the Parent Contract number ambiguous.
 
-The following decisions are frozen for V1 and should no longer be treated as open:
+## Resolved V1 decisions
 
 1. Person and Property are central reusable master records. Project-specific association/context is separate.
 2. Finalized OperationVersion is the canonical immutable historical snapshot; structured snapshots support queryability.
@@ -28,21 +30,21 @@ The following decisions are frozen for V1 and should no longer be treated as ope
 7. Users may have global and project-scoped roles. Project access is separately represented and required for project-scoped actions.
 8. V1 timezone policy: store timezone-aware UTC instants; Project carries the business/presentation timezone; server-local timezone is never an implicit rule.
 
-Remaining open items include the exact authentication/session implementation, complete permission catalog, backup encryption/key management, retention defaults, reminder delivery details, search ranking, template asset revision storage, and other implementation-level policies.
+## Parent Contract / transfer-chain decisions — frozen defaults, 2026-10-14
 
+These decisions resolve the schema-level ambiguities for the initial implementation:
 
+- **Separate numbering field:** preserve the existing `Project.code` as-is because it currently accepts general strings and may already be used by existing data. Add a distinct nullable `Project.contract_code` for Parent Contract numbering. It is a two-character numeric string from `10` through `99`; `01`–`09` are invalid. It must be unique when present. Do not auto-convert or renumber existing project codes. New Parent Contracts require a valid contract code.
+- **Stability:** once a Project has any Parent Contract, its `contract_code` cannot be changed or cleared. Before it is used, changing it remains an audited administrative operation; uniqueness is still enforced.
+- **Parent number:** preserve the six-character string exactly: two-character Project contract code plus a four-digit suffix. Suffixes `0000`–`9999` retain leading zeroes. The business number is not a database primary key and is globally unique.
+- **Transfer sequence:** child numbers use positive decimal integers without zero padding (e.g. `/1`, `/2`, `/10`). Allocate a sequence transactionally when a transfer is finalized, never with `MAX()+1`. Once a child number has been issued, never reuse it, even if that transfer is later reversed/cancelled; gaps are expected.
+- **Ownership:** only a finalized transfer changes the derived current owner. Draft, rejected, or cancelled-before-finalization operations do not. A later reversal/corrective business event must be represented explicitly and finalized; never rewrite the prior finalized history to make it disappear. Exact reversal operation types can be configured later.
+- **Correction vs transfer:** correcting the record of an already finalized operation is a revision/correction of that operation and must preserve its audit/history; a genuine subsequent ownership transfer is a new Operation with a new child number.
+- **Property details:** Parent Contract may optionally reference a Property. Imported unit/property columns are optional context, not part of the six-digit identifier.
+- **Import safety:** import is staged (map → validate/deduplicate → preview → explicit confirm → transactionally persist → report). No silent renumbering, no silent Person/Property merge, and no success response for a partial write. Historical ordering and ambiguous identity matching remain open as listed above.
 
-## Parent/child transfer-chain proposal — architecture direction, 2026-10-13
+The Parent Contract is a distinct entity from the existing optional transaction-specific `Contract` row. A transfer chain must be linked explicitly and must not be inferred from `Contract.operation_id` or `OperationVersion` alone.
 
-The proposed business model is accepted as the direction for the next design pass, but not yet marked implemented:
+## Status note
 
-- A Parent Contract has a stable six-digit business number. Its first two digits represent a Project code, and its last four digits identify the member/parent contract. Valid Project codes start at `10`; codes `01` through `09` are not used. Store the code as a two-character numeric string to preserve formatting. The Project code is shared by all members and Parent Contracts in that Project.
-- A Parent Contract can have zero or many transfer Operations. Each finalized transfer is a separate Operation and receives a child business number such as `109876/1`, `109876/2`, or `109876/10`.
-- A correction/revision of an already finalized transfer is an OperationVersion/correction workflow, not a new transfer child. A genuine subsequent transfer is a new Operation.
-- Parent/child business numbers are identifiers, never database primary keys. Allocate child sequence numbers transactionally per parent; never use `MAX()+1`.
-- Searching the parent number should return the parent summary, ordered transfer history, and authorized detail navigation for each child. Current ownership is derived only from the latest valid finalized transfer under an explicitly defined validity policy.
-- Excel/CSV import must support a staged mapping, validation/duplicate report, preview, explicit confirmation, transactional persistence, and an audit/import report. A partial import must not be presented as successful.
-
-Confirmed: Project codes are exactly two numeric digits and the available sequence starts at `10` (never `01`–`09`). The code is common to every member/contract in a Project. Parent Contract suffixes are four digits and may be entered manually or imported from Excel/CSV. Import may also include optional unit/property details. Preserve leading zeroes and existing six-digit numbers. Still decide: (1) whether Project codes are globally unique and immutable once used; (2) child numbering gaps/cancellation policy and sequence width; (3) the precise state transition at which a transfer becomes ownership-effective; (4) how imported legacy transfer histories and their ordering are represented; (5) exact import columns and duplicate-person matching rules.
-
-The proposal changes the domain relationship: the existing “zero or one Contract per Operation” remains valid for an Operation's transaction-specific Contract record, but the parent chain must be represented separately and must not be inferred from that optional Contract link alone.
+The decisions above are architecture defaults only. The Parent Contract schema, migrations, services, UI, import pipeline and ownership query are **not implemented yet**. The foundation branch remains a draft PR and must stay unmerged until tests and migration round-trip pass.
