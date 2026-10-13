@@ -50,12 +50,12 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
     return op
 
 def add_party(db: Session, user: User, operation_id: int, person_id: int, role_id: int,
-              sequence_no: int = 1, expected_version: int | None = None) -> OperationParty:
+              sequence_no: int = 1, *, expected_version: int) -> OperationParty:
     op = db.get(Operation, operation_id)
     if op is None: raise NotFoundError("operation_not_found")
     _require_project_access(db, user, op.project_id, "operation.edit")
     if op.status == "FINALIZED": raise ConflictError("operation_finalized")
-    if expected_version is not None and op.version != expected_version: raise ConflictError("stale_operation")
+    if op.version != expected_version: raise ConflictError("stale_operation")
     if sequence_no < 1: raise ValidationError("party_sequence_invalid")
     person, role = db.get(Person, person_id), db.get(PartyRole, role_id)
     if person is None or not person.is_active: raise ValidationError("person_invalid")
@@ -86,13 +86,13 @@ def _snapshot(db: Session, op: Operation) -> dict:
                 "unit_code": prop.unit_code, "plaque_number": prop.plaque_number, "address": prop.address},
             "parties": parties}
 
-def finalize_operation(db: Session, user: User, operation_id: int, expected_version: int | None = None,
+def finalize_operation(db: Session, user: User, operation_id: int, expected_version: int,
                        reason: str | None = None) -> OperationVersion:
     op = db.get(Operation, operation_id)
     if op is None: raise NotFoundError("operation_not_found")
     _require_project_access(db, user, op.project_id, "operation.finalize")
     if op.status == "FINALIZED": raise ConflictError("operation_already_finalized")
-    if expected_version is not None and op.version != expected_version: raise ConflictError("stale_operation")
+    if op.version != expected_version: raise ConflictError("stale_operation")
     if op.property_id is None: raise ValidationError("property_required")
 
     payload = _snapshot(db, op)
