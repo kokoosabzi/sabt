@@ -81,11 +81,12 @@
 
 ### Verified on GitHub Actions
 - [x] On commit `e5a882401f62c1f68c302ea94c89783bff5ef73e`: **25 passed, 2 warnings**; Python test suite passed.
+- [x] On commit `1b1903875e7ddcfe4bcfc2289324aafae9ad76a8`: **27 passed, 2 warnings**; added tests for inactive roles and revoked project access.
 - [x] Fresh SQLite Alembic upgrade reached `0006_remove_operation_appointment_id (head)`.
 - [x] Alembic downgrade to base and re-upgrade to head passed.
-- [x] ORM/migration parity test passed for table names, column names, and foreign keys.
+- [x] ORM/migration parity test passed for table names, column names, foreign keys, and column nullability (run `38343796388`, commit `1cc1ed2b946db611d7af6bbb751f7020fbd74fdc`).
 - [x] Latest branch head `014e868cf88bd0e10332986abf081f2c25165319`: GitHub Actions run **38343582096 completed successfully**. This commit only updates progress documentation; the run verifies the current branch's CI workflow.
-- [ ] The new nullability parity assertions in `tests/test_migration_schema.py` have not yet run; await CI on the next commit before marking them verified.
+- [x] Latest test run `38343819274` succeeded on commit `1b1903875e7ddcfe4bcfc2289324aafae9ad76a8`: 27 tests passed, fresh migration succeeded, and downgrade/re-upgrade round trip succeeded.
 
 ## Known implementation gaps and risks
 
@@ -105,6 +106,7 @@
 - 2026-10-09: Added `SKILL.md`, `AGENTS.md`, and initial progress tracking.
 - 2026-10-13: Added CI and expanded foundation regression tests on `codex/foundation-audit`.
 - 2026-10-13: CI run `38343582096` passed for branch head `014e868cf88bd0e10332986abf081f2c25165319`.
+- 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
 
 ## Next task
 
