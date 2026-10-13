@@ -106,8 +106,16 @@
 - 2026-10-09: Added `SKILL.md`, `AGENTS.md`, and initial progress tracking.
 - 2026-10-13: Added CI and expanded foundation regression tests on `codex/foundation-audit`.
 - 2026-10-13: CI run `38343582096` passed for branch head `014e868cf88bd0e10332986abf081f2c25165319`.
-- 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
+- 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.\n- 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
+
+## Parent Contract transfer-chain design update — 2026-10-13
+
+- [x] Recorded the proposed stable six-digit Parent Contract root and per-transfer child business number convention in architecture/domain/workflow/schema documents.
+- [x] Distinguished a genuine transfer (new Operation) from a correction to an existing finalized transfer (OperationVersion/correction workflow).
+- [x] Documented parent-number search/history, current-owner derivation, transactional child numbering, and staged Excel/CSV import as design targets.
+- [ ] Resolve the remaining business decisions: two-digit Project code uniqueness, four-digit parent suffix assignment, child-number gaps/width, ownership-effective state, and legacy import ordering.
+- [ ] Implement and test schema/migrations only after those policies are confirmed. The design documents do not mean these features are already implemented.
 
 ## Next task
 
-Continue Phase 0 by strengthening migration parity checks and testing the highest-risk operation lifecycle guarantees before starting broad feature development. Keep the pull request open and unmerged until the new checks and risks are reviewed.
+Continue Phase 0 with the highest-risk operation lifecycle guarantees and finish the Parent Contract numbering/ownership decisions before introducing schema migrations. Keep the pull request open and unmerged until the new checks and risks are reviewed.
