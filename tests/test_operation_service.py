@@ -11,6 +11,8 @@ from app.db.base import Base
 from app.db.models import (
     Appointment,
     AppointmentType,
+    PartyRole,
+    Person,
     Operation,
     OperationAppointment,
     OperationType,
@@ -19,6 +21,7 @@ from app.db.models import (
     Project,
     ProjectAccess,
     ProjectOperationType,
+    ProjectPerson,
     ProjectProperty,
     Property,
     Role,
@@ -26,7 +29,7 @@ from app.db.models import (
     User,
     UserRole,
 )
-from app.operations.service import ConflictError, ValidationError, create_operation, finalize_operation
+from app.operations.service import ConflictError, ValidationError, add_party, create_operation, finalize_operation
 
 
 @pytest.fixture()
@@ -296,3 +299,99 @@ def test_finalize_with_property_persists_hashed_snapshot_and_rejects_repeat(db: 
 
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 1
 
+
+
+def _make_party_records(db: Session, project_id: int, *, associated: bool = True, association_active: bool = True):
+    now = datetime.now(timezone.utc)
+    person = Person(
+        first_name="Test",
+        last_name="Owner",
+        created_at=now,
+        updated_at=now,
+        version=1,
+        is_active=True,
+    )
+    party_role = PartyRole(
+        code="OWNER",
+        name="Owner",
+        active=True,
+        system_defined=True,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add_all([person, party_role])
+    db.flush()
+    if associated:
+        db.add(
+            ProjectPerson(
+                project_id=project_id,
+                person_id=person.id,
+                active=association_active,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        db.flush()
+    return person, party_role
+
+
+def test_add_party_rejects_person_not_associated_with_operation_project(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    person, party_role = _make_party_records(db, project.id, associated=False)
+
+    with pytest.raises(ValidationError, match="person_not_associated_with_project"):
+        add_party(db, user, operation.id, person.id, party_role.id, expected_version=operation.version)
+
+    assert db.scalar(select(func.count()).select_from(OperationParty)) == 0
+    db.refresh(operation)
+    assert operation.version == 1
+
+
+def test_add_party_rejects_person_associated_only_with_another_project(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    other_project = db.scalar(select(Project).where(Project.code == "OTHER"))
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    person, party_role = _make_party_records(db, other_project.id)
+
+    with pytest.raises(ValidationError, match="person_not_associated_with_project"):
+        add_party(db, user, operation.id, person.id, party_role.id, expected_version=operation.version)
+
+    assert db.scalar(select(func.count()).select_from(OperationParty)) == 0
+
+
+def test_add_party_rejects_inactive_project_person_link(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    person, party_role = _make_party_records(db, project.id, association_active=False)
+
+    with pytest.raises(ValidationError, match="person_not_associated_with_project"):
+        add_party(db, user, operation.id, person.id, party_role.id, expected_version=operation.version)
+
+    assert db.scalar(select(func.count()).select_from(OperationParty)) == 0
+
+
+def test_add_party_requires_positive_sequence_number(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    person, party_role = _make_party_records(db, project.id)
+
+    with pytest.raises(ValidationError, match="party_sequence_invalid"):
+        add_party(db, user, operation.id, person.id, party_role.id, sequence_no=0,
+                  expected_version=operation.version)
+
+    assert db.scalar(select(func.count()).select_from(OperationParty)) == 0
+    db.refresh(operation)
+    assert operation.version == 1
+
+
+def test_add_party_persists_valid_project_member_and_increments_operation_version(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    person, party_role = _make_party_records(db, project.id)
+
+    party = add_party(db, user, operation.id, person.id, party_role.id, expected_version=operation.version)
+
+    assert db.get(OperationParty, party.id) is not None
+    db.refresh(operation)
+    assert operation.version == 2
