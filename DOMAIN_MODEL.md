@@ -3,11 +3,11 @@
 Version: 0.1
 
 ## Entity map
-Project -> Appointments, Operations, enabled Operation Types
+Project -> Appointments, Operations, enabled Operation Types, Parent Contracts
 Person -> reusable master data; referenced by Operation Parties
 Property -> reusable master data; project association/context is separate; referenced by Contracts
 Appointment -> 0..N Operations
-Operation -> 0..1 Contract, N Parties, 1 Property context, N Documents, N Custom Field values, N Audit events
+Parent Contract -> 0..N transfer Operations (stable transfer-chain root)\nOperation -> 0..1 transaction-specific Contract, 0..1 Parent Contract, N Parties, 1 Property context, N Documents, N Custom Field values, N Audit events
 Contract -> exactly 1 Property and manual Contract Number
 
 ## Project
@@ -75,3 +75,13 @@ The immutable final business truth is the finalized OperationVersion snapshot. I
 
 ### Project roles
 Users may have global roles and project-scoped roles. Project access is separate from role assignment and is required for project-scoped actions.
+
+
+## Parent/child model — proposed architecture direction
+
+- Parent Contract is a separate entity from the existing optional transaction-specific Contract record.
+- Transfer Operations reference the Parent Contract; do not encode the chain by reusing OperationVersion rows or by assuming the optional Contract relationship is sufficient.
+- The UI should show a parent summary and chronologically/sequence-ordered transfer tree. Selecting a child opens its own operation details and immutable finalized snapshot.
+- The parent detail view may show a current-owner summary derived from the latest valid finalized transfer, while preserving the initial owner on the Parent Contract.
+- Bulk import of existing parent contracts and member/owner rows is a staged, auditable import workflow, not direct unvalidated inserts.
+- Exact Project code constraints, four-digit suffix allocation, transfer numbering gaps, and ownership-effective status are still open decisions; do not hard-code them until resolved.
