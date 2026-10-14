@@ -195,6 +195,7 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Add project-scoped, time-filtered, paginated `GET /reports/workflow/events` using event occurrence time rather than operation creation time.
 - [x] Document the event table, transaction behavior, and current event coverage in `DATABASE_SCHEMA.md`.
 - [x] Verify CI run [38636861666](https://github.com/kokoosabzi/sabt/actions/runs/38636861666): 106 tests passed; migration upgrade/downgrade/re-upgrade checks passed.
+- [x] Verify latest CI run [38637141106](https://github.com/kokoosabzi/sabt/actions/runs/38637141106): 106 tests passed, including registration of the event report endpoint; SQLite migration round-trip passed.
 - [ ] Extend event recording to every implemented workflow state transition as the workflow engine grows; do not report time-in-state until all required transitions and timestamps are persisted.
 - [ ] Build the Persian RTL portal UI after the foundation stabilization gate; the repository currently has no frontend application.
 
