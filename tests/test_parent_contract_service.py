@@ -152,6 +152,14 @@ def test_parent_contract_history_lists_numbered_transfers_and_drafts(db):
     db.add(operation_type)
     db.flush()
     parent.next_transfer_sequence = 2
+    buyer = Person(first_name="Buyer", last_name="Transferee", created_at=now, updated_at=now,
+                   version=1, is_active=True)
+    buyer_role = PartyRole(code="BUYER_TRANSFEREE", name="Buyer / Transferee", active=True,
+                           system_defined=True, created_at=now, updated_at=now)
+    db.add_all([buyer, buyer_role])
+    db.flush()
+    db.add(ProjectPerson(project_id=project.id, person_id=buyer.id, active=True,
+                         created_at=now, updated_at=now))
     finalized = Operation(
         project_id=project.id, operation_type_id=operation_type.id, status="FINALIZED",
         current_workflow_state="FINALIZED", property_id=prop.id, created_by=user.id,
@@ -167,11 +175,21 @@ def test_parent_contract_history_lists_numbered_transfers_and_drafts(db):
     )
     db.add_all([finalized, draft])
     db.flush()
+    db.add_all([
+        OperationVersion(operation_id=finalized.id, version_number=1, created_by=user.id,
+                         created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash"),
+        OperationParty(operation_id=finalized.id, person_id=buyer.id, role_id=buyer_role.id,
+                       sequence_no=1, created_at=now, updated_at=now, version=1),
+    ])
+    db.flush()
 
     history = get_parent_contract_history(db, user, "760123")
     assert history["parent"]["contract_number"] == "760123"
     assert [row["child_contract_number"] for row in history["transfers"]] == ["760123/1", None]
     assert [row["status"] for row in history["transfers"]] == ["FINALIZED", "DRAFT"]
+    assert history["current_owner"]["source"] == "latest_valid_finalized_transfer"
+    assert history["current_owner"]["child_contract_number"] == "760123/1"
+    assert history["current_owner"]["people"][0]["person_id"] == buyer.id
 
 
 def test_parent_contract_history_rejects_user_without_project_access(db):
