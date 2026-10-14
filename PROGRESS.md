@@ -22,6 +22,14 @@
 - [x] Require an expected operation version for party edits and finalization; reject stale party edits without side effects.
 - [x] Record the verified findings and exact CI evidence in this progress ledger.
 
+### Parent Contract schema foundation
+- [x] Add additive Alembic migration for Project.contract_code, ParentContract, and Operation transfer-chain fields.
+- [x] Add matching ORM models/constraints and update the logical ERD/database schema documentation.
+- [ ] Verify migration upgrade/downgrade/re-upgrade and ORM parity in CI.
+- [ ] Add service validation for two-digit project contract codes and six-digit Parent Contract numbers.
+- [ ] Add transactional transfer child-number allocation on finalization; never use MAX()+1.
+- [ ] Add tests for project code format, parent-number format/uniqueness, transfer sequence uniqueness, and rollback.
+
 ### Phase 1 — Complete operation lifecycle
 - [ ] Define and implement working snapshots at operation creation.
 - [ ] Validate required parties, documents, fields, and workflow before finalization.
