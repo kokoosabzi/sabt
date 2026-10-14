@@ -22,7 +22,7 @@ def _report_response(fn):
 
 @router.get("/management/summary")
 def management_summary(
-    project_id: int = Query(..., ge=1),
+    project_id: int,
     start_at: datetime,
     end_at: datetime,
     user=Depends(current_user),
