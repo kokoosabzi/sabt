@@ -175,6 +175,12 @@ def test_create_operation_links_appointment_from_same_project(db: Session) -> No
     assert operation.status == "DRAFT"
     link = db.get(OperationAppointment, (appointment.id, operation.id))
     assert link is not None
+    created_event = db.scalar(select(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "OPERATION_CREATED",
+    ))
+    assert created_event is not None
+    assert created_event.to_status == "DRAFT"
 
 
 def test_cross_project_appointment_is_rejected_before_operation_write(db: Session) -> None:
