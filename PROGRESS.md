@@ -5,7 +5,7 @@
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** Parent Contract creation, project-code immutability, atomic transfer numbering, and Buyer / Transferee-based current-owner derivation are implemented on `codex/foundation-audit`. CI run `38596512913` is in progress for the latest code and tests. Implementation remains incomplete; PR #1 stays draft and unmerged.
+- **Overall status:** Parent Contract creation, project-code immutability, atomic transfer numbering, and Buyer / Transferee-based current-owner derivation are implemented on `codex/foundation-audit`. CI run `38596512913` passed **87 tests, 2 warnings**, plus fresh SQLite upgrade and downgrade/re-upgrade through `0008_transfer_sequence_counter`. Implementation remains incomplete; PR #1 stays draft and unmerged.
 - **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
