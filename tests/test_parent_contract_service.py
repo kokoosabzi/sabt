@@ -175,21 +175,40 @@ def test_parent_contract_history_lists_numbered_transfers_and_drafts(db):
     )
     db.add_all([finalized, draft])
     db.flush()
+    second_buyer = Person(first_name="Second", last_name="Buyer", created_at=now, updated_at=now,
+                          version=1, is_active=True)
+    db.add(second_buyer)
+    db.flush()
+    db.add(ProjectPerson(project_id=project.id, person_id=second_buyer.id, active=True,
+                         created_at=now, updated_at=now))
+    second_transfer = Operation(
+        project_id=project.id, operation_type_id=operation_type.id, status="FINALIZED",
+        current_workflow_state="FINALIZED", property_id=prop.id, created_by=user.id,
+        finalized_by=user.id, created_at=now, updated_at=now, finalized_at=now,
+        version=2, current_version_number=1, parent_contract_id=parent.id,
+        transfer_sequence=2, child_contract_number="760123/2",
+    )
+    db.add(second_transfer)
+    db.flush()
     db.add_all([
         OperationVersion(operation_id=finalized.id, version_number=1, created_by=user.id,
-                         created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash"),
+                         created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash-1"),
         OperationParty(operation_id=finalized.id, person_id=buyer.id, role_id=buyer_role.id,
+                       sequence_no=1, created_at=now, updated_at=now, version=1),
+        OperationVersion(operation_id=second_transfer.id, version_number=1, created_by=user.id,
+                         created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash-2"),
+        OperationParty(operation_id=second_transfer.id, person_id=second_buyer.id, role_id=buyer_role.id,
                        sequence_no=1, created_at=now, updated_at=now, version=1),
     ])
     db.flush()
 
     history = get_parent_contract_history(db, user, "760123")
     assert history["parent"]["contract_number"] == "760123"
-    assert [row["child_contract_number"] for row in history["transfers"]] == ["760123/1", None]
-    assert [row["status"] for row in history["transfers"]] == ["FINALIZED", "DRAFT"]
+    assert [row["child_contract_number"] for row in history["transfers"]] == ["760123/1", "760123/2", None]
+    assert [row["status"] for row in history["transfers"]] == ["FINALIZED", "FINALIZED", "DRAFT"]
     assert history["current_owner"]["source"] == "latest_valid_finalized_transfer"
-    assert history["current_owner"]["child_contract_number"] == "760123/1"
-    assert history["current_owner"]["people"][0]["person_id"] == buyer.id
+    assert history["current_owner"]["child_contract_number"] == "760123/2"
+    assert history["current_owner"]["people"][0]["person_id"] == second_buyer.id
 
 
 def test_parent_contract_history_rejects_user_without_project_access(db):
