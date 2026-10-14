@@ -29,7 +29,8 @@
 - [x] Add pure validation/formatting helpers and tests for two-digit Project contract codes, six-digit Parent Contract numbers, four-digit suffixes, and positive child sequences.\n- [ ] Integrate validation helpers into authorized Parent Contract creation and enforce project-code immutability after first use.
 - [ ] Add transactional transfer child-number allocation on finalization; never use MAX()+1.
 - [x] Add service tests for authorized Parent Contract creation, leading-zero preservation, missing project code, invalid suffixes, project membership/property association, duplicate suffix, and missing project access.
-- [ ] Add tests for project-code immutability, transfer sequence uniqueness, and rollback.
+- [x] Add tests for project-code immutability, stale project versions, and invalid project contract codes.
+- [ ] Add tests for transfer sequence uniqueness and rollback.
 
 ### Phase 1 — Complete operation lifecycle
 - [ ] Define and implement working snapshots at operation creation.
@@ -120,7 +121,7 @@
 - 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
 - 2026-10-13: CI run `38468577088` passed with 36 tests and SQLite migration upgrade/downgrade/re-upgrade checks. Added project-membership validation for OperationParty writes and mandatory optimistic version checks for party edits/finalization.
 - 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
-- 2026-10-14: Added `create_parent_contract` service on `codex/foundation-audit`, including authorization, project/person/property association checks, string-safe six-digit number creation, and duplicate safeguards. Added focused service tests; latest CI verification is pending.
+- 2026-10-14: Added `create_parent_contract` and `set_project_contract_code` services on `codex/foundation-audit`, including authorization, project/person/property association checks, string-safe six-digit number creation, duplicate safeguards, optimistic project version checks, and project-code immutability after first use. Focused service tests are in place; latest CI verification is pending.
 
 ## Parent Contract transfer-chain design update — 2026-10-13
 
