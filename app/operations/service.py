@@ -59,7 +59,8 @@ def _allocate_transfer_number(db: Session, op: Operation, now: datetime) -> None
     parent.updated_at = now
 
 def create_operation(db: Session, user: User, project_id: int, operation_type_id: int,
-                     property_id: int | None = None, appointment_id: int | None = None) -> Operation:
+                     property_id: int | None = None, appointment_id: int | None = None,
+                     parent_contract_id: int | None = None) -> Operation:
     _require_project_access(db, user, project_id, "operation.create")
     ot = db.get(OperationType, operation_type_id)
     if ot is None or not ot.active or ot.retired_at is not None: raise ValidationError("operation_type_inactive")
@@ -79,7 +80,8 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
         if appointment.project_id != project_id: raise ValidationError("appointment_project_mismatch")
     now = _now()
     op = Operation(project_id=project_id, operation_type_id=operation_type_id,
-                   property_id=property_id, status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
+                   property_id=property_id, parent_contract_id=parent_contract_id,
+                   status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
                    created_at=now, updated_at=now, version=1, current_version_number=0)
     db.add(op); db.flush()
     if appointment is not None:
