@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
-from app.reports.service import ReportValidationError, get_management_summary, get_workflow_report
+from app.reports.service import ReportValidationError, get_management_summary, get_workflow_events_report, get_workflow_report
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
