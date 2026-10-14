@@ -161,3 +161,11 @@ Define how the transferee is identified in operation parties and implement curre
 
 - [x] GitHub Actions run [38602455911](https://github.com/kokoosabzi/sabt/actions/runs/38602455911) passed on API route/test commit `814f87851f9c439bb66c22b83e6f5d255088834d`; the CI workflow includes the full pytest suite and SQLite migration round-trip.
 
+
+
+## Reporting implementation (2026-10-15)
+- [x] Add project-scoped management summary and paginated workflow report queries.
+- [x] Expose `/reports/management-summary` and `/reports/workflow` in FastAPI.
+- [x] Add service tests and a check that report routes are registered.
+- [ ] Complete route-level authorization, date-range, pagination and response tests after CI review.
+- [ ] Add state-transition audit events before reporting historical status changes or time-in-state.
