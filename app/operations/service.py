@@ -1,12 +1,13 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib, json
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from app.auth.authorization import AuthorizationContext, authorize
+from app.contracts.numbering import build_child_contract_number
 from app.db.models import (
     Appointment, Contract, Operation, OperationAppointment, OperationParty, OperationType, OperationVersion,
-    PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User,
+    ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User,
 )
 
 class OperationError(Exception): pass
@@ -19,6 +20,43 @@ def _require_project_access(db, user, project_id, permission):
     authorize(db, user, permission, AuthorizationContext(project_id=project_id))
 def _canonical(value): return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 def _sha(value): return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+def _allocate_transfer_number(db: Session, op: Operation, now: datetime) -> None:
+    """Atomically reserve the next child number inside the finalization transaction."""
+    parent = db.get(ParentContract, op.parent_contract_id)
+    if parent is None:
+        raise NotFoundError("parent_contract_not_found")
+    if parent.project_id != op.project_id or parent.status != "ACTIVE":
+        raise ValidationError("parent_contract_inactive_or_project_mismatch")
+    if db.scalar(select(OperationParty.id).where(OperationParty.operation_id == op.id).limit(1)) is None:
+        raise ValidationError("transfer_party_required")
+
+    # UPDATE ... RETURNING serializes counter changes in SQLite. The increment
+    # and operation finalization share the caller's transaction; rollback undoes both.
+    row = db.execute(
+        update(ParentContract)
+        .where(
+            ParentContract.id == parent.id,
+            ParentContract.project_id == op.project_id,
+            ParentContract.status == "ACTIVE",
+        )
+        .values(
+            next_transfer_sequence=ParentContract.next_transfer_sequence + 1,
+            version=ParentContract.version + 1,
+            updated_at=now,
+        )
+        .returning(ParentContract.next_transfer_sequence, ParentContract.version)
+        .execution_options(synchronize_session=False)
+    ).one_or_none()
+    if row is None:
+        raise ConflictError("parent_contract_sequence_unavailable")
+    next_sequence, parent_version = row
+    sequence = next_sequence - 1
+    op.transfer_sequence = sequence
+    op.child_contract_number = build_child_contract_number(parent.contract_number, sequence)
+    parent.next_transfer_sequence = next_sequence
+    parent.version = parent_version
+    parent.updated_at = now
 
 def create_operation(db: Session, user: User, project_id: int, operation_type_id: int,
                      property_id: int | None = None, appointment_id: int | None = None) -> Operation:
@@ -80,7 +118,10 @@ def _snapshot(db: Session, op: Operation) -> dict:
                         "mobile": person.mobile, "address": person.address}})
     prop = db.get(Property, op.property_id) if op.property_id else None
     return {"operation": {"id": op.id, "project_id": op.project_id, "operation_type_id": op.operation_type_id,
-                           "status": op.status, "workflow_state": op.current_workflow_state},
+                           "status": op.status, "workflow_state": op.current_workflow_state,
+                           "parent_contract_id": op.parent_contract_id,
+                           "transfer_sequence": op.transfer_sequence,
+                           "child_contract_number": op.child_contract_number},
             "property": None if prop is None else {"property_id": prop.id, "block_tower": prop.block_tower,
                 "floor": prop.floor, "orientation": prop.orientation, "unit_number": prop.unit_number,
                 "unit_code": prop.unit_code, "plaque_number": prop.plaque_number, "address": prop.address},
@@ -95,9 +136,13 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
     if op.version != expected_version: raise ConflictError("stale_operation")
     if op.property_id is None: raise ValidationError("property_required")
 
+    now = _now()
+    if op.parent_contract_id is not None:
+        if op.transfer_sequence is not None or op.child_contract_number is not None:
+            raise ConflictError("transfer_number_already_allocated")
+        _allocate_transfer_number(db, op, now)
     payload = _snapshot(db, op)
     encoded = _canonical(payload)
-    now = _now()
     next_version = op.current_version_number + 1
     version = OperationVersion(operation_id=op.id, version_number=next_version, reason=reason,
                                created_by=user.id, created_at=now, finalized_at=now,
