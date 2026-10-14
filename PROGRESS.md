@@ -181,3 +181,7 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] CI run [38635961043](https://github.com/kokoosabzi/sabt/actions/runs/38635961043) passed: 104 tests, 2 warnings; fresh SQLite migration, Alembic head, downgrade and re-upgrade checks also passed.
 - [ ] Add workflow event history before reporting historical status changes or time-in-state.
 - [ ] Build the Persian RTL portal and report pages; add CSV/Excel/PDF export after UI/API contract review.
+
+- [x] Require timezone-aware report range bounds and normalize them to UTC; add malformed parent/child contract filter validation.
+- [x] Add dashboard counts for currently open operations and parent-contract transfers finalized in the selected period, without inferring unrecorded state transitions.
+- [x] Latest verification: [GitHub Actions run 38636446498](https://github.com/kokoosabzi/sabt/actions/runs/38636446498) passed **105 tests, 2 warnings**, plus fresh SQLite upgrade, Alembic head, downgrade and re-upgrade checks.
