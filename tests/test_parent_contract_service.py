@@ -11,7 +11,7 @@ from app.db.models import (
     ProjectProperty, Property, Role, RolePermission, User, UserRole,
 )
 from app.contracts.service import (
-    ParentContractConflictError, ParentContractValidationError, create_parent_contract,
+    ParentContractConflictError, ParentContractValidationError, create_parent_contract, set_project_contract_code,
 )
 
 
@@ -36,10 +36,12 @@ def seed_context(db, *, contract_code="76", associated=True, property_linked=Tru
     prop = Property(unit_number="101", created_at=now, updated_at=now, version=1, is_active=True)
     role = Role(code="contract-admin", name="Contract Admin", active=True)
     permission = Permission(code="parent_contract.create", name="Create Parent Contract")
-    db.add_all([user, project, person, prop, role, permission])
+    project_edit = Permission(code="project.edit", name="Edit Project")
+    db.add_all([user, project, person, prop, role, permission, project_edit])
     db.flush()
     db.add_all([
         RolePermission(role_id=role.id, permission_id=permission.id),
+        RolePermission(role_id=role.id, permission_id=project_edit.id),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
     ])
@@ -108,3 +110,29 @@ def test_create_parent_contract_requires_project_access(db):
     with pytest.raises(PermissionError, match="forbidden"):
         create_parent_contract(db, user, project.id, "0123", person.id)
     assert db.scalar(select(ParentContract.id)) is None
+
+
+def test_project_contract_code_can_be_changed_before_first_parent_contract(db):
+    user, project, _, _ = seed_context(db)
+    updated = set_project_contract_code(db, user, project.id, "77", expected_version=project.version)
+    assert updated.contract_code == "77"
+    assert updated.version == 2
+
+
+def test_project_contract_code_is_immutable_after_first_parent_contract(db):
+    user, project, person, _ = seed_context(db)
+    create_parent_contract(db, user, project.id, "0123", person.id)
+    with pytest.raises(ParentContractConflictError, match="project_contract_code_immutable"):
+        set_project_contract_code(db, user, project.id, "77", expected_version=project.version)
+    db.refresh(project)
+    assert project.contract_code == "76"
+
+
+def test_project_contract_code_rejects_stale_version_and_invalid_code(db):
+    user, project, _, _ = seed_context(db)
+    with pytest.raises(ParentContractConflictError, match="stale_project"):
+        set_project_contract_code(db, user, project.id, "77", expected_version=project.version - 1)
+    with pytest.raises(ParentContractValidationError, match="project_contract_code_invalid"):
+        set_project_contract_code(db, user, project.id, "09", expected_version=project.version)
+    db.refresh(project)
+    assert project.contract_code == "76"
