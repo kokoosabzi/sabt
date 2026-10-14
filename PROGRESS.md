@@ -200,3 +200,6 @@ Define how the transferee is identified in operation parties and implement curre
 - [ ] Build the Persian RTL portal UI after the foundation stabilization gate; the repository currently has no frontend application.
 
 - [x] Latest workflow-event verification: [GitHub Actions run 38636873310](https://github.com/kokoosabzi/sabt/actions/runs/38636873310) passed **106 tests, 2 warnings**, including fresh SQLite migration and downgrade/re-upgrade checks.
+
+- [x] Add API regression coverage for `GET /reports/workflow/events` and ensure both event and linked Operation queries are scoped to the authorized project.
+- [x] Latest verified branch checks: [GitHub Actions run 38637248974](https://github.com/kokoosabzi/sabt/actions/runs/38637248974) passed **107 tests, 2 warnings**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
