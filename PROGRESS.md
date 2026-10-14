@@ -5,7 +5,7 @@
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** Foundation baseline previously passed CI. Parent Contract creation, project-code immutability, and transactional child-number allocation have been implemented on `codex/foundation-audit`; focused tests were added, but CI for these latest changes is still pending. Implementation is incomplete and the pull request is intentionally not merged.
+- **Overall status:** Foundation baseline previously passed CI. Parent Contract creation, project-code immutability, and transactional child-number allocation have been implemented on `codex/foundation-audit`; latest CI run `38594111665` passed 85 tests and the full SQLite migration round-trip through `0008_transfer_sequence_counter`. Implementation is incomplete and the pull request is intentionally not merged.
 - **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
@@ -122,7 +122,7 @@
 - 2026-10-13: CI run `38468577088` passed with 36 tests and SQLite migration upgrade/downgrade/re-upgrade checks. Added project-membership validation for OperationParty writes and mandatory optimistic version checks for party edits/finalization.
 - 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
 - 2026-10-14: Added `create_parent_contract` and `set_project_contract_code` services on `codex/foundation-audit`, including authorization, project/person/property association checks, string-safe six-digit number creation, duplicate safeguards, optimistic project version checks, and project-code immutability after first use.
-- 2026-10-14: Added migration `0008_transfer_sequence_counter`, the ParentContract counter, validation when linking an Operation to a Parent Contract, atomic child-number allocation during finalization, and rollback/sequential-number tests. CI verification is pending.
+- 2026-10-14: Added migration `0008_transfer_sequence_counter`, the ParentContract counter, validation when linking an Operation to a Parent Contract, atomic child-number allocation during finalization, and rollback/sequential-number tests. CI run `38594111665` passed 85 tests and the migration upgrade/downgrade/re-upgrade round-trip through `0008_transfer_sequence_counter`.
 
 ## Parent Contract transfer-chain design update — 2026-10-13
 
@@ -138,4 +138,4 @@
 
 ## Next task
 
-Verify the latest service and migration changes in CI. Then define how the transferee is identified in operation parties and implement current-owner/history queries; keep the pull request open and unmerged until the new checks and risks are reviewed.
+Define how the transferee is identified in operation parties and implement current-owner/history queries; keep the pull request open and unmerged until the new checks and risks are reviewed.
