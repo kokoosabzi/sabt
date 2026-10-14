@@ -29,10 +29,12 @@ def api_context():
                     version=1, is_active=True)
     role = Role(code="api-viewer", name="API Viewer", active=True)
     permission = Permission(code="parent_contract.view", name="View Parent Contract")
-    db.add_all([user, project, person, role, permission])
+    report_permission = Permission(code="workflow.report.view", name="View Workflow Reports")
+    db.add_all([user, project, person, role, permission, report_permission])
     db.flush()
     db.add_all([
         RolePermission(role_id=role.id, permission_id=permission.id),
+        RolePermission(role_id=role.id, permission_id=report_permission.id),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
         ParentContract(project_id=project.id, contract_number="760123", suffix="0123",
