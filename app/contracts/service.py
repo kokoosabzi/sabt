@@ -164,3 +164,53 @@ def get_parent_contract_history(
             for operation in operations
         ],
     }
+
+
+def _derive_current_owner(db: Session, parent: ParentContract) -> dict:
+    # Only a finalized operation with its current finalized version and at least
+    # one Buyer / Transferee party is a valid ownership-changing transfer.
+    latest = db.scalar(
+        select(Operation)
+        .join(
+            OperationVersion,
+            (OperationVersion.operation_id == Operation.id)
+            & (OperationVersion.version_number == Operation.current_version_number)
+            & (OperationVersion.finalized_at.is_not(None)),
+        )
+        .join(OperationParty, OperationParty.operation_id == Operation.id)
+        .join(PartyRole, PartyRole.id == OperationParty.role_id)
+        .where(
+            Operation.parent_contract_id == parent.id,
+            Operation.status == "FINALIZED",
+            Operation.finalized_at.is_not(None),
+            Operation.transfer_sequence.is_not(None),
+            Operation.child_contract_number.is_not(None),
+            Operation.current_version_number > 0,
+            PartyRole.code == BUYER_TRANSFEREE_ROLE_CODE,
+        )
+        .order_by(Operation.transfer_sequence.desc(), Operation.finalized_at.desc(), Operation.id.desc())
+    )
+    if latest is None:
+        person = db.get(Person, parent.initial_person_id)
+        return {
+            "source": "initial_contract",
+            "operation_id": None,
+            "child_contract_number": None,
+            "people": [{"person_id": person.id, "first_name": person.first_name,
+                        "last_name": person.last_name, "national_id": person.national_id,
+                        "mobile": person.mobile}],
+        }
+    people = db.execute(
+        select(Person)
+        .join(OperationParty, OperationParty.person_id == Person.id)
+        .join(PartyRole, PartyRole.id == OperationParty.role_id)
+        .where(OperationParty.operation_id == latest.id, PartyRole.code == BUYER_TRANSFEREE_ROLE_CODE)
+        .order_by(OperationParty.sequence_no, OperationParty.id)
+    ).scalars().all()
+    return {
+        "source": "latest_valid_finalized_transfer",
+        "operation_id": latest.id,
+        "child_contract_number": latest.child_contract_number,
+        "people": [{"person_id": p.id, "first_name": p.first_name, "last_name": p.last_name,
+                    "national_id": p.national_id, "mobile": p.mobile} for p in people],
+    }
