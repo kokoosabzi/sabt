@@ -122,3 +122,13 @@ def test_workflow_report_rejects_malformed_contract_filters(report_context):
             db, user, project.id, now - timedelta(hours=1), now + timedelta(hours=1),
             child_contract_number="760123",
         )
+
+
+def test_cross_project_report_access_denied(report_context):
+    db, user, project, now, _, _ = report_context
+    other = Project(code="OTHER-REPORT-P", name="Other Project", status="ACTIVE",
+                    timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+    db.add(other)
+    db.commit()
+    with pytest.raises(PermissionError, match="forbidden"):
+        get_management_summary(db, user, other.id, now - timedelta(hours=1), now + timedelta(hours=1))
