@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.auth.dependencies import current_user, get_db
 from app.db.base import Base
-from app.db.models import Permission, Project, ProjectAccess, Role, RolePermission, User, UserRole
+from app.db.models import (Operation, OperationType, Permission, Project, ProjectAccess, Role, RolePermission, User, UserRole, WorkflowEvent)
 from app.main import app
 
 
@@ -110,6 +110,51 @@ def test_reporting_api_enforces_project_access():
         })
         assert response.status_code == 403
         assert response.json()["detail"] == "forbidden"
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+
+def test_workflow_events_api_returns_persisted_events_only():
+    engine, db, client, project = _context()
+    try:
+        now = datetime.now(timezone.utc)
+        operation_type = OperationType(
+            code="EVENT-TEST", name="Event Test", active=True, system_defined=False,
+            created_at=now, updated_at=now,
+        )
+        db.add(operation_type)
+        db.flush()
+        operation = Operation(
+            project_id=project.id, operation_type_id=operation_type.id,
+            status="DRAFT", current_workflow_state="DRAFT", created_by=1,
+            created_at=now, updated_at=now, version=1, current_version_number=0,
+        )
+        db.add(operation)
+        db.flush()
+        event = WorkflowEvent(
+            project_id=project.id, operation_id=operation.id, actor_user_id=1,
+            event_type="OPERATION_CREATED", from_status=None, to_status="DRAFT",
+            occurred_at=now, metadata_json=None,
+        )
+        db.add(event)
+        db.commit()
+
+        response = client.get("/reports/workflow/events", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+            "event_type": "OPERATION_CREATED",
+        })
+        assert response.status_code == 200
+        body = response.json()
+        assert body["pagination"]["total"] == 1
+        assert body["items"][0]["event_type"] == "OPERATION_CREATED"
+        assert body["items"][0]["to_status"] == "DRAFT"
+        assert body["period"]["basis"] == "workflow_events.occurred_at"
     finally:
         app.dependency_overrides.clear()
         db.close()
