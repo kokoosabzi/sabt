@@ -7,11 +7,11 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
 from app.db.models import (
-    ParentContract, Permission, Person, Project, ProjectAccess, ProjectPerson,
+    Operation, OperationType, ParentContract, Permission, Person, Project, ProjectAccess, ProjectPerson,
     ProjectProperty, Property, Role, RolePermission, User, UserRole,
 )
 from app.contracts.service import (
-    ParentContractConflictError, ParentContractValidationError, create_parent_contract, set_project_contract_code,
+    ParentContractConflictError, ParentContractValidationError, create_parent_contract, get_parent_contract_history, set_project_contract_code,
 )
 
 
@@ -37,11 +37,13 @@ def seed_context(db, *, contract_code="76", associated=True, property_linked=Tru
     role = Role(code="contract-admin", name="Contract Admin", active=True)
     permission = Permission(code="parent_contract.create", name="Create Parent Contract")
     project_edit = Permission(code="project.edit", name="Edit Project")
-    db.add_all([user, project, person, prop, role, permission, project_edit])
+    view_permission = Permission(code="parent_contract.view", name="View Parent Contract")
+    db.add_all([user, project, person, prop, role, permission, project_edit, view_permission])
     db.flush()
     db.add_all([
         RolePermission(role_id=role.id, permission_id=permission.id),
         RolePermission(role_id=role.id, permission_id=project_edit.id),
+        RolePermission(role_id=role.id, permission_id=view_permission.id),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
     ])
@@ -136,3 +138,46 @@ def test_project_contract_code_rejects_stale_version_and_invalid_code(db):
         set_project_contract_code(db, user, project.id, "09", expected_version=project.version)
     db.refresh(project)
     assert project.contract_code == "76"
+
+
+
+def test_parent_contract_history_lists_numbered_transfers_and_drafts(db):
+    user, project, person, prop = seed_context(db)
+    parent = create_parent_contract(db, user, project.id, "0123", person.id, prop.id)
+    now = datetime.now(timezone.utc)
+    operation_type = OperationType(
+        code="TRANSFER", name="Transfer", active=True, system_defined=True,
+        created_at=now, updated_at=now,
+    )
+    db.add(operation_type)
+    db.flush()
+    parent.next_transfer_sequence = 2
+    finalized = Operation(
+        project_id=project.id, operation_type_id=operation_type.id, status="FINALIZED",
+        current_workflow_state="FINALIZED", property_id=prop.id, created_by=user.id,
+        finalized_by=user.id, created_at=now, updated_at=now, finalized_at=now,
+        version=2, current_version_number=1, parent_contract_id=parent.id,
+        transfer_sequence=1, child_contract_number="760123/1",
+    )
+    draft = Operation(
+        project_id=project.id, operation_type_id=operation_type.id, status="DRAFT",
+        current_workflow_state="DRAFT", property_id=prop.id, created_by=user.id,
+        created_at=now, updated_at=now, version=1, current_version_number=0,
+        parent_contract_id=parent.id,
+    )
+    db.add_all([finalized, draft])
+    db.flush()
+
+    history = get_parent_contract_history(db, user, "760123")
+    assert history["parent"]["contract_number"] == "760123"
+    assert [row["child_contract_number"] for row in history["transfers"]] == ["760123/1", None]
+    assert [row["status"] for row in history["transfers"]] == ["FINALIZED", "DRAFT"]
+
+
+def test_parent_contract_history_rejects_user_without_project_access(db):
+    user, project, person, _ = seed_context(db)
+    create_parent_contract(db, user, project.id, "0123", person.id)
+    db.delete(db.get(ProjectAccess, (user.id, project.id)))
+    db.flush()
+    with pytest.raises(PermissionError, match="forbidden"):
+        get_parent_contract_history(db, user, "760123")
