@@ -71,6 +71,16 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
         if db.get(Property, property_id) is None: raise NotFoundError("property_not_found")
         association = db.get(ProjectProperty, (project_id, property_id))
         if association is None or not association.active: raise ValidationError("property_not_associated_with_project")
+    if parent_contract_id is not None:
+        parent = db.get(ParentContract, parent_contract_id)
+        if parent is None:
+            raise NotFoundError("parent_contract_not_found")
+        if parent.project_id != project_id:
+            raise ValidationError("parent_contract_project_mismatch")
+        if parent.status != "ACTIVE":
+            raise ValidationError("parent_contract_inactive")
+        if parent.property_id is not None and parent.property_id != property_id:
+            raise ValidationError("parent_contract_property_mismatch")
     # Validate all external references before the first write so a validation
     # failure cannot leave a partially-created Operation in the caller's unit of work.
     appointment = None
