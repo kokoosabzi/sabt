@@ -59,6 +59,7 @@ def test_management_summary_counts_created_and_finalized_by_their_own_timestamps
     result = get_management_summary(db, user, project.id, now - timedelta(hours=1), now + timedelta(hours=1))
     assert result["indicators"]["created_operations"] == 1
     assert result["indicators"]["finalized_operations"] == 1
+    assert result["indicators"]["currently_open_operations"] == 1
     assert result["indicators"]["created_operations_by_status"] == [{"status": "DRAFT", "count": 1}]
 
 
