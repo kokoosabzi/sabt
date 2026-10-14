@@ -215,7 +215,6 @@ Columns:
 - id
 - project_id
 - operation_type_id
-- appointment_id (nullable)
 - status
 - current_workflow_state
 - property_id (nullable until required by workflow)
@@ -226,6 +225,9 @@ Columns:
 - finalized_at
 - version
 - current_version_number
+- parent_contract_id (nullable; set for transfer Operations)
+- transfer_sequence (nullable; allocated when a linked transfer is finalized)
+- child_contract_number (nullable; e.g. `760123/1`)
 
 Important:
 - One Appointment may have many Operations.
