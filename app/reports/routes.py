@@ -33,7 +33,7 @@ def management_summary(
 
 @router.get("/workflow")
 def workflow_report(
-    project_id: int = Query(..., ge=1),
+    project_id: int,
     start_at: datetime,
     end_at: datetime,
     status: str | None = Query(None, min_length=1, max_length=32),
