@@ -170,3 +170,13 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Add route-level tests for report permissions, range validation, empty metrics and paginated results.
 - [x] Verify GitHub Actions run [38635961043](https://github.com/kokoosabzi/sabt/actions/runs/38635961043): 104 tests passed; SQLite upgrade, Alembic head, downgrade and re-upgrade passed.
 - [ ] Add state-transition audit events before reporting historical status changes or time-in-state.
+
+
+## Management and workflow reports — 2026-10-15
+- [x] Implement project-scoped management summary from stored operation and Parent Contract records.
+- [x] Implement a paginated workflow report with time range, status, operation type, Parent Contract/child number, property and creator filters.
+- [x] Expose authenticated report endpoints; permission checks and project scope are enforced in the service.
+- [x] Add report service/API tests and fix route-registration test compatibility with current FastAPI.
+- [x] CI run [38635961043](https://github.com/kokoosabzi/sabt/actions/runs/38635961043) passed: 104 tests, 2 warnings; fresh SQLite migration, Alembic head, downgrade and re-upgrade checks also passed.
+- [ ] Add workflow event history before reporting historical status changes or time-in-state.
+- [ ] Build the Persian RTL portal and report pages; add CSV/Excel/PDF export after UI/API contract review.
