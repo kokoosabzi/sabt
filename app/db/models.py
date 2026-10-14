@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -9,6 +9,7 @@ class Project(Base):
     code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     contract_code: Mapped[str | None] = mapped_column(String(2), unique=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    __table_args__ = (CheckConstraint("contract_code IS NULL OR contract_code GLOB '[1-9][0-9]'", name="ck_projects_contract_code_format"),)
     description: Mapped[str | None] = mapped_column(Text())
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="Asia/Tehran")
@@ -219,6 +220,8 @@ class ParentContract(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     __table_args__ = (
         UniqueConstraint("project_id", "suffix", name="uq_parent_contract_project_suffix"),
+        CheckConstraint("contract_number GLOB '[1-9][0-9][0-9][0-9][0-9][0-9]'", name="ck_parent_contract_number_format"),
+        CheckConstraint("suffix GLOB '[0-9][0-9][0-9][0-9]'", name="ck_parent_contract_suffix_format"),
     )
 
 
