@@ -133,3 +133,24 @@ def test_cross_project_report_access_denied(report_context):
     db.commit()
     with pytest.raises(PermissionError, match="forbidden"):
         get_management_summary(db, user, other.id, now - timedelta(hours=1), now + timedelta(hours=1))
+
+
+def test_workflow_event_report_uses_event_time(report_context):
+    db, user, project, now, operation, _ = report_context
+    db.add(WorkflowEvent(
+        project_id=project.id,
+        operation_id=operation.id,
+        actor_user_id=user.id,
+        event_type="OPERATION_CREATED",
+        to_status="DRAFT",
+        occurred_at=now,
+        metadata_json='{"source":"test"}',
+    ))
+    db.commit()
+    result = get_workflow_events_report(
+        db, user, project.id, now - timedelta(minutes=1), now + timedelta(minutes=1)
+    )
+    assert result["pagination"]["total"] == 1
+    assert result["period"]["basis"] == "workflow_events.occurred_at"
+    assert result["items"][0]["event_type"] == "OPERATION_CREATED"
+    assert result["items"][0]["metadata"] == {"source": "test"}
