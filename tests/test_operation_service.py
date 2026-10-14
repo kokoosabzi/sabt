@@ -422,6 +422,8 @@ def _make_transfer_operation(db: Session):
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     project.contract_code = "76"
     initial_person, party_role = _make_party_records(db, project.id)
+    party_role.code = "BUYER_TRANSFEREE"
+    party_role.name = "Buyer / Transferee"
     now = datetime.now(timezone.utc)
     parent = ParentContract(
         project_id=project.id, contract_number="760123", suffix="0123",
@@ -468,7 +470,9 @@ def test_each_finalized_transfer_gets_a_distinct_sequence(db: Session):
 def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: Session):
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     project.contract_code = "76"
-    person, _ = _make_party_records(db, project.id)
+    person, role = _make_party_records(db, project.id)
+    role.code = "BUYER_TRANSFEREE"
+    role.name = "Buyer / Transferee"
     now = datetime.now(timezone.utc)
     parent = ParentContract(
         project_id=project.id, contract_number="760123", suffix="0123",
@@ -479,7 +483,7 @@ def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: S
     db.flush()
     operation = create_operation(db, user, project.id, operation_type.id,
                                  property_id=property_record.id, parent_contract_id=parent.id)
-    with pytest.raises(ValidationError, match="transfer_party_required"):
+    with pytest.raises(ValidationError, match="buyer_transferee_required"):
         finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.refresh(parent)
     db.refresh(operation)
