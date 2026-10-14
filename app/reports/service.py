@@ -61,6 +61,13 @@ def get_management_summary(
     created_count = db.scalar(select(func.count()).select_from(created_range.subquery())) or 0
     finalized_count = db.scalar(select(func.count()).select_from(finalized_range.subquery())) or 0
 
+    currently_open_operations = db.scalar(
+        select(func.count(Operation.id)).where(
+            Operation.project_id == project_id,
+            Operation.status.not_in(("FINALIZED", "CANCELLED", "REJECTED")),
+        )
+    ) or 0
+
     status_rows = db.execute(
         select(Operation.status, func.count(Operation.id))
         .where(
@@ -102,6 +109,7 @@ def get_management_summary(
         "indicators": {
             "created_operations": created_count,
             "finalized_operations": finalized_count,
+            "currently_open_operations": currently_open_operations,
             "created_operations_by_status": [
                 {"status": status, "count": count} for status, count in status_rows
             ],
