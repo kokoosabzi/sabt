@@ -430,8 +430,8 @@ def _make_transfer_operation(db: Session):
     )
     db.add(parent)
     db.flush()
-    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
-    operation.parent_contract_id = parent.id
+    operation = create_operation(db, user, project.id, operation_type.id,
+                                 property_id=property_record.id, parent_contract_id=parent.id)
     add_party(db, user, operation.id, initial_person.id, party_role.id, expected_version=operation.version)
     db.flush()
     return user, project, parent, operation
@@ -454,8 +454,8 @@ def test_finalized_transfer_gets_next_child_number_and_snapshot(db: Session):
 def test_each_finalized_transfer_gets_a_distinct_sequence(db: Session):
     user, project, parent, first = _make_transfer_operation(db)
     finalize_operation(db, user, first.id, expected_version=first.version)
-    second = create_operation(db, user, project.id, first.operation_type_id, property_id=first.property_id)
-    second.parent_contract_id = parent.id
+    second = create_operation(db, user, project.id, first.operation_type_id,
+                              property_id=first.property_id, parent_contract_id=parent.id)
     party = db.scalar(select(OperationParty).where(OperationParty.operation_id == first.id))
     add_party(db, user, second.id, party.person_id, party.role_id, expected_version=second.version)
     finalize_operation(db, user, second.id, expected_version=second.version)
@@ -477,8 +477,8 @@ def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: S
     )
     db.add(parent)
     db.flush()
-    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
-    operation.parent_contract_id = parent.id
+    operation = create_operation(db, user, project.id, operation_type.id,
+                                 property_id=property_record.id, parent_contract_id=parent.id)
     with pytest.raises(ValidationError, match="transfer_party_required"):
         finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.refresh(parent)
