@@ -41,7 +41,7 @@ PROJECT
 ## Parent Contract transfer chain
 - Project 1:N ParentContract
 - ParentContract 1:N transfer Operations
-- ParentContract has one stable six-digit business number; each finalized transfer Operation has a child number such as `109876/1`.
+- ParentContract has one stable six-digit business number and an atomic `next_transfer_sequence` counter; each finalized transfer Operation receives a child number such as `109876/1` in the same transaction as finalization.
 - ParentContract is distinct from the optional transaction-specific Contract row.
 
 ## Critical cardinalities
