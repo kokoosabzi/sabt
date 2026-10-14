@@ -185,3 +185,13 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Require timezone-aware report range bounds and normalize them to UTC; add malformed parent/child contract filter validation.
 - [x] Add dashboard counts for currently open operations and parent-contract transfers finalized in the selected period, without inferring unrecorded state transitions.
 - [x] Latest verification: [GitHub Actions run 38636446498](https://github.com/kokoosabzi/sabt/actions/runs/38636446498) passed **105 tests, 2 warnings**, plus fresh SQLite upgrade, Alembic head, downgrade and re-upgrade checks.
+
+
+## Workflow event audit stream — 2026-10-15
+- [x] Add migration `0009_workflow_events` and matching `WorkflowEvent` ORM model with project/operation/actor references and time indexes.
+- [x] Record `OPERATION_CREATED`, `PARTY_ADDED`, and `OPERATION_FINALIZED` in the same database transaction as their source actions.
+- [x] Add project-scoped, time-filtered, paginated `GET /reports/workflow/events` using event occurrence time rather than operation creation time.
+- [x] Document the event table, transaction behavior, and current event coverage in `DATABASE_SCHEMA.md`.
+- [x] Verify CI run [38636861666](https://github.com/kokoosabzi/sabt/actions/runs/38636861666): 106 tests passed; migration upgrade/downgrade/re-upgrade checks passed.
+- [ ] Extend event recording to every implemented workflow state transition as the workflow engine grows; do not report time-in-state until all required transitions and timestamps are persisted.
+- [ ] Build the Persian RTL portal UI after the foundation stabilization gate; the repository currently has no frontend application.
