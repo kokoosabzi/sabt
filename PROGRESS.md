@@ -5,7 +5,7 @@
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** Foundation baseline has a green CI run on branch `codex/foundation-audit`; latest verified run `38468577088` passed 36 tests and the SQLite migration upgrade/downgrade/re-upgrade checks. Implementation is still incomplete and the pull request is intentionally not merged.
+- **Overall status:** Foundation baseline previously passed CI. Parent Contract creation service and tests have now been added on `codex/foundation-audit`; CI for the latest commits is pending. Implementation is still incomplete and the pull request is intentionally not merged.
 - **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
@@ -28,7 +28,8 @@
 - [x] Verify migration upgrade/downgrade/re-upgrade and ORM table/column/foreign-key/nullability parity in CI (run `38590960614`).
 - [x] Add pure validation/formatting helpers and tests for two-digit Project contract codes, six-digit Parent Contract numbers, four-digit suffixes, and positive child sequences.\n- [ ] Integrate validation helpers into authorized Parent Contract creation and enforce project-code immutability after first use.
 - [ ] Add transactional transfer child-number allocation on finalization; never use MAX()+1.
-- [ ] Add tests for project code format, parent-number format/uniqueness, transfer sequence uniqueness, and rollback.
+- [x] Add service tests for authorized Parent Contract creation, leading-zero preservation, missing project code, invalid suffixes, project membership/property association, duplicate suffix, and missing project access.
+- [ ] Add tests for project-code immutability, transfer sequence uniqueness, and rollback.
 
 ### Phase 1 — Complete operation lifecycle
 - [ ] Define and implement working snapshots at operation creation.
@@ -119,6 +120,7 @@
 - 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
 - 2026-10-13: CI run `38468577088` passed with 36 tests and SQLite migration upgrade/downgrade/re-upgrade checks. Added project-membership validation for OperationParty writes and mandatory optimistic version checks for party edits/finalization.
 - 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
+- 2026-10-14: Added `create_parent_contract` service on `codex/foundation-audit`, including authorization, project/person/property association checks, string-safe six-digit number creation, and duplicate safeguards. Added focused service tests; latest CI verification is pending.
 
 ## Parent Contract transfer-chain design update — 2026-10-13
 
@@ -132,4 +134,4 @@
 
 ## Next task
 
-Continue Phase 0 with the highest-risk operation lifecycle guarantees and finish the Parent Contract numbering/ownership decisions before introducing schema migrations. Keep the pull request open and unmerged until the new checks and risks are reviewed.
+Run CI for the Parent Contract creation service, then enforce project-code immutability and implement transactional child-number allocation on transfer finalization. Keep the pull request open and unmerged until the new checks and risks are reviewed.
