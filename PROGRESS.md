@@ -25,8 +25,8 @@
 ### Parent Contract schema foundation
 - [x] Add additive Alembic migration for Project.contract_code, ParentContract, and Operation transfer-chain fields.
 - [x] Add matching ORM models/constraints and update the logical ERD/database schema documentation.
-- [ ] Verify migration upgrade/downgrade/re-upgrade and ORM parity in CI.
-- [ ] Add service validation for two-digit project contract codes and six-digit Parent Contract numbers.
+- [x] Verify migration upgrade/downgrade/re-upgrade and ORM table/column/foreign-key/nullability parity in CI (run `38590960614`).
+- [x] Add pure validation/formatting helpers and tests for two-digit Project contract codes, six-digit Parent Contract numbers, four-digit suffixes, and positive child sequences.\n- [ ] Integrate validation helpers into authorized Parent Contract creation and enforce project-code immutability after first use.
 - [ ] Add transactional transfer child-number allocation on finalization; never use MAX()+1.
 - [ ] Add tests for project code format, parent-number format/uniqueness, transfer sequence uniqueness, and rollback.
 
