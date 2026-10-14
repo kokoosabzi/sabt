@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
+import json
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.authorization import AuthorizationContext, authorize
 from app.contracts.numbering import validate_parent_contract_number
-from app.db.models import Operation, OperationType, ParentContract, Project, User
+from app.db.models import Operation, OperationType, ParentContract, Project, User, WorkflowEvent
 
 
 class ReportValidationError(ValueError):
@@ -245,5 +246,86 @@ def get_workflow_report(
                 "current_version_number": op.current_version_number,
             }
             for op, type_name, parent_number, creator_name in rows
+        ],
+    }
+
+
+
+def get_workflow_events_report(
+    db: Session,
+    user: User,
+    project_id: int,
+    start_at: datetime,
+    end_at: datetime,
+    *,
+    event_type: str | None = None,
+    operation_id: int | None = None,
+    actor_user_id: int | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict:
+    """Return actual recorded workflow/activity events for a project and time range."""
+    start_at, end_at = _validate_range(start_at, end_at)
+    project = _authorize_project_report(db, user, project_id, "workflow_report.view")
+    if limit < 1 or limit > 100:
+        raise ReportValidationError("report_limit_invalid")
+    if offset < 0:
+        raise ReportValidationError("report_offset_invalid")
+    if operation_id is not None and operation_id < 1:
+        raise ReportValidationError("operation_id_invalid")
+    if actor_user_id is not None and actor_user_id < 1:
+        raise ReportValidationError("actor_user_id_invalid")
+
+    filters = [
+        WorkflowEvent.project_id == project_id,
+        WorkflowEvent.occurred_at >= start_at,
+        WorkflowEvent.occurred_at < end_at,
+    ]
+    if event_type:
+        filters.append(WorkflowEvent.event_type == event_type)
+    if operation_id is not None:
+        filters.append(WorkflowEvent.operation_id == operation_id)
+    if actor_user_id is not None:
+        filters.append(WorkflowEvent.actor_user_id == actor_user_id)
+
+    count_stmt = select(func.count(WorkflowEvent.id)).where(*filters)
+    stmt = (
+        select(WorkflowEvent, OperationType.name, User.display_name, Operation.child_contract_number,
+               ParentContract.contract_number)
+        .join(Operation, Operation.id == WorkflowEvent.operation_id)
+        .join(OperationType, OperationType.id == Operation.operation_type_id)
+        .join(User, User.id == WorkflowEvent.actor_user_id)
+        .outerjoin(ParentContract, ParentContract.id == Operation.parent_contract_id)
+        .where(*filters)
+    )
+    total = db.scalar(count_stmt) or 0
+    rows = db.execute(
+        stmt.order_by(WorkflowEvent.occurred_at.desc(), WorkflowEvent.id.desc())
+        .limit(limit).offset(offset)
+    ).all()
+    return {
+        "project": {"id": project.id, "code": project.code, "name": project.name,
+                    "timezone": project.timezone},
+        "period": {"start_at": start_at.isoformat(), "end_at": end_at.isoformat(),
+                   "basis": "workflow_events.occurred_at", "range_semantics": "[start_at, end_at)"},
+        "filters": {"event_type": event_type, "operation_id": operation_id,
+                    "actor_user_id": actor_user_id},
+        "pagination": {"limit": limit, "offset": offset, "total": total},
+        "items": [
+            {
+                "event_id": event.id,
+                "event_type": event.event_type,
+                "operation_id": event.operation_id,
+                "operation_type_name": operation_type_name,
+                "parent_contract_number": parent_number,
+                "child_contract_number": child_number,
+                "actor_user_id": event.actor_user_id,
+                "actor_display_name": actor_name,
+                "from_status": event.from_status,
+                "to_status": event.to_status,
+                "occurred_at": event.occurred_at.isoformat(),
+                "metadata": json.loads(event.metadata_json) if event.metadata_json else {},
+            }
+            for event, operation_type_name, actor_name, child_number, parent_number in rows
         ],
     }
