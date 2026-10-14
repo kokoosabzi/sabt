@@ -164,8 +164,9 @@ Define how the transferee is identified in operation parties and implement curre
 
 
 ## Reporting implementation (2026-10-15)
-- [x] Add project-scoped management summary and paginated workflow report queries.
-- [x] Expose `/reports/management-summary` and `/reports/workflow` in FastAPI.
+- [x] Add project-scoped management summary indicators and paginated workflow report queries with status/type/contract/property/creator filters.
+- [x] Expose `/reports/management/summary` and `/reports/workflow`; retain `/reports/management-summary` as a deprecated compatibility alias.
 - [x] Add service tests and a check that report routes are registered.
-- [ ] Complete route-level authorization, date-range, pagination and response tests after CI review.
+- [x] Add route-level tests for report permissions, range validation, empty metrics and paginated results.
+- [x] Verify GitHub Actions run [38635961043](https://github.com/kokoosabzi/sabt/actions/runs/38635961043): 104 tests passed; SQLite upgrade, Alembic head, downgrade and re-upgrade passed.
 - [ ] Add state-transition audit events before reporting historical status changes or time-in-state.
