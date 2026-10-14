@@ -139,3 +139,11 @@
 ## Next task
 
 Define how the transferee is identified in operation parties and implement current-owner/history queries; keep the pull request open and unmerged until the new checks and risks are reviewed.
+
+
+## Confirmed ownership rule — 2026-10-14
+- [x] User confirmed the owner-changing party role is **Buyer / Transferee**.
+- [x] Canonical role code is `BUYER_TRANSFEREE`; a Parent Contract transfer cannot be finalized without at least one active party with this role.
+- [x] Current owner is derived from the latest valid finalized transfer with a finalized current OperationVersion and Buyer / Transferee party; draft operations do not change ownership.
+- [x] Parent Contract history response includes the current owner and identifies whether it came from the initial contract or a finalized transfer.
+- [ ] Verify latest CI for the buyer/transferee rule and current-owner derivation; then expose the history service through an authorized API route.
