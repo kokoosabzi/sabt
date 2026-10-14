@@ -12,10 +12,12 @@ class ReportValidationError(ValueError):
 
 
 def _authorize_project_report(db: Session, user: User, project_id: int, permission: str) -> Project:
+    # Check access before resolving the project to avoid exposing whether an
+    # inaccessible project ID exists.
+    authorize(db, user, permission, AuthorizationContext(project_id=project_id))
     project = db.get(Project, project_id)
     if project is None:
         raise LookupError("project_not_found")
-    authorize(db, user, permission, AuthorizationContext(project_id=project_id))
     return project
 
 
