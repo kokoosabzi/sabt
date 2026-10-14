@@ -5,7 +5,7 @@
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** Foundation baseline previously passed CI. Parent Contract creation, project-code immutability, and transactional child-number allocation have been implemented on `codex/foundation-audit`; latest CI run `38594111665` passed 85 tests and the full SQLite migration round-trip through `0008_transfer_sequence_counter`. Implementation is incomplete and the pull request is intentionally not merged.
+- **Overall status:** Parent Contract creation, project-code immutability, atomic transfer numbering, and Buyer / Transferee-based current-owner derivation are implemented on `codex/foundation-audit`. CI run `38596512913` is in progress for the latest code and tests. Implementation remains incomplete; PR #1 stays draft and unmerged.
 - **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
