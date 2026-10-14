@@ -38,7 +38,7 @@ Constraints:
 - Existing `code` remains a general-purpose identifier and is not silently converted.
 - `contract_code` is a two-character numeric string from `10` through `99`, unique when present; `01`–`09` are invalid.
 - The same `contract_code` prefixes every Parent Contract in that Project.
-- Once any Parent Contract exists for a Project, its `contract_code` must not change or be cleared (service-level invariant to implement).
+- The `set_project_contract_code` service requires project-scoped `project.edit` authorization and an expected project version; it prevents changing the code after any Parent Contract exists.
 - name should be indexed.
 
 ### persons
@@ -827,13 +827,13 @@ Every schema change must have:
 
 ## Parent Contract transfer chain — implementation status
 
-Migration `0007_parent_contracts` and the matching ORM tables/columns now exist on the foundation branch. The following describes the schema foundation only; service validation, transactional allocation, ownership derivation, import staging and UI are still pending.
+Migrations `0007_parent_contracts` and `0008_transfer_sequence_counter` and their matching ORM models now exist on the foundation branch. Authorized Parent Contract creation and transactional child-number allocation during Operation finalization have been implemented in services, with focused tests added. CI verification is pending; ownership derivation, import staging and UI are still pending.
 
 ### projects.contract_code
 - Separate from the legacy general-purpose `projects.code`; existing project codes are not auto-converted.
 - Nullable and unique until a Parent Contract is created for the Project.
 - Two-character numeric string from `10` through `99`; `01`–`09` are invalid.
-- The service must prevent changing/clearing this value after a Parent Contract exists.
+- `set_project_contract_code` prevents changing/clearing this value after a Parent Contract exists and requires an expected Project version.
 
 ### parent_contracts
 - `id`: internal primary key.
@@ -842,7 +842,7 @@ Migration `0007_parent_contracts` and the matching ORM tables/columns now exist 
 - `suffix`: four-character string; preserve leading zeroes (for example `0123`).
 - `initial_person_id`: required Person reference.
 - `property_id`: optional Property reference.
-- `status`, `created_at`, `updated_at`, `version`.
+- `status`, `next_transfer_sequence` (starts at 1 and is atomically incremented when a transfer is finalized), `created_at`, `updated_at`, `version`.
 
 The database currently enforces uniqueness of `contract_number` and `project_id + suffix`, and basic number/suffix formatting. Service-level validation must additionally verify that the first two digits of `contract_number` equal the associated Project's `contract_code`.
 
@@ -851,7 +851,7 @@ The database currently enforces uniqueness of `contract_number` and `project_id 
 - `transfer_sequence`: nullable positive integer for a transfer.
 - `child_contract_number`: nullable unique string such as `760123/1`.
 
-The schema prevents duplicate child numbers and duplicate `parent_contract_id + transfer_sequence` pairs. Transactional sequence allocation and the rule to allocate only at finalization are not implemented yet. Allocated sequence values must never be reused; gaps are acceptable.
+The schema prevents duplicate child numbers and duplicate `parent_contract_id + transfer_sequence` pairs. Finalization atomically increments `next_transfer_sequence` and records the child number in the same transaction as the OperationVersion snapshot. Rolling back that transaction also rolls back the counter. A transfer-linked operation must have at least one party. Ownership derivation from the latest valid finalized transfer is still pending.
 
 ### Still future work
 - Service-level project-code immutability after first Parent Contract.
