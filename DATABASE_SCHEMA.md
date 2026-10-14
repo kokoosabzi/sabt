@@ -24,8 +24,8 @@ Core project records.
 
 Columns:
 - id
-- code
-- name
+- code (existing general-purpose project code; preserved for backward compatibility)
+- contract_code (nullable, unique, two-digit numeric code used for Parent Contract numbering)
 - description
 - status
 - timezone
@@ -35,9 +35,10 @@ Columns:
 - version
 
 Constraints:
-- code is stored as a two-character numeric string for Parent Contract numbering; valid values start at `10`, and `01`–`09` are invalid.
-- the same Project code prefixes every member/Parent Contract in that Project.
-- code should be unique (global uniqueness and immutability after use remain a business decision).
+- Existing `code` remains a general-purpose identifier and is not silently converted.
+- `contract_code` is a two-character numeric string from `10` through `99`, unique when present; `01`–`09` are invalid.
+- The same `contract_code` prefixes every Parent Contract in that Project.
+- Once any Parent Contract exists for a Project, its `contract_code` must not change or be cleared (service-level invariant to implement).
 - name should be indexed.
 
 ### persons
