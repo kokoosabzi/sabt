@@ -7,7 +7,7 @@ from app.auth.authorization import AuthorizationContext, authorize
 from app.contracts.numbering import BUYER_TRANSFEREE_ROLE_CODE, build_child_contract_number
 from app.db.models import (
     Appointment, Contract, Operation, OperationAppointment, OperationParty, OperationType, OperationVersion,
-    ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User,
+    ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User, WorkflowEvent,
 )
 
 class OperationError(Exception): pass
@@ -20,6 +20,13 @@ def _require_project_access(db, user, project_id, permission):
     authorize(db, user, permission, AuthorizationContext(project_id=project_id))
 def _canonical(value): return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 def _sha(value): return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+def _record_workflow_event(db: Session, user: User, op: Operation, event_type: str, now: datetime,
+                           from_status: str | None = None, to_status: str | None = None,
+                           metadata: dict | None = None) -> None:
+    db.add(WorkflowEvent(project_id=op.project_id, operation_id=op.id, actor_user_id=user.id,
+        event_type=event_type, from_status=from_status, to_status=to_status,
+        occurred_at=now, metadata_json=_canonical(metadata) if metadata else None))
 
 def _allocate_transfer_number(db: Session, op: Operation, now: datetime) -> None:
     """Atomically reserve the next child number inside the finalization transaction."""
@@ -105,6 +112,7 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
                    status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
                    created_at=now, updated_at=now, version=1, current_version_number=0)
     db.add(op); db.flush()
+    _record_workflow_event(db, user, op, "OPERATION_CREATED", now, to_status="DRAFT")
     if appointment is not None:
         db.add(OperationAppointment(appointment_id=appointment.id, operation_id=op.id, created_at=now))
         db.flush()
@@ -127,7 +135,10 @@ def add_party(db: Session, user: User, operation_id: int, person_id: int, role_i
     now = _now()
     party = OperationParty(operation_id=op.id, person_id=person_id, role_id=role_id, sequence_no=sequence_no,
                            created_at=now, updated_at=now, version=1)
-    db.add(party); op.version += 1; op.updated_at = now; db.flush(); return party
+    db.add(party); op.version += 1; op.updated_at = now; db.flush()
+    _record_workflow_event(db, user, op, "PARTY_ADDED", now, from_status=op.status,
+                           to_status=op.status, metadata={"party_id": party.id, "role_id": role_id})
+    return party
 
 def _snapshot(db: Session, op: Operation) -> dict:
     parties = []
@@ -160,6 +171,7 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
     if op.property_id is None: raise ValidationError("property_required")
 
     now = _now()
+    previous_status = op.status
     if op.parent_contract_id is not None:
         if op.transfer_sequence is not None or op.child_contract_number is not None:
             raise ConflictError("transfer_number_already_allocated")
@@ -188,4 +200,8 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
     op.status, op.current_workflow_state = "FINALIZED", "FINALIZED"
     op.finalized_by, op.finalized_at = user.id, now
     op.current_version_number, op.version, op.updated_at = next_version, op.version + 1, now
-    db.add(version); db.flush(); return version
+    db.add(version); db.flush()
+    _record_workflow_event(db, user, op, "OPERATION_FINALIZED", now,
+                           from_status=previous_status, to_status="FINALIZED",
+                           metadata={"version_number": next_version})
+    return version
