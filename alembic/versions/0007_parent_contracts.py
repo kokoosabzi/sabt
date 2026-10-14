@@ -11,6 +11,7 @@ depends_on = None
 def upgrade() -> None:
     op.add_column("projects", sa.Column("contract_code", sa.String(length=2), nullable=True))
     op.create_index("uq_projects_contract_code", "projects", ["contract_code"], unique=True)
+    op.create_check_constraint("ck_projects_contract_code_format", "projects", "contract_code IS NULL OR contract_code GLOB '[1-9][0-9]'")
     op.create_table(
         "parent_contracts",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -24,6 +25,8 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.UniqueConstraint("project_id", "suffix", name="uq_parent_contract_project_suffix"),
+        sa.CheckConstraint("contract_number GLOB '[1-9][0-9][0-9][0-9][0-9][0-9]'", name="ck_parent_contract_number_format"),
+        sa.CheckConstraint("suffix GLOB '[0-9][0-9][0-9][0-9]'", name="ck_parent_contract_suffix_format"),
     )
     with op.batch_alter_table("operations") as batch:
         batch.add_column(sa.Column("parent_contract_id", sa.Integer(), nullable=True))
@@ -44,4 +47,5 @@ def downgrade() -> None:
         batch.drop_column("parent_contract_id")
     op.drop_table("parent_contracts")
     op.drop_index("uq_projects_contract_code", table_name="projects")
+    op.drop_constraint("ck_projects_contract_code_format", "projects", type_="check")
     op.drop_column("projects", "contract_code")
