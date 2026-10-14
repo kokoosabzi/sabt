@@ -168,7 +168,8 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Expose `/reports/management/summary` and `/reports/workflow`; retain `/reports/management-summary` as a deprecated compatibility alias.
 - [x] Add service tests and a check that report routes are registered.
 - [x] Add route-level tests for report permissions, range validation, empty metrics and paginated results.
-- [x] Verify GitHub Actions run [38635961043](https://github.com/kokoosabzi/sabt/actions/runs/38635961043): 104 tests passed; SQLite upgrade, Alembic head, downgrade and re-upgrade passed.
+- [x] Verify GitHub Actions run [38636249232](https://github.com/kokoosabzi/sabt/actions/runs/38636249232): 105 tests passed; fresh SQLite upgrade, Alembic head, downgrade and re-upgrade passed.
+- [x] Check report authorization before resolving the requested Project, avoiding disclosure of inaccessible Project existence; add a cross-project regression test.
 - [ ] Add state-transition audit events before reporting historical status changes or time-in-state.
 
 
