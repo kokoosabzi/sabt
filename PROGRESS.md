@@ -160,3 +160,4 @@ Define how the transferee is identified in operation parties and implement curre
 - [ ] Keep PR #1 draft and do not merge until tests and review are complete.
 
 - [x] GitHub Actions run [38602455911](https://github.com/kokoosabzi/sabt/actions/runs/38602455911) passed on API route/test commit `814f87851f9c439bb66c22b83e6f5d255088834d`; the CI workflow includes the full pytest suite and SQLite migration round-trip.
+
