@@ -90,6 +90,7 @@ def test_reporting_routes_are_registered():
     paths = set(app.openapi()['paths'])
     assert '/reports/management-summary' in paths
     assert '/reports/workflow' in paths
+    assert '/reports/workflow/events' in paths
 
 
 
