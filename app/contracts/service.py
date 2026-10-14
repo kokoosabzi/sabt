@@ -139,7 +139,9 @@ def get_parent_contract_history(
             Operation.id,
         )
     ).all()
+    current_owner = _derive_current_owner(db, parent)
     return {
+        "current_owner": current_owner,
         "parent": {
             "id": parent.id,
             "project_id": parent.project_id,
