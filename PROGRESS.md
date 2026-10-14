@@ -170,7 +170,8 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Add route-level tests for report permissions, range validation, empty metrics and paginated results.
 - [x] Verify GitHub Actions run [38636249232](https://github.com/kokoosabzi/sabt/actions/runs/38636249232): 105 tests passed; fresh SQLite upgrade, Alembic head, downgrade and re-upgrade passed.
 - [x] Check report authorization before resolving the requested Project, avoiding disclosure of inaccessible Project existence; add a cross-project regression test.
-- [ ] Add state-transition audit events before reporting historical status changes or time-in-state.
+- [x] Add WorkflowEvent records for operation creation/finalization and a project-scoped, paginated `/reports/workflow/events` API; report only persisted events.
+- [ ] Extend event capture to all relevant lifecycle changes (party edits, cancellation/rejection, assignments and appointment transitions) before claiming comprehensive workflow history or time-in-state.
 
 
 ## Management and workflow reports — 2026-10-15
@@ -179,7 +180,8 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Expose authenticated report endpoints; permission checks and project scope are enforced in the service.
 - [x] Add report service/API tests and fix route-registration test compatibility with current FastAPI.
 - [x] CI run [38635961043](https://github.com/kokoosabzi/sabt/actions/runs/38635961043) passed: 104 tests, 2 warnings; fresh SQLite migration, Alembic head, downgrade and re-upgrade checks also passed.
-- [ ] Add workflow event history before reporting historical status changes or time-in-state.
+- [x] Add workflow event history endpoint based on persisted events; no inferred events or hidden time-in-state estimates.
+- [ ] Extend event recording to every relevant workflow transition before offering a comprehensive event timeline.
 - [ ] Build the Persian RTL portal and report pages; add CSV/Excel/PDF export after UI/API contract review.
 
 - [x] Require timezone-aware report range bounds and normalize them to UTC; add malformed parent/child contract filter validation.
@@ -195,3 +197,5 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Verify CI run [38636861666](https://github.com/kokoosabzi/sabt/actions/runs/38636861666): 106 tests passed; migration upgrade/downgrade/re-upgrade checks passed.
 - [ ] Extend event recording to every implemented workflow state transition as the workflow engine grows; do not report time-in-state until all required transitions and timestamps are persisted.
 - [ ] Build the Persian RTL portal UI after the foundation stabilization gate; the repository currently has no frontend application.
+
+- [x] Latest workflow-event verification: [GitHub Actions run 38636873310](https://github.com/kokoosabzi/sabt/actions/runs/38636873310) passed **106 tests, 2 warnings**, including fresh SQLite migration and downgrade/re-upgrade checks.
