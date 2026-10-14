@@ -147,3 +147,14 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Current owner is derived from the latest valid finalized transfer with a finalized current OperationVersion and Buyer / Transferee party; draft operations do not change ownership.
 - [x] Parent Contract history response includes the current owner and identifies whether it came from the initial contract or a finalized transfer.
 - [ ] Verify latest CI for the buyer/transferee rule and current-owner derivation; then expose the history service through an authorized API route.
+
+
+## API and management reporting update — 2026-10-14
+- [x] Added authenticated `GET /contracts/parent/{contract_number}/history` route using the authorized service; maps invalid number, missing contract, and forbidden access to HTTP 422/404/403.
+- [x] Registered the contract-history router in the FastAPI app.
+- [x] Specified a Persian RTL management portal, daily/date-range workflow reports, contract transfer-chain report, ad-hoc reports, drill-down behavior, permissions, timezone/Jalali date handling, pagination, and export/audit rules in `UI_FLOW.md`.
+- [ ] Add API tests for contract-history route authentication, authorization, invalid numbers, not-found responses, and response shape.
+- [ ] Implement portal summary/report APIs only from verified source data and enforce project scope in every query.
+- [ ] Implement contract-history UI and portal/report screens; the repository currently has no frontend application files.
+- [ ] Implement staged Excel/CSV import with validation, preview, explicit confirmation, transactional persistence, and import result report.
+- [ ] Keep PR #1 draft and do not merge until tests and review are complete.
