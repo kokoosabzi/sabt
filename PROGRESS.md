@@ -166,7 +166,7 @@ Define how the transferee is identified in operation parties and implement curre
 ## Reporting implementation (2026-10-15)
 - [x] Add project-scoped management summary indicators and paginated workflow report queries with status/type/contract/property/creator filters.
 - [x] Expose `/reports/management/summary` and `/reports/workflow`; retain `/reports/management-summary` as a deprecated compatibility alias.
-- [x] Add service tests and a check that report routes are registered.
+- [x] Add service tests for metrics, project permission, range validation, filters and pagination, plus route-registration checks.
 - [x] Add route-level tests for report permissions, range validation, empty metrics and paginated results.
 - [x] Verify GitHub Actions run [38636249232](https://github.com/kokoosabzi/sabt/actions/runs/38636249232): 105 tests passed; fresh SQLite upgrade, Alembic head, downgrade and re-upgrade passed.
 - [x] Check report authorization before resolving the requested Project, avoiding disclosure of inaccessible Project existence; add a cross-project regression test.
