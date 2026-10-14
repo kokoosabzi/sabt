@@ -33,7 +33,7 @@ def management_summary(
 
 @router.get("/workflow")
 def workflow_report(
-    project_id: int,
+    project_id: int = Query(..., ge=1),
     start_at: datetime = Query(...),
     end_at: datetime = Query(...),
     status: str | None = Query(None, min_length=1, max_length=32),
@@ -63,8 +63,8 @@ def workflow_report(
 @router.get("/workflow/events")
 def workflow_events_report(
     project_id: int,
-    start_at: datetime,
-    end_at: datetime,
+    start_at: datetime = Query(...),
+    end_at: datetime = Query(...),
     event_type: str | None = Query(None, min_length=1, max_length=64),
     operation_id: int | None = Query(None, ge=1),
     actor_user_id: int | None = Query(None, ge=1),
