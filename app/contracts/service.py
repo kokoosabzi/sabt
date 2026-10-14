@@ -63,3 +63,46 @@ def create_parent_contract(db: Session, user: User, project_id: int, suffix: str
     except IntegrityError as exc:
         raise ParentContractConflictError("parent_contract_number_conflict") from exc
     return record
+
+
+def set_project_contract_code(
+    db: Session,
+    user: User,
+    project_id: int,
+    contract_code: str,
+    *,
+    expected_version: int,
+) -> Project:
+    """Set a project's contract code, but freeze it after its first Parent Contract."""
+    authorize(db, user, "project.edit", AuthorizationContext(project_id=project_id))
+    project = db.get(Project, project_id)
+    if project is None:
+        raise ParentContractNotFoundError("project_not_found")
+    if project.version != expected_version:
+        raise ParentContractConflictError("stale_project")
+    try:
+        normalized_code = validate_project_contract_code(contract_code)
+    except ValueError as exc:
+        raise ParentContractValidationError(str(exc)) from exc
+
+    existing = db.scalar(
+        select(Project.id).where(
+            Project.contract_code == normalized_code,
+            Project.id != project_id,
+        )
+    )
+    if existing is not None:
+        raise ParentContractConflictError("project_contract_code_exists")
+
+    has_contracts = db.scalar(
+        select(ParentContract.id).where(ParentContract.project_id == project_id).limit(1)
+    ) is not None
+    if has_contracts and project.contract_code != normalized_code:
+        raise ParentContractConflictError("project_contract_code_immutable")
+
+    if project.contract_code != normalized_code:
+        project.contract_code = normalized_code
+        project.version += 1
+        project.updated_at = datetime.now(timezone.utc)
+        db.flush()
+    return project
