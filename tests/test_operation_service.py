@@ -18,6 +18,7 @@ from app.db.models import (
     OperationParty,
     OperationType,
     OperationVersion,
+    ParentContract,
     Permission,
     Project,
     ProjectAccess,
@@ -414,3 +415,92 @@ def test_add_party_rejects_stale_version_without_side_effects(db: Session) -> No
     assert db.scalar(select(func.count()).select_from(OperationParty)) == 0
     db.refresh(operation)
     assert operation.version == 1
+
+
+
+def _make_transfer_operation(db: Session):
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    project.contract_code = "76"
+    initial_person, party_role = _make_party_records(db, project.id)
+    now = datetime.now(timezone.utc)
+    parent = ParentContract(
+        project_id=project.id, contract_number="760123", suffix="0123",
+        initial_person_id=initial_person.id, property_id=property_record.id, status="ACTIVE",
+        next_transfer_sequence=1, created_at=now, updated_at=now, version=1,
+    )
+    db.add(parent)
+    db.flush()
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    operation.parent_contract_id = parent.id
+    add_party(db, user, operation.id, initial_person.id, party_role.id, expected_version=operation.version)
+    db.flush()
+    return user, project, parent, operation
+
+
+def test_finalized_transfer_gets_next_child_number_and_snapshot(db: Session):
+    user, project, parent, operation = _make_transfer_operation(db)
+    version = finalize_operation(db, user, operation.id, expected_version=operation.version)
+    db.refresh(operation)
+    db.refresh(parent)
+    assert operation.status == "FINALIZED"
+    assert operation.transfer_sequence == 1
+    assert operation.child_contract_number == "760123/1"
+    assert parent.next_transfer_sequence == 2
+    snapshot = json.loads(version.snapshot_json)
+    assert snapshot["operation"]["child_contract_number"] == "760123/1"
+    assert snapshot["operation"]["transfer_sequence"] == 1
+
+
+def test_each_finalized_transfer_gets_a_distinct_sequence(db: Session):
+    user, project, parent, first = _make_transfer_operation(db)
+    finalize_operation(db, user, first.id, expected_version=first.version)
+    second = create_operation(db, user, project.id, first.operation_type_id, property_id=first.property_id)
+    second.parent_contract_id = parent.id
+    party = db.scalar(select(OperationParty).where(OperationParty.operation_id == first.id))
+    add_party(db, user, second.id, party.person_id, party.role_id, expected_version=second.version)
+    finalize_operation(db, user, second.id, expected_version=second.version)
+    db.refresh(second)
+    assert first.child_contract_number == "760123/1"
+    assert second.child_contract_number == "760123/2"
+    assert second.transfer_sequence == 2
+
+
+def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: Session):
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    project.contract_code = "76"
+    person, _ = _make_party_records(db, project.id)
+    now = datetime.now(timezone.utc)
+    parent = ParentContract(
+        project_id=project.id, contract_number="760123", suffix="0123",
+        initial_person_id=person.id, property_id=property_record.id, status="ACTIVE",
+        next_transfer_sequence=1, created_at=now, updated_at=now, version=1,
+    )
+    db.add(parent)
+    db.flush()
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    operation.parent_contract_id = parent.id
+    with pytest.raises(ValidationError, match="transfer_party_required"):
+        finalize_operation(db, user, operation.id, expected_version=operation.version)
+    db.refresh(parent)
+    db.refresh(operation)
+    assert parent.next_transfer_sequence == 1
+    assert operation.status == "DRAFT"
+    assert operation.child_contract_number is None
+
+
+def test_rolling_back_transfer_finalization_releases_sequence(db: Session):
+    user, project, parent, operation = _make_transfer_operation(db)
+    nested = db.begin_nested()
+    finalize_operation(db, user, operation.id, expected_version=operation.version)
+    db.flush()
+    nested.rollback()
+    db.expire_all()
+    parent = db.get(ParentContract, parent.id)
+    operation = db.get(Operation, operation.id)
+    assert parent.next_transfer_sequence == 1
+    assert operation.status == "DRAFT"
+    assert operation.transfer_sequence is None
+    assert operation.child_contract_number is None
+    assert db.scalar(select(func.count()).select_from(OperationVersion).where(
+        OperationVersion.operation_id == operation.id
+    )) == 0
