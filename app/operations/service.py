@@ -28,8 +28,19 @@ def _allocate_transfer_number(db: Session, op: Operation, now: datetime) -> None
         raise NotFoundError("parent_contract_not_found")
     if parent.project_id != op.project_id or parent.status != "ACTIVE":
         raise ValidationError("parent_contract_inactive_or_project_mismatch")
-    if db.scalar(select(OperationParty.id).where(OperationParty.operation_id == op.id).limit(1)) is None:
-        raise ValidationError("transfer_party_required")
+    transferee_role_id = db.scalar(
+        select(PartyRole.id).where(PartyRole.code == "BUYER_TRANSFEREE", PartyRole.active.is_(True),
+                                   PartyRole.retired_at.is_(None))
+    )
+    if transferee_role_id is None:
+        raise ValidationError("buyer_transferee_role_not_configured")
+    transferee_count = db.scalar(
+        select(OperationParty.id)
+        .where(OperationParty.operation_id == op.id, OperationParty.role_id == transferee_role_id)
+        .limit(1)
+    )
+    if transferee_count is None:
+        raise ValidationError("buyer_transferee_required")
 
     # UPDATE ... RETURNING serializes counter changes in SQLite. The increment
     # and operation finalization share the caller's transaction; rollback undoes both.
