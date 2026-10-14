@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
 from app.db.models import (
-    Operation, OperationType, ParentContract, Permission, Person, Project, ProjectAccess, ProjectPerson,
+    Operation, OperationParty, OperationType, OperationVersion, ParentContract, PartyRole, Permission, Person, Project, ProjectAccess, ProjectPerson,
     ProjectProperty, Property, Role, RolePermission, User, UserRole,
 )
 from app.contracts.service import (
