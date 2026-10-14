@@ -4,7 +4,7 @@ import hashlib, json
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from app.auth.authorization import AuthorizationContext, authorize
-from app.contracts.numbering import build_child_contract_number
+from app.contracts.numbering import BUYER_TRANSFEREE_ROLE_CODE, build_child_contract_number
 from app.db.models import (
     Appointment, Contract, Operation, OperationAppointment, OperationParty, OperationType, OperationVersion,
     ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User,
@@ -29,7 +29,7 @@ def _allocate_transfer_number(db: Session, op: Operation, now: datetime) -> None
     if parent.project_id != op.project_id or parent.status != "ACTIVE":
         raise ValidationError("parent_contract_inactive_or_project_mismatch")
     transferee_role_id = db.scalar(
-        select(PartyRole.id).where(PartyRole.code == "BUYER_TRANSFEREE", PartyRole.active.is_(True),
+        select(PartyRole.id).where(PartyRole.code == BUYER_TRANSFEREE_ROLE_CODE, PartyRole.active.is_(True),
                                    PartyRole.retired_at.is_(None))
     )
     if transferee_role_id is None:
