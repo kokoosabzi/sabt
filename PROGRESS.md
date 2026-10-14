@@ -153,8 +153,10 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Added authenticated `GET /contracts/parent/{contract_number}/history` route using the authorized service; maps invalid number, missing contract, and forbidden access to HTTP 422/404/403.
 - [x] Registered the contract-history router in the FastAPI app.
 - [x] Specified a Persian RTL management portal, daily/date-range workflow reports, contract transfer-chain report, ad-hoc reports, drill-down behavior, permissions, timezone/Jalali date handling, pagination, and export/audit rules in `UI_FLOW.md`.
-- [ ] Add API tests for contract-history route authentication, authorization, invalid numbers, not-found responses, and response shape.
+- [x] Add API tests for contract-history route authentication, authorization, invalid numbers, not-found responses, and response shape.
 - [ ] Implement portal summary/report APIs only from verified source data and enforce project scope in every query.
 - [ ] Implement contract-history UI and portal/report screens; the repository currently has no frontend application files.
 - [ ] Implement staged Excel/CSV import with validation, preview, explicit confirmation, transactional persistence, and import result report.
 - [ ] Keep PR #1 draft and do not merge until tests and review are complete.
+
+- [x] GitHub Actions run [38602455911](https://github.com/kokoosabzi/sabt/actions/runs/38602455911) passed on API route/test commit `814f87851f9c439bb66c22b83e6f5d255088834d`; the CI workflow includes the full pytest suite and SQLite migration round-trip.
