@@ -177,7 +177,11 @@ class Operation(Base):
     current_version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     parent_contract_id: Mapped[int | None] = mapped_column(ForeignKey("parent_contracts.id", ondelete="RESTRICT"))
     transfer_sequence: Mapped[int | None] = mapped_column(Integer)
-    child_contract_number: Mapped[str | None] = mapped_column(String(32), unique=True)
+    child_contract_number: Mapped[str | None] = mapped_column(String(32))
+    __table_args__ = (
+        UniqueConstraint("child_contract_number", name="uq_operations_child_contract_number"),
+        UniqueConstraint("parent_contract_id", "transfer_sequence", name="uq_operations_parent_transfer_sequence"),
+    )
 
 class OperationParty(Base):
     __tablename__ = "operation_parties"
@@ -215,10 +219,12 @@ class ParentContract(Base):
     initial_person_id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"), nullable=False)
     property_id: Mapped[int | None] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"))
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
+    next_transfer_sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     __table_args__ = (
+        CheckConstraint("next_transfer_sequence >= 1", name="ck_parent_contract_next_transfer_sequence_positive"),
         UniqueConstraint("project_id", "suffix", name="uq_parent_contract_project_suffix"),
         CheckConstraint("contract_number GLOB '[1-9][0-9][0-9][0-9][0-9][0-9]'", name="ck_parent_contract_number_format"),
         CheckConstraint("suffix GLOB '[0-9][0-9][0-9][0-9]'", name="ck_parent_contract_suffix_format"),
