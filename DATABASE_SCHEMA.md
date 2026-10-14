@@ -330,6 +330,33 @@ Unique:
 
 Allocation is transactional and must not use MAX()+1.
 
+### workflow_events
+
+Immutable activity records used by date-scoped workflow reports.
+
+Columns:
+- id (internal primary key)
+- project_id
+- operation_id
+- actor_user_id
+- event_type (for example OPERATION_CREATED, PARTY_ADDED, OPERATION_FINALIZED)
+- from_status (nullable)
+- to_status (nullable)
+- occurred_at (timezone-aware timestamp)
+- metadata_json (optional non-sensitive event context)
+
+Indexes:
+- project_id + occurred_at
+- operation_id + occurred_at
+- actor_user_id + occurred_at
+
+Rules:
+- Events are written in the same transaction as the operation action that produced them.
+- Current initial event coverage: operation creation, party addition, and operation finalization.
+- Draft/finalized timestamps alone are not a substitute for a workflow event stream.
+- Events are append-only; corrections or reversals must be represented by new events, not by rewriting prior history.
+- Event reports are restricted by project authorization and use occurred_at for date-range filtering.
+
 ### operation_versions
 Immutable finalized/correction versions.
 
