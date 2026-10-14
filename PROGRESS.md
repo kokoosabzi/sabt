@@ -5,7 +5,7 @@
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** Foundation baseline previously passed CI. Parent Contract creation service and tests have now been added on `codex/foundation-audit`; CI for the latest commits is pending. Implementation is still incomplete and the pull request is intentionally not merged.
+- **Overall status:** Foundation baseline previously passed CI. Parent Contract creation, project-code immutability, and transactional child-number allocation have been implemented on `codex/foundation-audit`; focused tests were added, but CI for these latest changes is still pending. Implementation is incomplete and the pull request is intentionally not merged.
 - **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
@@ -121,7 +121,8 @@
 - 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
 - 2026-10-13: CI run `38468577088` passed with 36 tests and SQLite migration upgrade/downgrade/re-upgrade checks. Added project-membership validation for OperationParty writes and mandatory optimistic version checks for party edits/finalization.
 - 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
-- 2026-10-14: Added `create_parent_contract` and `set_project_contract_code` services on `codex/foundation-audit`, including authorization, project/person/property association checks, string-safe six-digit number creation, duplicate safeguards, optimistic project version checks, and project-code immutability after first use. Focused service tests are in place; latest CI verification is pending.
+- 2026-10-14: Added `create_parent_contract` and `set_project_contract_code` services on `codex/foundation-audit`, including authorization, project/person/property association checks, string-safe six-digit number creation, duplicate safeguards, optimistic project version checks, and project-code immutability after first use.
+- 2026-10-14: Added migration `0008_transfer_sequence_counter`, the ParentContract counter, validation when linking an Operation to a Parent Contract, atomic child-number allocation during finalization, and rollback/sequential-number tests. CI verification is pending.
 
 ## Parent Contract transfer-chain design update — 2026-10-13
 
@@ -131,8 +132,10 @@
 - [x] Distinguished a genuine transfer (new Operation) from a correction to an existing finalized transfer (OperationVersion/correction workflow).
 - [x] Documented parent-number search/history, current-owner derivation, transactional child numbering, and staged Excel/CSV import as design targets.
 - [ ] Resolve the remaining business decisions: global uniqueness/immutability of Project codes, child-number gaps/width, ownership-effective state, legacy import ordering, and exact import columns/person duplicate matching.
-- [ ] Implement and test schema/migrations only after those policies are confirmed. The design documents do not mean these features are already implemented.
+- [x] Implement schema and core service behavior for Parent Contract creation and child-number allocation.
+- [ ] Implement current-owner derivation from latest valid finalized transfers; recipient/owner role policy must be explicitly defined rather than guessed.
+- [ ] Add authorized search/history APIs, UI, and staged Excel/CSV import.
 
 ## Next task
 
-Run CI for the Parent Contract creation service, then enforce project-code immutability and implement transactional child-number allocation on transfer finalization. Keep the pull request open and unmerged until the new checks and risks are reviewed.
+Verify the latest service and migration changes in CI. Then define how the transferee is identified in operation parties and implement current-owner/history queries; keep the pull request open and unmerged until the new checks and risks are reviewed.
