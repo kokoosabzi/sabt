@@ -85,3 +85,12 @@ Users may have global roles and project-scoped roles. Project access is separate
 - The parent detail view may show a current-owner summary derived from the latest valid finalized transfer, while preserving the initial owner on the Parent Contract.
 - Bulk import of existing parent contracts and member/owner rows is a staged, auditable import workflow, not direct unvalidated inserts.
 - Project codes are exactly two digits and begin at `10`; `01`–`09` are invalid. The code is shared by all members/contracts within a Project and stored as text. A Parent Contract number is six digits: Project code plus a four-digit member/contract suffix. The suffix may be entered manually or imported from Excel/CSV, optionally alongside unit/property details. Global uniqueness/immutability of Project codes, child-number gap policy, and ownership-effective status remain open.
+
+
+## Confirmed Parent Contract ownership rule — 2026-10-14
+
+- The OperationParty role that receives ownership on a transfer is **Buyer / Transferee**, with canonical technical code `BUYER_TRANSFEREE`.
+- A transfer linked to a Parent Contract cannot be finalized without at least one active Buyer / Transferee party.
+- Current owner is derived from the latest valid finalized transfer: the Operation must be finalized, have its current finalized OperationVersion, have a child transfer number, and include Buyer / Transferee party membership.
+- Draft and non-finalized operations never change current ownership. If no valid finalized transfer exists, current owner is the Parent Contract initial person.
+- Multiple Buyer / Transferee parties are supported and returned as a list to avoid silently discarding joint transferees.
