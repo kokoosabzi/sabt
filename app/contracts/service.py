@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.auth.authorization import AuthorizationContext, authorize
-from app.contracts.numbering import build_parent_contract_number, validate_parent_contract_suffix, validate_project_contract_code
+from app.contracts.numbering import build_parent_contract_number, validate_parent_contract_number, validate_parent_contract_suffix, validate_project_contract_code
 from app.db.models import Operation, ParentContract, Person, Project, ProjectPerson, ProjectProperty, Property, User
 
 class ParentContractError(Exception):
