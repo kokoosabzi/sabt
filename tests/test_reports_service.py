@@ -86,6 +86,6 @@ def test_reporting_rejects_invalid_time_range(report_context):
 
 def test_reporting_routes_are_registered():
     from app.main import app
-    paths = {route.path for route in app.routes}
+    paths = set(app.openapi()['paths'])
     assert '/reports/management-summary' in paths
     assert '/reports/workflow' in paths
