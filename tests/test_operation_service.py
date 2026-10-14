@@ -30,6 +30,7 @@ from app.db.models import (
     RolePermission,
     User,
     UserRole,
+    WorkflowEvent,
 )
 from app.operations.service import ConflictError, ValidationError, add_party, create_operation, finalize_operation
 
