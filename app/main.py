@@ -5,10 +5,12 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import current_user, get_db
 from app.auth.service import authenticate, create_session, get_user_by_token, revoke_session
 from app.contracts.routes import router as contracts_router
+from app.reports.routes import router as reports_router
 from app.reports.service import get_management_summary, get_workflow_report
 
 app = FastAPI(title='SABT', version='0.1.0')
 app.include_router(contracts_router)
+app.include_router(reports_router)
 basic = HTTPBasic()
 bearer = HTTPBearer(auto_error=False)
 
