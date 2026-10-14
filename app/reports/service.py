@@ -288,7 +288,11 @@ def get_workflow_events_report(
     if actor_user_id is not None:
         filters.append(WorkflowEvent.actor_user_id == actor_user_id)
 
-    count_stmt = select(func.count(WorkflowEvent.id)).where(*filters)
+    count_stmt = (
+        select(func.count(WorkflowEvent.id))
+        .join(Operation, Operation.id == WorkflowEvent.operation_id)
+        .where(*filters, Operation.project_id == project_id)
+    )
     stmt = (
         select(WorkflowEvent, OperationType.name, User.display_name, Operation.child_contract_number,
                ParentContract.contract_number)
@@ -296,7 +300,7 @@ def get_workflow_events_report(
         .join(OperationType, OperationType.id == Operation.operation_type_id)
         .join(User, User.id == WorkflowEvent.actor_user_id)
         .outerjoin(ParentContract, ParentContract.id == Operation.parent_contract_id)
-        .where(*filters)
+        .where(*filters, Operation.project_id == project_id)
     )
     total = db.scalar(count_stmt) or 0
     rows = db.execute(
