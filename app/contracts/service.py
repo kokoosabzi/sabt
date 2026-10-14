@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.auth.authorization import AuthorizationContext, authorize
 from app.contracts.numbering import build_parent_contract_number, validate_parent_contract_suffix, validate_project_contract_code
-from app.db.models import ParentContract, Person, Project, ProjectPerson, ProjectProperty, Property, User
+from app.db.models import Operation, ParentContract, Person, Project, ProjectPerson, ProjectProperty, Property, User
 
 class ParentContractError(Exception):
     pass
@@ -106,3 +106,61 @@ def set_project_contract_code(
         project.updated_at = datetime.now(timezone.utc)
         db.flush()
     return project
+
+
+def get_parent_contract_history(
+    db: Session,
+    user: User,
+    contract_number: str,
+) -> dict:
+    """Return an authorized Parent Contract and its linked Operation history."""
+    try:
+        normalized_number = validate_parent_contract_number(contract_number)
+    except ValueError as exc:
+        raise ParentContractValidationError(str(exc)) from exc
+    parent = db.scalar(
+        select(ParentContract).where(ParentContract.contract_number == normalized_number)
+    )
+    if parent is None:
+        raise ParentContractNotFoundError("parent_contract_not_found")
+    authorize(
+        db,
+        user,
+        "parent_contract.view",
+        AuthorizationContext(project_id=parent.project_id),
+    )
+    operations = db.scalars(
+        select(Operation)
+        .where(Operation.parent_contract_id == parent.id)
+        .order_by(
+            Operation.transfer_sequence.is_(None),
+            Operation.transfer_sequence,
+            Operation.created_at,
+            Operation.id,
+        )
+    ).all()
+    return {
+        "parent": {
+            "id": parent.id,
+            "project_id": parent.project_id,
+            "contract_number": parent.contract_number,
+            "suffix": parent.suffix,
+            "initial_person_id": parent.initial_person_id,
+            "property_id": parent.property_id,
+            "status": parent.status,
+        },
+        "transfers": [
+            {
+                "operation_id": operation.id,
+                "operation_type_id": operation.operation_type_id,
+                "status": operation.status,
+                "transfer_sequence": operation.transfer_sequence,
+                "child_contract_number": operation.child_contract_number,
+                "property_id": operation.property_id,
+                "created_at": operation.created_at,
+                "finalized_at": operation.finalized_at,
+                "current_version_number": operation.current_version_number,
+            }
+            for operation in operations
+        ],
+    }
