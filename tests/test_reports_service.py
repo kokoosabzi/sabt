@@ -89,3 +89,36 @@ def test_reporting_routes_are_registered():
     paths = set(app.openapi()['paths'])
     assert '/reports/management-summary' in paths
     assert '/reports/workflow' in paths
+
+
+
+def test_report_rejects_naive_datetimes(report_context):
+    db, user, project, now, _, _ = report_context
+    with pytest.raises(ReportValidationError, match="report_start_must_include_timezone"):
+        get_management_summary(db, user, project.id, now.replace(tzinfo=None), now + timedelta(hours=1))
+
+
+def test_workflow_report_supports_status_and_creator_filters(report_context):
+    db, user, project, now, op, _ = report_context
+    result = get_workflow_report(
+        db, user, project.id, now - timedelta(hours=1), now + timedelta(hours=1),
+        status="DRAFT", created_by=user.id, limit=10, offset=0,
+    )
+    assert result["pagination"]["total"] == 1
+    assert result["items"][0]["operation_id"] == op.id
+    assert result["items"][0]["created_by_display_name"] == user.display_name
+    assert result["filters"]["created_by"] == user.id
+
+
+def test_workflow_report_rejects_malformed_contract_filters(report_context):
+    db, user, project, now, _, _ = report_context
+    with pytest.raises(ReportValidationError, match="parent_contract_number_invalid"):
+        get_workflow_report(
+            db, user, project.id, now - timedelta(hours=1), now + timedelta(hours=1),
+            parent_contract_number="76X123",
+        )
+    with pytest.raises(ReportValidationError, match="child_contract_number_invalid"):
+        get_workflow_report(
+            db, user, project.id, now - timedelta(hours=1), now + timedelta(hours=1),
+            child_contract_number="760123",
+        )
