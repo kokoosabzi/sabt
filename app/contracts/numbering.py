@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import re
 
+BUYER_TRANSFEREE_ROLE_CODE = "BUYER_TRANSFEREE"
+
 _PROJECT_CODE = re.compile(r"^[1-9][0-9]$")
 _SUFFIX = re.compile(r"^[0-9]{4}$")
 _PARENT_NUMBER = re.compile(r"^[1-9][0-9]{5}$")
