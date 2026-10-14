@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.authorization import AuthorizationContext, authorize
+from app.contracts.numbering import validate_parent_contract_number
 from app.db.models import Operation, OperationType, ParentContract, Project, User
 
 
@@ -143,14 +144,19 @@ def get_workflow_report(
         raise ReportValidationError("report_limit_invalid")
     if offset < 0:
         raise ReportValidationError("report_offset_invalid")
-    if parent_contract_number is not None and (
-        len(parent_contract_number) != 6 or not parent_contract_number.isdigit()
-    ):
-        raise ReportValidationError("parent_contract_number_invalid")
-    if child_contract_number is not None and (
-        "/" not in child_contract_number or not child_contract_number.split("/", 1)[0].isdigit()
-    ):
-        raise ReportValidationError("child_contract_number_invalid")
+    if parent_contract_number is not None:
+        try:
+            validate_parent_contract_number(parent_contract_number)
+        except ValueError as exc:
+            raise ReportValidationError("parent_contract_number_invalid") from exc
+    if child_contract_number is not None:
+        try:
+            parent_number, sequence_text = child_contract_number.split("/", 1)
+            validate_parent_contract_number(parent_number)
+            if not sequence_text.isdigit() or int(sequence_text) < 1 or str(int(sequence_text)) != sequence_text:
+                raise ValueError("transfer_sequence_invalid")
+        except ValueError as exc:
+            raise ReportValidationError("child_contract_number_invalid") from exc
 
     stmt = (
         select(Operation, OperationType.name, ParentContract.contract_number, User.display_name)
