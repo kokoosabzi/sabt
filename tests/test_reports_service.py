@@ -82,3 +82,10 @@ def test_reporting_rejects_invalid_time_range(report_context):
     db, user, project, now, _, _ = report_context
     with pytest.raises(ReportValidationError, match="report_range_invalid"):
         get_management_summary(db, user, project.id, now, now)
+
+
+def test_reporting_routes_are_registered():
+    from app.main import app
+    paths = {route.path for route in app.routes}
+    assert '/reports/management-summary' in paths
+    assert '/reports/workflow' in paths
