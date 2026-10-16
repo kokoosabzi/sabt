@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>پرتال مدیریتی | ثبت</title>
+  <style>
+    :root{font-family:Tahoma,"Segoe UI",sans-serif;color:#182230;background:#f4f7fb;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}
+    .shell{max-width:1440px;margin:auto;padding:22px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:#183b56;color:white;font-weight:800}
+    h1{font-size:23px;margin:0 0 5px}h2{font-size:17px;margin:0 0 16px}p{margin:0;color:#667085;font-size:13px;line-height:1.8}
+    .status{font-size:12px;color:#526071;background:#e9eef5;border-radius:999px;padding:7px 11px}
+    .layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:20px}
+    nav,.panel,.metric{background:white;border:1px solid #e3e9f1;border-radius:16px;box-shadow:0 4px 18px #172b4d08}
+    nav{padding:12px;height:max-content;position:sticky;top:14px}nav button{width:100%;text-align:right;background:transparent;color:#475467;border:0;padding:12px;border-radius:10px;cursor:pointer;margin:2px 0}
+    nav button.active,nav button:hover{background:#edf4f8;color:#173d57;font-weight:700}
+    main{min-width:0}.panel{padding:20px;margin-bottom:18px}.filters{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:12px;align-items:end}
+    label{display:block;font-size:12px;color:#475467;margin-bottom:7px}input{width:100%;padding:10px 11px;border:1px solid #d0d8e2;border-radius:9px;background:#fff;color:#182230}
+    .btn{border:0;border-radius:9px;padding:11px 15px;background:#183b56;color:white;cursor:pointer;font-weight:700}.btn.secondary{background:#edf2f7;color:#263b50}.btn:disabled{opacity:.5;cursor:not-allowed}
+    .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.metric{padding:17px}.metric span{display:block;color:#667085;font-size:12px}.metric strong{display:block;font-size:27px;margin-top:12px;font-weight:800;color:#173d57}
+    .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,td{padding:12px 10px;text-align:right;border-bottom:1px solid #edf0f4}th{color:#667085;font-weight:700;background:#f9fafb}
+    .muted{color:#667085;font-size:12px}.error{color:#b42318;background:#fff1f0;border-radius:9px;padding:10px;margin-bottom:12px;display:none}.success{color:#067647}.hidden{display:none!important}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{max-width:250px}
+    .login{max-width:520px;margin:48px auto}.login .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.login .fields .full{grid-column:1/-1}
+    .section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+    footer{color:#98a2b3;font-size:11px;text-align:center;padding:10px}
+    @media(max-width:950px){.layout{grid-template-columns:1fr}nav{position:static;display:grid;grid-template-columns:repeat(2,1fr)}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.shell{padding:12px}header{align-items:flex-start}.metrics{gap:8px}.metric{padding:12px}.metric strong{font-size:22px}.filters,.login .fields{grid-template-columns:1fr}.login .fields .full{grid-column:auto}.panel{padding:14px}nav{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <div id="loginView" class="shell login">
+    <section class="panel">
+      <div class="brand" style="margin-bottom:20px"><div class="logo">س</div><div><h1>ورود به پرتال SABT</h1><p>پرتال مدیریتی و گزارش‌های گردش کار</p></div></div>
+      <div id="loginError" class="error"></div>
+      <form id="loginForm" class="fields">
+        <div><label for="username">نام کاربری</label><input id="username" autocomplete="username" required></div>
+        <div><label for="password">گذرواژه</label><input id="password" type="password" autocomplete="current-password" required></div>
+        <div class="full"><button class="btn" type="submit">ورود امن</button></div>
+      </form>
+      <p style="margin-top:14px">برای مشاهده گزارش‌ها، حساب کاربری و مجوز پروژه لازم است.</p>
+    </section>
+  </div>
+  <div id="appView" class="shell hidden">
+    <header>
+      <div class="brand"><div class="logo">س</div><div><h1>پرتال مدیریتی SABT</h1><p>نمای وضعیت، گردش کار و سوابق قرارداد</p></div></div>
+      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="logoutButton" class="btn secondary">خروج</button></div>
+    </header>
+    <div class="layout">
+      <nav aria-label="منوی گزارش‌ها">
+        <button class="active" data-page="dashboard">نمای مدیریتی</button>
+        <button data-page="workflow">گزارش گردش کار</button>
+        <button data-page="events">رخدادهای گردش کار</button>
+        <button data-page="contract">گردش قرارداد</button>
+      </nav>
+      <main>
+        <div id="globalError" class="error"></div>
+        <section class="panel">
+          <div class="section-title"><div><h2>محدوده گزارش</h2><p>زمان‌ها در این نسخه با منطقه زمانی دستگاه به UTC تبدیل می‌شوند. بازه شامل زمان شروع و فاقد زمان پایان است.</p></div></div>
+          <div class="filters">
+            <div><label for="projectId">شناسه پروژه</label><input id="projectId" type="number" min="1" step="1" value="1" required></div>
+            <div><label for="startAt">از تاریخ و ساعت</label><input id="startAt" type="datetime-local" required></div>
+            <div><label for="endAt">تا تاریخ و ساعت</label><input id="endAt" type="datetime-local" required></div>
+            <div><button id="loadButton" class="btn">دریافت گزارش</button></div>
+          </div>
+        </section>
+        <section id="dashboardPage" class="page">
+          <div class="metrics">
+            <div class="metric"><span>عملیات ایجادشده در بازه</span><strong id="createdMetric">—</strong></div>
+            <div class="metric"><span>عملیات نهایی‌شده در بازه</span><strong id="finalizedMetric">—</strong></div>
+            <div class="metric"><span>عملیات باز در حال حاضر</span><strong id="openMetric">—</strong></div>
+            <div class="metric"><span>انتقال نهایی‌شده در بازه</span><strong id="transfersMetric">—</strong></div>
+          </div>
+          <section class="panel"><h2>عملیات ایجادشده به تفکیک وضعیت</h2><div id="statusMetrics" class="row muted">برای دریافت شاخص‌ها، «دریافت گزارش» را انتخاب کنید.</div></section>
+          <section class="panel"><h2>توضیحات و حدود داده</h2><p>شاخص‌ها فقط از رکوردهای ذخیره‌شده محاسبه می‌شوند. زمان رسیدگی و مدت حضور در هر وضعیت تا زمانی که تمام رخدادهای لازم ثبت نشده باشند محاسبه نمی‌شوند.</p></section>
+        </section>
+        <section id="workflowPage" class="page hidden">
+          <section class="panel">
+            <div class="section-title"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div>
+            <div class="filters">
+              <div><label for="statusFilter">وضعیت</label><select id="statusFilter"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
+              <div><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" type="number" min="1"></div>
+              <div><label for="contractFilter">شماره قرارداد مادر</label><input id="contractFilter" inputmode="numeric" maxlength="6" placeholder="مثلاً 760123"></div>
+              <div><label for="creatorFilter">شناسه ثبت‌کننده</label><input id="creatorFilter" type="number" min="1"></div>
+            </div>
+          </section>
+          <section class="panel"><div id="workflowMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>ثبت‌کننده</th><th>تاریخ ایجاد</th><th>نهایی‌شدن</th></tr></thead><tbody id="workflowRows"><tr><td colspan="8">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div><div class="row" style="margin-top:14px"><button id="prevPage" class="btn secondary">قبلی</button><span id="pageMeta" class="muted"></span><button id="nextPage" class="btn secondary">بعدی</button></div></section>
+        </section>
+        <section id="eventsPage" class="page hidden">
+          <section class="panel">
+            <div class="section-title"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div>
+            <div class="filters"><div><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" type="number" min="1"></div><div><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" type="number" min="1"></div></div>
+          </section>
+          <section class="panel"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
+        </section>
+        <section id="contractPage" class="page hidden">
+          <section class="panel"><h2>جست‌وجوی گردش قرارداد</h2><p style="margin-bottom:14px">شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p><form id="contractForm" class="row"><input id="contractNumber" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required><button class="btn" type="submit">جست‌وجو</button></form></section>
+          <section id="contractResult" class="panel hidden"><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
+        </section>
+      </main>
+    </div>
+    <footer>SABT · نسخه اولیه پرتال گزارش‌ها · تمام داده‌ها از API مجاز سامانه دریافت می‌شوند.</footer>
+  </div>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let token = sessionStorage.getItem('sabt_token') || '';
+  let page = 0, limit = 50, activePage = 'dashboard';
+  const fmt = value => value ? new Date(value).toLocaleString('fa-IR') : '—';
+  const showError = (message, target='globalError') => { const el=$(target); el.textContent=message; el.style.display='block'; };
+  const clearError = (target='globalError') => { const el=$(target); el.textContent=''; el.style.display='none'; };
+  async function api(path, options={}) {
+    const response = await fetch(path, {...options, headers:{'Content-Type':'application/json', ...(options.headers||{}), ...(token?{Authorization:'Bearer '+token}:{})}});
+    const body = await response.json().catch(()=>({detail:'پاسخ نامعتبر از سرور'}));
+    if(!response.ok) {
+      if(response.status===401){token='';sessionStorage.removeItem('sabt_token');showLogin();}
+      throw new Error(body.detail || 'خطا در دریافت اطلاعات');
+    }
+    return body;
+  }
+  function showLogin(){ $('loginView').classList.remove('hidden'); $('appView').classList.add('hidden'); }
+  function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); }
+  function period() {
+    const start=$('startAt').value, end=$('endAt').value;
+    if(!start||!end) throw new Error('تاریخ شروع و پایان را مشخص کنید.');
+    if(new Date(start)>=new Date(end)) throw new Error('تاریخ شروع باید قبل از تاریخ پایان باشد.');
+    return {start_at:new Date(start).toISOString(),end_at:new Date(end).toISOString(),project_id:$('projectId').value};
+  }
+  function query(values){const p=new URLSearchParams();Object.entries(values).forEach(([k,v])=>{if(v!==''&&v!==null&&v!==undefined)p.set(k,v)});return p.toString();}
+  function setDefaults(){const now=new Date(), start=new Date(now);start.setDate(start.getDate()-7);const local=d=>{const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())};$('startAt').value=local(start);$('endAt').value=local(now);}
+  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();await loadActivePage()}catch(err){showError(err.message,'loginError')}});
+  $('logoutButton').addEventListener('click',async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}token='';sessionStorage.removeItem('sabt_token');showLogin()});
+  document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===button));activePage=button.dataset.page;document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));$(activePage+'Page').classList.remove('hidden');clearError();loadActivePage()}));
+  $('loadButton').addEventListener('click',()=>loadActivePage());$('workflowRefresh').addEventListener('click',()=>{page=0;loadWorkflow()});$('eventsRefresh').addEventListener('click',loadEvents);
+  $('prevPage').addEventListener('click',()=>{if(page>0){page--;loadWorkflow()}});$('nextPage').addEventListener('click',()=>{page++;loadWorkflow()});
+  async function loadActivePage(){if(!token)return;clearError();try{if(activePage==='dashboard')await loadSummary();else if(activePage==='workflow')await loadWorkflow();else if(activePage==='events')await loadEvents()}catch(err){showError(err.message)}}
+  async function loadSummary(){const p=period();const data=await api('/reports/management/summary?'+query(p));const m=data.indicators;$('createdMetric').textContent=m.created_operations;$('finalizedMetric').textContent=m.finalized_operations;$('openMetric').textContent=m.currently_open_operations;$('transfersMetric').textContent=m.transfers_finalized;$('statusMetrics').innerHTML='';if(!m.created_operations_by_status.length){$('statusMetrics').textContent='در این بازه عملیاتی ایجاد نشده است.'}else m.created_operations_by_status.forEach(x=>{const el=document.createElement('span');el.className='status';el.textContent=x.status+': '+x.count;$('statusMetrics').appendChild(el)});}
+  async function loadWorkflow(){const p=period();Object.assign(p,{limit,offset:page*limit,status:$('statusFilter').value,operation_type_id:$('operationTypeFilter').value,parent_contract_number:$('contractFilter').value,created_by:$('creatorFilter').value});const data=await api('/reports/workflow?'+query(p));$('workflowMeta').textContent='تعداد کل: '+data.pagination.total+' | بازه بر اساس تاریخ ایجاد عملیات';$('workflowRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.operation_type_name,x.status,x.parent_contract_number,x.child_contract_number,x.created_by_display_name,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('workflowRows').appendChild(tr)});if(!data.items.length)$('workflowRows').innerHTML='<tr><td colspan="8">موردی در این بازه پیدا نشد.</td></tr>';$('pageMeta').textContent='صفحه '+(page+1)+' · '+data.pagination.total+' ردیف';$('prevPage').disabled=page===0;$('nextPage').disabled=(page+1)*limit>=data.pagination.total;}
+  async function loadEvents(){const p=period();Object.assign(p,{limit:100,offset:0,event_type:$('eventTypeFilter').value,operation_id:$('eventOperationFilter').value,actor_user_id:$('eventActorFilter').value});const data=await api('/reports/workflow/events?'+query(p));$('eventsMeta').textContent='تعداد کل رخدادهای ثبت‌شده: '+data.pagination.total;$('eventRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[fmt(x.occurred_at),x.event_type,x.operation_id,x.parent_contract_number,x.child_contract_number,x.actor_display_name,(x.from_status||'—')+' ← '+(x.to_status||'—')].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('eventRows').appendChild(tr)});if(!data.items.length)$('eventRows').innerHTML='<tr><td colspan="7">رخدادی در این بازه ثبت نشده است.</td></tr>';}
+  $('contractForm').addEventListener('submit',async e=>{e.preventDefault();clearError();try{const number=$('contractNumber').value.trim();const data=await api('/contracts/parent/'+encodeURIComponent(number)+'/history');$('contractResult').classList.remove('hidden');$('contractSummary').innerHTML='';const p=data.parent,o=data.current_owner;const lines=[['شماره قرارداد مادر',p.contract_number],['شناسه پروژه',p.project_id],['وضعیت',p.status],['مبنای مالک فعلی',o.source==='initial_contract'?'قرارداد اولیه':'آخرین انتقال نهایی معتبر']];lines.forEach(([label,value])=>{const el=document.createElement('p');el.textContent=label+' : '+(value??'—');$('contractSummary').appendChild(el)});const people=o.people||[];people.forEach(person=>{const el=document.createElement('p');el.textContent='مالک فعلی: '+[person.first_name,person.last_name].filter(Boolean).join(' ');$('contractSummary').appendChild(el)});$('contractRows').innerHTML='';data.transfers.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.child_contract_number,x.status,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('contractRows').appendChild(tr)});if(!data.transfers.length)$('contractRows').innerHTML='<tr><td colspan="5">هنوز انتقالی برای این قرارداد ثبت نشده است.</td></tr>';}catch(err){showError(err.message)}})
+  setDefaults();
+  if(token){showApp();loadActivePage().catch(()=>showLogin())}else showLogin();
+})();
+</script>
+</body>
+</html>
