@@ -2,6 +2,8 @@ from datetime import datetime
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBasic, HTTPBasicCredentials, HTTPBearer
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
@@ -11,6 +13,7 @@ from app.reports.routes import router as reports_router
 from app.reports.service import get_management_summary
 
 app = FastAPI(title="SABT", version="0.1.0")
+app.mount("/portal", StaticFiles(directory=Path(__file__).parent / "static", html=True), name="portal")
 app.include_router(contracts_router)
 app.include_router(reports_router)
 basic = HTTPBasic()
