@@ -4,7 +4,7 @@ SABT is a Persian-first local/LAN document and operation management system for r
 
 ## Architecture baseline
 
-The current repository begins with an architecture-first specification. No application code is being generated until the domain model and workflows are sufficiently stable.
+The repository combines architecture-first specifications with a working FastAPI foundation, authorized contract-history/report APIs, and an initial Persian RTL reporting portal. The portal is served by the application at `/portal/`; the feature set is still under development and must not be treated as a complete production UI.
 
 Core documents:
 - [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -23,3 +23,11 @@ Before implementing a feature, read the development guide and update `PROGRESS.m
 
 ## Core rule
 SABT does not process money. Financial activity occurs outside the system; related receipts or scans may be stored as operation documents.
+
+
+## Reporting portal (early implementation)
+- Start the FastAPI application using the repository's normal ASGI command, then open `/portal/` on the same host.
+- Sign in with an existing SABT user. The portal uses the current bearer-session API; it does not create or bypass authorization.
+- Available first-pass pages: management summary, paginated workflow report, persisted workflow events, and Parent Contract transfer history.
+- Report access requires the corresponding project-scoped permissions. Enter the numeric Project ID to request a report.
+- The current date controls use the browser's local date/time and send UTC timestamps. Jalali calendar controls, project-timezone-aware display, export files, and browser end-to-end tests are not implemented yet.
