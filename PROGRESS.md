@@ -203,3 +203,11 @@ Define how the transferee is identified in operation parties and implement curre
 
 - [x] Add API regression coverage for `GET /reports/workflow/events` and ensure both event and linked Operation queries are scoped to the authorized project.
 - [x] Latest verified branch checks: [GitHub Actions run 38637248974](https://github.com/kokoosabzi/sabt/actions/runs/38637248974) passed **107 tests, 2 warnings**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
+
+
+## Persian reporting portal UI — 2026-10-16
+- [x] Add responsive Persian RTL interface at `/portal/` with login/logout, management summary, paginated workflow report, persisted workflow events and Parent Contract history lookup.
+- [x] Add a smoke test confirming the portal is served as Persian RTL HTML.
+- [ ] Verify the current CI run before marking this UI verified.
+- [ ] Add CSV/Excel/PDF export, Jalali calendar and project-timezone-aware date display.
+- [ ] Add browser end-to-end tests and graphical transfer-tree visualization.
