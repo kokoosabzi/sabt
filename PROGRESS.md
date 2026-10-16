@@ -208,6 +208,6 @@ Define how the transferee is identified in operation parties and implement curre
 ## Persian reporting portal UI — 2026-10-16
 - [x] Add responsive Persian RTL interface at `/portal/` with login/logout, management summary, paginated workflow report, persisted workflow events and Parent Contract history lookup.
 - [x] Add a smoke test confirming the portal is served as Persian RTL HTML.
-- [ ] Verify the current CI run before marking this UI verified.
+- [x] GitHub Actions run [38881571821](https://github.com/kokoosabzi/sabt/actions/runs/38881571821) passed on the portal implementation commit; the workflow runs pytest and SQLite migration round-trip checks.
 - [ ] Add CSV/Excel/PDF export, Jalali calendar and project-timezone-aware date display.
 - [ ] Add browser end-to-end tests and graphical transfer-tree visualization.
