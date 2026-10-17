@@ -171,7 +171,7 @@ def test_workflow_csv_export_is_utf8_and_permission_scoped():
             "end_at": "2026-11-01T00:00:00+00:00",
         })
         assert response.status_code == 200
-        assert response.content.startswith(b"\\xef\\xbb\\xbf")
+        assert response.content.startswith(b"\xef\xbb\xbf")
         assert "attachment; filename=\"sabt-workflow-report.csv\"" == response.headers["content-disposition"]
         assert "شناسه عملیات".encode("utf-8") in response.content
     finally:
@@ -190,7 +190,7 @@ def test_workflow_events_csv_export_is_available_and_project_scoped():
             "end_at": "2026-11-01T00:00:00+00:00",
         })
         assert response.status_code == 200
-        assert response.content.startswith(b"\\xef\\xbb\\xbf")
+        assert response.content.startswith(b"\xef\xbb\xbf")
         assert "sabt-workflow-events.csv" in response.headers["content-disposition"]
         assert "شناسه رخداد".encode("utf-8") in response.content
     finally:
