@@ -284,4 +284,4 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Create right-to-left worksheets with Persian headers, freeze panes, filters, and bounded column widths.
 - [x] Neutralize formula-like untrusted text cells and serialize structured event metadata safely.
 - [x] Add API tests that reopen generated workbooks, validate Persian headers/content type, and verify project authorization.
-- [ ] Await CI for codex/report-excel-and-pdf-exports after explicitly labeling exported timestamps as UTC; PDF/print exports remain the next slice.
+- [x] GitHub Actions run [39058393067](https://github.com/kokoosabzi/sabt/actions/runs/39058393067) passed on commit `f36c746d6f2696171b39046a8942bdc104f0642d`: **142 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed. Excel timestamp columns are explicitly labeled UTC; PDF/print exports remain the next slice.
