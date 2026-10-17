@@ -108,7 +108,39 @@
   const $ = id => document.getElementById(id);
   let token = sessionStorage.getItem('sabt_token') || '';
   let page = 0, limit = 50, activePage = 'dashboard';
-  const fmt = value => value ? new Date(value).toLocaleString('fa-IR') : '—';
+  let projectTimezone = 'Asia/Tehran', contextProjectId = null, defaultsInitialized = false;
+  const fmt = value => value ? new Intl.DateTimeFormat('fa-IR', {
+    timeZone: projectTimezone, dateStyle: 'short', timeStyle: 'medium'
+  }).format(new Date(value)) : '—';
+  function zonedParts(date, zone) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(date);
+    const result = {};
+    for (const part of parts) if (part.type !== 'literal') result[part.type] = Number(part.value);
+    return result;
+  }
+  function localInputToUtc(value) {
+    const match = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/.exec(value);
+    if (!match) throw new Error('فرمت تاریخ و ساعت معتبر نیست.');
+    const desired = {year:+match[1], month:+match[2], day:+match[3], hour:+match[4], minute:+match[5]};
+    const target = Date.UTC(desired.year, desired.month-1, desired.day, desired.hour, desired.minute);
+    let guess = target;
+    for (let i=0; i<5; i++) {
+      const p = zonedParts(new Date(guess), projectTimezone);
+      const observed = Date.UTC(p.year, p.month-1, p.day, p.hour, p.minute);
+      const delta = target-observed;
+      guess += delta;
+      if (delta === 0) break;
+    }
+    const actual = zonedParts(new Date(guess), projectTimezone);
+    if (actual.year!==desired.year || actual.month!==desired.month || actual.day!==desired.day ||
+        actual.hour!==desired.hour || actual.minute!==desired.minute) {
+      throw new Error('این ساعت محلی در منطقه زمانی پروژه معتبر نیست؛ زمان دیگری انتخاب کنید.');
+    }
+    return new Date(guess).toISOString();
+  }
   const showError = (message, target='globalError') => { const el=$(target); el.textContent=message; el.style.display='block'; };
   const clearError = (target='globalError') => { const el=$(target); el.textContent=''; el.style.display='none'; };
   async function api(path, options={}) {
