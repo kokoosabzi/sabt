@@ -189,16 +189,27 @@ def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(
     expect(page.locator("#startHour option")).to_have_count(24)
     expect(page.locator("#startMinute option")).to_have_count(60)
 
-    # Dates can only be selected through the Jalali calendar, not typed by hand.
+    # Select dates through the picker only; derive the test dates from its current Jalali month.
+    to_latin = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
+    year_text, month_text, _ = page.locator("#startAt").input_value().translate(to_latin).split("/")
+    year, month = int(year_text), int(month_text)
+    start_date = f"{year:04d}/{month:02d}/01"
+    next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
+    end_date = f"{next_year:04d}/{next_month:02d}/01"
+
     page.locator("#startAt").click()
     expect(page.locator("#jalaliPicker")).to_be_visible()
-    page.locator('#jalaliDays button[data-jalali-date="1405/07/01"]').click()
-    expect(page.locator("#startAt")).to_have_value("۱۴۰۵/۰۷/۰۱")
+    page.locator(f'#jalaliDays button[data-jalali-date="{start_date}"]').click()
+    expect(page.locator("#startAt")).to_have_value("۱۴۰۰/۰۱/۰۱" if False else "".join(
+        "۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in start_date
+    ))
 
     page.locator("#endAt").click()
     page.locator("#jalaliNext").click()
-    page.locator('#jalaliDays button[data-jalali-date="1405/08/01"]').click()
-    expect(page.locator("#endAt")).to_have_value("۱۴۰۵/۰۸/۰۱")
+    page.locator(f'#jalaliDays button[data-jalali-date="{end_date}"]').click()
+    expect(page.locator("#endAt")).to_have_value("".join(
+        "۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in end_date
+    ))
 
     page.locator("#startHour").select_option("00")
     page.locator("#startMinute").select_option("00")
