@@ -131,6 +131,7 @@
   let token = sessionStorage.getItem('sabt_token') || '';
   let page = 0, limit = 50, activePage = 'dashboard';
   let stagedContractImport = null;
+  let lastContractHistory = null;
   let projectTimezone = 'Asia/Tehran', contextProjectId = null, defaultsInitialized = false;
   const fmt = value => value ? new Intl.DateTimeFormat('fa-IR', {
     timeZone: projectTimezone, dateStyle: 'short', timeStyle: 'medium'
@@ -361,6 +362,11 @@
   $('summaryExportXlsx').addEventListener('click',async()=>{try{await loadProjectContext();await downloadFile('/reports/management/summary/export.xlsx',period())}catch(err){showError(err.message)}});
   $('workflowExportXlsx').addEventListener('click',async()=>{try{await loadProjectContext();await downloadFile('/reports/workflow/export.xlsx',workflowFilters())}catch(err){showError(err.message)}});
   $('eventsExportXlsx').addEventListener('click',async()=>{try{await loadProjectContext();await downloadFile('/reports/workflow/events/export.xlsx',eventFilters())}catch(err){showError(err.message)}});
+  $('summaryPrint').addEventListener('click',()=>runPrint(printSummaryReport));
+  $('workflowPrint').addEventListener('click',()=>runPrint(printWorkflowReport));
+  $('eventsPrint').addEventListener('click',()=>runPrint(printEventsReport));
+  $('contractPrint').addEventListener('click',()=>runPrint(printContractReport));
+
 
   $('prevPage').addEventListener('click',()=>{if(page>0){page--;loadWorkflow()}});$('nextPage').addEventListener('click',()=>{page++;loadWorkflow()});
   async function loadActivePage(){if(!token)return;clearError();try{await loadProjectContext();if(activePage==='dashboard')await loadSummary();else if(activePage==='workflow')await loadWorkflow();else if(activePage==='events')await loadEvents()}catch(err){showError(err.message)}}
@@ -393,7 +399,7 @@
     columns.forEach(label=>{const th=doc.createElement('th');th.textContent=label;header.appendChild(th)});
     thead.appendChild(header);table.appendChild(thead);
     const tbody=doc.createElement('tbody');
-    rows.forEach(row=>{const tr=doc.createElement('tr');row.forEach(value=>{const td=doc.createElement('td');td.textContent=value===null||value===undefined||value===''?'—':String(value);tr.appendChild(td)});tbody.appendChild(tr)});
+    rows.forEach(row=>{const tr=doc.createElement('tr');row.forEach(value=>{const td=doc.createElement('td');td.textContent=value===null||value===undefined||value===''?'—':(typeof value==='object'?JSON.stringify(value):String(value));tr.appendChild(td)});tbody.appendChild(tr)});
     table.appendChild(tbody);
     doc.body.replaceChildren(toolbar,heading,note,table);
     printWindow.focus();
@@ -438,6 +444,23 @@
     const items=await fetchAllReportItems('/reports/workflow/events',eventFilters());
     const rows=items.map(x=>[fmt(x.occurred_at),x.event_type,x.operation_id,x.operation_type_name,x.parent_contract_number,x.child_contract_number,x.actor_user_id,x.actor_display_name,x.from_status,x.to_status,x.metadata]);
     renderPrintReport(printWindow,'گزارش رخدادهای گردش کار',printPeriodDescription()+' · تعداد ردیف‌ها: '+items.length,['زمان رخداد','نوع رخداد','شناسه عملیات','نوع عملیات','قرارداد مادر','شماره انتقال','شناسه کاربر','نام کاربر','وضعیت قبل','وضعیت بعد','جزئیات'],rows);
+  }
+  async function printContractReport(printWindow) {
+    await loadProjectContext();
+    if(!lastContractHistory)throw new Error('ابتدا گردش یک قرارداد را جست‌وجو کنید.');
+    const data=lastContractHistory,p=data.parent,o=data.current_owner;
+    const people=(o.people||[]).map(person=>[person.first_name,person.last_name].filter(Boolean).join(' ')).filter(Boolean).join('، ');
+    const rows=[
+      ['قرارداد مادر',p.id,p.contract_number,p.status,'','', 'شناسه پروژه '+p.project_id],
+      ['مالک فعلی','','', '', '', '', people+' · '+(o.source==='initial_contract'?'قرارداد اولیه':'آخرین انتقال نهایی معتبر')],
+      ...data.transfers.map(x=>['انتقال',x.operation_id,x.child_contract_number,x.status,fmt(x.created_at),fmt(x.finalized_at),''])
+    ];
+    renderPrintReport(printWindow,'گزارش گردش قرارداد '+p.contract_number,'سوابق ثبت‌شده قرارداد و انتقال‌های مرتبط',['نوع رکورد','شناسه','شماره قرارداد','وضعیت','تاریخ ایجاد','تاریخ نهایی‌شدن','توضیحات'],rows);
+  }
+  async function runPrint(renderFunction) {
+    let printWindow=null;
+    try { printWindow=openPrintWindow(); await renderFunction(printWindow); }
+    catch(err) { if(printWindow&&!printWindow.closed)printWindow.close(); showError(err.message); }
   }
   async function loadWorkflow(){await loadProjectContext();const p={...workflowFilters(),limit,offset:page*limit};const data=await api('/reports/workflow?'+query(p));$('workflowMeta').textContent='تعداد کل: '+data.pagination.total+' | بازه بر اساس تاریخ ایجاد عملیات';$('workflowRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.operation_type_name,x.status,x.parent_contract_number,x.child_contract_number,x.created_by_display_name,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('workflowRows').appendChild(tr)});if(!data.items.length)$('workflowRows').innerHTML='<tr><td colspan="8">موردی در این بازه پیدا نشد.</td></tr>';$('pageMeta').textContent='صفحه '+(page+1)+' · '+data.pagination.total+' ردیف';$('prevPage').disabled=page===0;$('nextPage').disabled=(page+1)*limit>=data.pagination.total;}
   async function loadEvents(){await loadProjectContext();const p={...eventFilters(),limit:100,offset:0};const data=await api('/reports/workflow/events?'+query(p));$('eventsMeta').textContent='تعداد کل رخدادهای ثبت‌شده: '+data.pagination.total;$('eventRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[fmt(x.occurred_at),x.event_type,x.operation_id,x.parent_contract_number,x.child_contract_number,x.actor_display_name,(x.from_status||'—')+' ← '+(x.to_status||'—')].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('eventRows').appendChild(tr)});if(!data.items.length)$('eventRows').innerHTML='<tr><td colspan="7">رخدادی در این بازه ثبت نشده است.</td></tr>';}
@@ -548,7 +571,7 @@
     }
   });
 
-  $('contractForm').addEventListener('submit',async e=>{e.preventDefault();clearError();try{const number=$('contractNumber').value.trim();const data=await api('/contracts/parent/'+encodeURIComponent(number)+'/history');$('contractResult').classList.remove('hidden');$('contractSummary').innerHTML='';const p=data.parent,o=data.current_owner;const lines=[['شماره قرارداد مادر',p.contract_number],['شناسه پروژه',p.project_id],['وضعیت',p.status],['مبنای مالک فعلی',o.source==='initial_contract'?'قرارداد اولیه':'آخرین انتقال نهایی معتبر']];lines.forEach(([label,value])=>{const el=document.createElement('p');el.textContent=label+' : '+(value??'—');$('contractSummary').appendChild(el)});const people=o.people||[];people.forEach(person=>{const el=document.createElement('p');el.textContent='مالک فعلی: '+[person.first_name,person.last_name].filter(Boolean).join(' ');$('contractSummary').appendChild(el)});$('contractRows').innerHTML='';data.transfers.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.child_contract_number,x.status,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('contractRows').appendChild(tr)});if(!data.transfers.length)$('contractRows').innerHTML='<tr><td colspan="5">هنوز انتقالی برای این قرارداد ثبت نشده است.</td></tr>';}catch(err){showError(err.message)}})
+  $('contractForm').addEventListener('submit',async e=>{e.preventDefault();clearError();try{const number=$('contractNumber').value.trim();const data=await api('/contracts/parent/'+encodeURIComponent(number)+'/history');lastContractHistory=data;$('contractResult').classList.remove('hidden');$('contractSummary').innerHTML='';const p=data.parent,o=data.current_owner;const lines=[['شماره قرارداد مادر',p.contract_number],['شناسه پروژه',p.project_id],['وضعیت',p.status],['مبنای مالک فعلی',o.source==='initial_contract'?'قرارداد اولیه':'آخرین انتقال نهایی معتبر']];lines.forEach(([label,value])=>{const el=document.createElement('p');el.textContent=label+' : '+(value??'—');$('contractSummary').appendChild(el)});const people=o.people||[];people.forEach(person=>{const el=document.createElement('p');el.textContent='مالک فعلی: '+[person.first_name,person.last_name].filter(Boolean).join(' ');$('contractSummary').appendChild(el)});$('contractRows').innerHTML='';data.transfers.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.child_contract_number,x.status,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('contractRows').appendChild(tr)});if(!data.transfers.length)$('contractRows').innerHTML='<tr><td colspan="5">هنوز انتقالی برای این قرارداد ثبت نشده است.</td></tr>';}catch(err){showError(err.message)}})
   if(token){showApp();loadActivePage().catch(()=>showLogin())}else showLogin();
 })();
 </script>
