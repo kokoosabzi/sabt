@@ -231,3 +231,51 @@ def test_csv_export_neutralizes_spreadsheet_formula_cells():
     assert "'=HYPERLINK(" in body
     assert "ordinary text" in body
     assert "42" in body
+
+
+def test_report_project_context_returns_authorized_project_timezone():
+    engine, db, client, project = _context()
+    try:
+        response = client.get("/reports/project-context", params={"project_id": project.id})
+        assert response.status_code == 200
+        assert response.json()["project"]["timezone"] == "Asia/Tehran"
+        assert response.json()["project"]["id"] == project.id
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_report_project_context_accepts_workflow_only_permission():
+    engine, db, client, project = _context()
+    try:
+        db.query(RolePermission).filter(
+            RolePermission.permission_id == db.query(Permission.id).filter(
+                Permission.code == "management_dashboard.view"
+            ).scalar_subquery()
+        ).delete(synchronize_session=False)
+        db.commit()
+        response = client.get("/reports/project-context", params={"project_id": project.id})
+        assert response.status_code == 200
+        assert response.json()["project"]["timezone"] == "Asia/Tehran"
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_report_project_context_denies_users_without_report_permission():
+    engine, db, client, project = _context()
+    try:
+        db.query(RolePermission).delete()
+        db.commit()
+        response = client.get("/reports/project-context", params={"project_id": project.id})
+        assert response.status_code == 403
+        assert response.json()["detail"] == "forbidden"
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
