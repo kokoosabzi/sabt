@@ -245,7 +245,9 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Added a Persian RTL portal page for file selection, preview table, validation issues, explicit confirmation, and success/error feedback.
 - [x] Added API tests for preview-without-writes, successful confirmation, duplicate rows, and missing create permission.
 - [x] Added API regression tests that force a failure on the second row and simulate a uniqueness conflict arising after preflight; both assert that the entire batch is rolled back with zero persisted contracts.
-- [ ] Browser/UI automation tests have not been added or run; preview rows currently require correcting the source file and uploading again rather than inline editing.
+- [x] Added inline editable fields for suffix, initial person ID, and optional property ID in the preview table, plus a no-write `/contracts/parent/import/validate` endpoint to refresh duplicate and association checks after edits.
+- [x] Added API regression coverage proving duplicate suffixes can be corrected and revalidated without creating records, plus a portal smoke test for the inline-edit/revalidate controls.
+- [ ] Browser end-to-end automation has not been added or run; malformed file structure/columns and parser-level format errors still require fixing the source file and uploading again.
 - [x] GitHub Actions run [39055125021](https://github.com/kokoosabzi/sabt/actions/runs/39055125021) passed on commit `583878d27e93b75c71ebf00e657fe58f5bed4c3d`: **128 tests passed**, fresh SQLite migration upgrade, Alembic head verification, and downgrade/re-upgrade all succeeded (2 deprecation warnings).
 - [x] GitHub Actions run [39055134348](https://github.com/kokoosabzi/sabt/actions/runs/39055134348) also passed on the latest documentation commit `f18768092ceb1a925e9fe1eb00266b4f121bd214`.
 - [ ] Do not mark the feature complete until browser/UI automation and inline preview-row correction are implemented and verified.
