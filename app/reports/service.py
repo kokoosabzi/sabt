@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import json
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.auth.authorization import AuthorizationContext, authorize
+from app.auth.authorization import AuthorizationContext, authorize, has_permission
 from app.contracts.numbering import validate_parent_contract_number
 from app.db.models import Operation, OperationType, ParentContract, Project, User, WorkflowEvent
 
@@ -332,4 +333,31 @@ def get_workflow_events_report(
             }
             for event, operation_type_name, actor_name, child_number, parent_number in rows
         ],
+    }
+
+
+def get_report_project_context(db: Session, user: User, project_id: int) -> dict:
+    """Return project display/timezone context only when the user can view reports."""
+    if project_id < 1:
+        raise ReportValidationError("project_id_invalid")
+    permitted = (
+        has_permission(db, user, "management_dashboard.view", project_id)
+        or has_permission(db, user, "workflow_report.view", project_id)
+    )
+    if not permitted:
+        raise PermissionError("forbidden")
+    project = db.get(Project, project_id)
+    if project is None:
+        raise LookupError("project_not_found")
+    try:
+        ZoneInfo(project.timezone)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ReportValidationError("project_timezone_invalid") from exc
+    return {
+        "project": {
+            "id": project.id,
+            "code": project.code,
+            "name": project.name,
+            "timezone": project.timezone,
+        }
     }
