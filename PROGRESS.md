@@ -259,3 +259,12 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Browser E2E verified in CI run [39056308692](https://github.com/kokoosabzi/sabt/actions/runs/39056308692): **136 tests passed**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
 - **Integrated:** PR #4 (browser E2E) merged into PR #3; PR #3 (parser hardening) merged into PR #2; PR #2 (staged import) merged into PR #1.
 - **Stable foundation milestone:** PR #1 merged into `main` as commit `083f6728adf3107c04535b05fe944f94b5b0b802` after the combined 136-test CI and SQLite migration round-trip passed.
+
+
+## Jalali reporting-period controls — 2026-10-17
+- [x] Replace Gregorian browser datetime-local inputs with explicit Jalali date and time fields in the Persian RTL reporting portal.
+- [x] Accept Persian and Latin numerals, validate Jalali month/day combinations using the browser's Persian calendar data, and convert the selected date/time using the authorized project's timezone before sending UTC API bounds.
+- [x] Initialize the seven-day report window and current time using the selected project's timezone and display timestamps using Persian locale formatting.
+- [x] Add Playwright/Chromium browser coverage for invalid Jalali dates, Persian-digit input, and successful report loading with a Jalali date range.
+- [x] Update the README to describe current date handling and separate implemented from planned export/event work.
+- [ ] Await CI on `codex/jalali-date-controls`; only mark this milestone stable and merge after the full test suite and SQLite migration round-trip pass.
