@@ -244,6 +244,7 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Added parser tests for CSV/XLSX success, invalid columns/data, unsupported file types, encoding, empty data, and size limits.
 - [x] Added a Persian RTL portal page for file selection, preview table, validation issues, explicit confirmation, and success/error feedback.
 - [x] Added API tests for preview-without-writes, successful confirmation, duplicate rows, and missing create permission.
+- [x] Added API regression tests that force a failure on the second row and simulate a uniqueness conflict arising after preflight; both assert that the entire batch is rolled back with zero persisted contracts.
 - [ ] Browser/UI automation tests have not been added or run; preview rows currently require correcting the source file and uploading again rather than inline editing.
-- [ ] CI for the newest API-test commit is pending; do not mark the feature complete until its result is confirmed.
+- [ ] CI for the newest transaction-rollback tests is pending; do not mark the feature complete until its result is confirmed.
 - **Review:** Draft PR #2 targets `codex/foundation-audit`: https://github.com/kokoosabzi/sabt/pull/2
