@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
 from app.reports.service import (
-    ReportValidationError, get_management_summary, get_workflow_events_report,
-    get_workflow_report,
+    ReportValidationError, get_management_summary, get_report_project_context,
+    get_workflow_events_report, get_workflow_report,
 )
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -185,3 +185,12 @@ def export_workflow_events_csv(
                 item["metadata"] = str(item["metadata"])
         return _csv_response("sabt-workflow-events.csv", columns, items)
     return _report_response(build)
+
+
+@router.get("/project-context")
+def report_project_context(
+    project_id: int = Query(..., ge=1),
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    return _report_response(lambda: get_report_project_context(db, user, project_id))
