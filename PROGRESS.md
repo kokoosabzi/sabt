@@ -285,3 +285,11 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Neutralize formula-like untrusted text cells and serialize structured event metadata safely.
 - [x] Add API tests that reopen generated workbooks, validate Persian headers/content type, and verify project authorization.
 - [x] GitHub Actions run [39058393067](https://github.com/kokoosabzi/sabt/actions/runs/39058393067) passed on commit `f36c746d6f2696171b39046a8942bdc104f0642d`: **142 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed. Excel timestamp columns are explicitly labeled UTC; PDF/print exports remain the next slice.
+
+
+## PDF-ready report printing — 2026-10-17
+- [x] Add print-ready RTL layouts for management summary, all filtered workflow rows, all filtered persisted-event rows, and contract transfer history.
+- [x] Provide an explicit “Print / Save PDF” action in the print view; use the browser/Windows print engine so the user can choose “Save as PDF” without a server-side PDF dependency or internet access.
+- [x] Keep dynamic report values in text nodes rather than injecting them as HTML; enforce project-scoped APIs and a 5,000-row limit for bulk print reports.
+- [x] Add a Chromium E2E check for the RTL, PDF-ready management print view.
+- [ ] Await CI for codex/pdf-print-exports; merge after full test suite, Chromium E2E, and SQLite migration round-trip pass.
