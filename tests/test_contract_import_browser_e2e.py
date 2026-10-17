@@ -188,6 +188,8 @@ def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(
     expect(page.locator("#startAt")).to_have_attribute("aria-haspopup", "dialog")
     expect(page.locator("#startHour option")).to_have_count(24)
     expect(page.locator("#startMinute option")).to_have_count(60)
+    expect(page.locator("#startAt")).not_to_have_value("")
+    expect(page.locator("#endAt")).not_to_have_value("")
 
     # Select dates through the picker only; derive the test dates from its current Jalali month.
     to_latin = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
