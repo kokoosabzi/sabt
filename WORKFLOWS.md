@@ -61,7 +61,7 @@ Normal edits use optimistic concurrency. Sensitive forms may use short-lived app
 5. Only a transfer in the agreed ownership-effective state changes the derived current-owner summary. Draft, rejected, or cancelled transfers do not.
 6. A later real transfer creates another Operation. A correction to an already finalized transfer uses the correction/version process and preserves the old version.
 
-The exact moment of number allocation, policy for cancelled child numbers, child sequence width, and ownership-effective status remain open decisions; this workflow is a design target, not a claim of current implementation.
+Current implementation allocates the child sequence transactionally during transfer finalization; issued numbers are not reused, so gaps are expected. Child numbers are positive decimal integers without zero padding. Ownership is derived only from valid finalized transfers containing the `BUYER_TRANSFEREE` role. Legacy import ordering and duplicate Person/Property matching remain open; do not infer either silently.
 
 ### Search and transfer history
 - Searching by a six-digit Parent Contract number returns the parent summary and its authorized transfer history.
