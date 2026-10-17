@@ -250,5 +250,7 @@ Define how the transferee is identified in operation parties and implement curre
 - [ ] Browser end-to-end automation has not been added or run; malformed file structure/columns and parser-level format errors still require fixing the source file and uploading again.
 - [x] GitHub Actions run [39055125021](https://github.com/kokoosabzi/sabt/actions/runs/39055125021) passed on commit `583878d27e93b75c71ebf00e657fe58f5bed4c3d`: **128 tests passed**, fresh SQLite migration upgrade, Alembic head verification, and downgrade/re-upgrade all succeeded (2 deprecation warnings).
 - [x] GitHub Actions run [39055134348](https://github.com/kokoosabzi/sabt/actions/runs/39055134348) also passed on the latest documentation commit `f18768092ceb1a925e9fe1eb00266b4f121bd214`.
+- [x] GitHub Actions run [39055279448](https://github.com/kokoosabzi/sabt/actions/runs/39055279448) passed after inline correction and UI smoke-test additions: **130 tests passed**, fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade all succeeded.
+- [x] Latest progress-documentation CI run [39055286369](https://github.com/kokoosabzi/sabt/actions/runs/39055286369) passed on commit `cb8606c253057654bea74f5be636eed52f14c253`.
 - [ ] Do not mark the feature complete until browser/UI automation and inline preview-row correction are implemented and verified.
 - **Review:** Draft PR #2 targets `codex/foundation-audit`: https://github.com/kokoosabzi/sabt/pull/2
