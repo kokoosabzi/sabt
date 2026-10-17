@@ -187,8 +187,8 @@ def export_workflow_csv(
             ("وضعیت", "status"), ("وضعیت گردش کار", "workflow_state"),
             ("شناسه ملک", "property_id"), ("شماره قرارداد مادر", "parent_contract_number"),
             ("شماره انتقال", "child_contract_number"), ("ثبت‌کننده", "created_by_display_name"),
-            ("تاریخ ایجاد", "created_at"), ("تاریخ به‌روزرسانی", "updated_at"),
-            ("تاریخ نهایی‌شدن", "finalized_at"), ("شماره نسخه", "current_version_number"),
+            ("تاریخ ایجاد (UTC)", "created_at"), ("تاریخ به‌روزرسانی (UTC)", "updated_at"),
+            ("تاریخ نهایی‌شدن (UTC)", "finalized_at"), ("شماره نسخه", "current_version_number"),
         ]
         return _csv_response("sabt-workflow-report.csv", columns, items)
     return _report_response(build)
@@ -217,7 +217,7 @@ def export_workflow_events_csv(
             ("شماره قرارداد مادر", "parent_contract_number"), ("شماره انتقال", "child_contract_number"),
             ("شناسه کاربر", "actor_user_id"), ("نام کاربر", "actor_display_name"),
             ("وضعیت قبل", "from_status"), ("وضعیت بعد", "to_status"),
-            ("زمان رخداد", "occurred_at"), ("جزئیات", "metadata"),
+            ("زمان رخداد (UTC)", "occurred_at"), ("جزئیات", "metadata"),
         ]
         for item in items:
             if isinstance(item.get("metadata"), dict):
