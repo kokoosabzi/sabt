@@ -267,4 +267,4 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Initialize the seven-day report window and current time using the selected project's timezone and display timestamps using Persian locale formatting.
 - [x] Add Playwright/Chromium browser coverage for invalid Jalali dates, Persian-digit input, and successful report loading with a Jalali date range.
 - [x] Update the README to describe current date handling and separate implemented from planned export/event work.
-- [ ] Await CI on `codex/jalali-date-controls`; only mark this milestone stable and merge after the full test suite and SQLite migration round-trip pass.
+- [x] Verified GitHub Actions run [39057009090](https://github.com/kokoosabzi/sabt/actions/runs/39057009090) on commit `1d7aa9dd922cd7914c6b5ca3b1494eafdde67dea`: **137 tests passed, 2 warnings**; Chromium browser E2E passed and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade all passed.
