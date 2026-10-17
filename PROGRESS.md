@@ -246,5 +246,7 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Added API tests for preview-without-writes, successful confirmation, duplicate rows, and missing create permission.
 - [x] Added API regression tests that force a failure on the second row and simulate a uniqueness conflict arising after preflight; both assert that the entire batch is rolled back with zero persisted contracts.
 - [ ] Browser/UI automation tests have not been added or run; preview rows currently require correcting the source file and uploading again rather than inline editing.
-- [ ] CI for the newest transaction-rollback tests is pending; do not mark the feature complete until its result is confirmed.
+- [x] GitHub Actions run [39055125021](https://github.com/kokoosabzi/sabt/actions/runs/39055125021) passed on commit `583878d27e93b75c71ebf00e657fe58f5bed4c3d`: **128 tests passed**, fresh SQLite migration upgrade, Alembic head verification, and downgrade/re-upgrade all succeeded (2 deprecation warnings).
+- [x] GitHub Actions run [39055134348](https://github.com/kokoosabzi/sabt/actions/runs/39055134348) also passed on the latest documentation commit `f18768092ceb1a925e9fe1eb00266b4f121bd214`.
+- [ ] Do not mark the feature complete until browser/UI automation and inline preview-row correction are implemented and verified.
 - **Review:** Draft PR #2 targets `codex/foundation-audit`: https://github.com/kokoosabzi/sabt/pull/2
