@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import io
+import zipfile
 from collections import Counter
 from typing import Any
 
@@ -26,6 +27,8 @@ from app.db.models import ParentContract, Person, Project, ProjectPerson, Projec
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 MAX_IMPORT_ROWS = 2000
+MAX_XLSX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
+MAX_XLSX_ZIP_ENTRIES = 200
 REQUIRED_COLUMNS = {"suffix", "initial_person_id"}
 ALLOWED_COLUMNS = REQUIRED_COLUMNS | {"property_id"}
 
@@ -52,25 +55,65 @@ def parse_parent_contract_import(filename: str, content: bytes) -> list[dict[str
     try:
         if name.endswith(".csv"):
             text = content.decode("utf-8-sig")
-            reader = csv.DictReader(io.StringIO(text))
-            headers = {str(h).strip().lower() for h in (reader.fieldnames or []) if h}
-            if not REQUIRED_COLUMNS.issubset(headers):
+            reader = csv.reader(io.StringIO(text))
+            raw_headers = next(reader, None)
+            if not raw_headers:
                 raise ContractImportError("import_required_columns_missing")
-            if headers - ALLOWED_COLUMNS:
+            headers = [str(header).strip().lower() for header in raw_headers]
+            if any(not header for header in headers):
+                raise ContractImportError("import_blank_column_header")
+            if len(headers) != len(set(headers)):
+                raise ContractImportError("import_duplicate_column_header")
+            header_set = set(headers)
+            if not REQUIRED_COLUMNS.issubset(header_set):
+                raise ContractImportError("import_required_columns_missing")
+            if header_set - ALLOWED_COLUMNS:
                 raise ContractImportError("import_unknown_columns")
-            rows = [{str(k).strip().lower(): v for k, v in row.items() if k is not None} for row in reader]
+            rows = []
+            for row_number, values in enumerate(reader, start=2):
+                if len(values) != len(headers):
+                    raise ContractImportError(f"import_row_column_count_mismatch:{row_number}")
+                rows.append(dict(zip(headers, values)))
+                if len(rows) > MAX_IMPORT_ROWS:
+                    raise ContractImportError("import_row_limit_exceeded")
         elif name.endswith(".xlsx"):
+            try:
+                with zipfile.ZipFile(io.BytesIO(content)) as archive:
+                    entries = archive.infolist()
+                    if len(entries) > MAX_XLSX_ZIP_ENTRIES:
+                        raise ContractImportError("import_xlsx_too_many_zip_entries")
+                    if any(entry.flag_bits & 0x1 for entry in entries):
+                        raise ContractImportError("import_xlsx_encrypted")
+                    if sum(entry.file_size for entry in entries) > MAX_XLSX_UNCOMPRESSED_BYTES:
+                        raise ContractImportError("import_xlsx_expanded_size_too_large")
+                    if any(entry.file_size > 1024 * 1024 and entry.compress_size == 0 for entry in entries):
+                        raise ContractImportError("import_xlsx_suspicious_compression")
+            except zipfile.BadZipFile as exc:
+                raise ContractImportError("import_file_invalid") from exc
             workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
             try:
                 sheet = workbook.active
                 iterator = sheet.iter_rows(values_only=True)
                 first = next(iterator, None)
                 headers = [str(v).strip().lower() if v is not None else "" for v in (first or ())]
-                if not REQUIRED_COLUMNS.issubset(set(headers)):
+                if any(not header for header in headers):
+                    raise ContractImportError("import_blank_column_header")
+                if len(headers) != len(set(headers)):
+                    raise ContractImportError("import_duplicate_column_header")
+                header_set = set(headers)
+                if not REQUIRED_COLUMNS.issubset(header_set):
                     raise ContractImportError("import_required_columns_missing")
-                if set(headers) - ALLOWED_COLUMNS:
+                if header_set - ALLOWED_COLUMNS:
                     raise ContractImportError("import_unknown_columns")
-                rows = [dict(zip(headers, values)) for values in iterator]
+                rows = []
+                for row_number, values in enumerate(iterator, start=2):
+                    if all(value is None for value in values):
+                        continue
+                    if len(values) != len(headers):
+                        raise ContractImportError(f"import_row_column_count_mismatch:{row_number}")
+                    rows.append(dict(zip(headers, values)))
+                    if len(rows) > MAX_IMPORT_ROWS:
+                        raise ContractImportError("import_row_limit_exceeded")
             finally:
                 workbook.close()
         else:

@@ -55,3 +55,27 @@ def test_rejects_oversized_upload():
 def test_rejects_invalid_csv_encoding():
     with pytest.raises(ContractImportError, match="import_csv_encoding_invalid"):
         parse_parent_contract_import("contracts.csv", b"\xff\xfe\xff")
+
+@pytest.mark.parametrize(
+    ("content", "error"),
+    [
+        (b"suffix,initial_person_id,initial_person_id\n0001,2,3\n", "import_duplicate_column_header"),
+        (b"suffix,initial_person_id,\n0001,2,\n", "import_blank_column_header"),
+        (b"suffix,initial_person_id\n0001,2,extra\n", "import_row_column_count_mismatch:2"),
+    ],
+)
+def test_rejects_ambiguous_or_malformed_csv(content, error):
+    with pytest.raises(ContractImportError, match=error):
+        parse_parent_contract_import("contracts.csv", content)
+
+
+def test_rejects_csv_over_row_limit_while_parsing():
+    content = ("suffix,initial_person_id\n" + "".join(f"{i:04d},{i + 1}\n" for i in range(2001))).encode()
+    with pytest.raises(ContractImportError, match="import_row_limit_exceeded"):
+        parse_parent_contract_import("contracts.csv", content)
+
+
+def test_rejects_xlsx_extension_with_non_zip_content():
+    with pytest.raises(ContractImportError, match="import_file_invalid"):
+        parse_parent_contract_import("contracts.xlsx", b"not a zip archive")
+
