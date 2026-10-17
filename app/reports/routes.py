@@ -228,6 +228,38 @@ def export_workflow_events_csv(
     return _report_response(build)
 
 
+@router.get("/management/summary/export.xlsx")
+def export_management_summary_xlsx(
+    project_id: int = Query(..., ge=1),
+    start_at: datetime = Query(...),
+    end_at: datetime = Query(...),
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    def build():
+        summary = get_management_summary(db, user, project_id, start_at, end_at)
+        indicators = summary["indicators"]
+        rows = [
+            {"label": "شناسه پروژه", "value": summary["project"]["id"]},
+            {"label": "کد پروژه", "value": summary["project"]["code"]},
+            {"label": "نام پروژه", "value": summary["project"]["name"]},
+            {"label": "منطقه زمانی", "value": summary["project"]["timezone"]},
+            {"label": "شروع بازه (UTC)", "value": summary["period"]["start_at"]},
+            {"label": "پایان بازه (UTC)", "value": summary["period"]["end_at"]},
+            {"label": "عملیات ایجادشده", "value": indicators["created_operations"]},
+            {"label": "عملیات نهایی‌شده", "value": indicators["finalized_operations"]},
+            {"label": "عملیات باز فعلی", "value": indicators["currently_open_operations"]},
+            {"label": "قراردادهای مادر ایجادشده", "value": indicators["parent_contracts_created"]},
+            {"label": "انتقال‌های نهایی‌شده", "value": indicators["transfers_finalized"]},
+        ]
+        rows.extend(
+            {"label": "عملیات ایجادشده - وضعیت " + item["status"], "value": item["count"]}
+            for item in indicators["created_operations_by_status"]
+        )
+        return _xlsx_response("sabt-management-summary.xlsx", [("شاخص", "label"), ("مقدار", "value")], rows)
+    return _report_response(build)
+
+
 @router.get("/project-context")
 def report_project_context(
     project_id: int = Query(..., ge=1),
