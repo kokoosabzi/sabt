@@ -293,6 +293,35 @@ def export_workflow_xlsx(
     return _report_response(build)
 
 
+@router.get("/workflow/events/export.xlsx")
+def export_workflow_events_xlsx(
+    project_id: int = Query(..., ge=1),
+    start_at: datetime = Query(...),
+    end_at: datetime = Query(...),
+    event_type: str | None = Query(None, min_length=1, max_length=64),
+    operation_id: int | None = Query(None, ge=1),
+    actor_user_id: int | None = Query(None, ge=1),
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    def build():
+        items = _collect_pages(lambda offset: get_workflow_events_report(
+            db, user, project_id, start_at, end_at, event_type=event_type,
+            operation_id=operation_id, actor_user_id=actor_user_id,
+            limit=EXPORT_PAGE_SIZE, offset=offset,
+        ))
+        columns = [
+            ("شناسه رخداد", "event_id"), ("نوع رخداد", "event_type"),
+            ("شناسه عملیات", "operation_id"), ("نوع عملیات", "operation_type_name"),
+            ("شماره قرارداد مادر", "parent_contract_number"), ("شماره انتقال", "child_contract_number"),
+            ("شناسه کاربر", "actor_user_id"), ("نام کاربر", "actor_display_name"),
+            ("وضعیت قبل", "from_status"), ("وضعیت بعد", "to_status"),
+            ("زمان رخداد", "occurred_at"), ("جزئیات", "metadata"),
+        ]
+        return _xlsx_response("sabt-workflow-events.xlsx", columns, items)
+    return _report_response(build)
+
+
 @router.get("/project-context")
 def report_project_context(
     project_id: int = Query(..., ge=1),
