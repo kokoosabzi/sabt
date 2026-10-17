@@ -108,6 +108,7 @@
             <div class="row">
               <input id="contractImportFile" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها">
               <button id="contractImportPreview" class="btn">بارگذاری و پیش‌نمایش</button>
+              <button id="contractImportRevalidate" class="btn" disabled>اعتبارسنجی مجدد پس از اصلاح</button>
               <button id="contractImportConfirm" class="btn" disabled>تأیید و ثبت همه قراردادها</button>
             </div>
             <p id="contractImportMeta" class="muted" style="margin-top:12px"></p>
@@ -218,6 +219,52 @@
   async function loadWorkflow(){await loadProjectContext();const p={...workflowFilters(),limit,offset:page*limit};const data=await api('/reports/workflow?'+query(p));$('workflowMeta').textContent='تعداد کل: '+data.pagination.total+' | بازه بر اساس تاریخ ایجاد عملیات';$('workflowRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.operation_type_name,x.status,x.parent_contract_number,x.child_contract_number,x.created_by_display_name,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('workflowRows').appendChild(tr)});if(!data.items.length)$('workflowRows').innerHTML='<tr><td colspan="8">موردی در این بازه پیدا نشد.</td></tr>';$('pageMeta').textContent='صفحه '+(page+1)+' · '+data.pagination.total+' ردیف';$('prevPage').disabled=page===0;$('nextPage').disabled=(page+1)*limit>=data.pagination.total;}
   async function loadEvents(){await loadProjectContext();const p={...eventFilters(),limit:100,offset:0};const data=await api('/reports/workflow/events?'+query(p));$('eventsMeta').textContent='تعداد کل رخدادهای ثبت‌شده: '+data.pagination.total;$('eventRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[fmt(x.occurred_at),x.event_type,x.operation_id,x.parent_contract_number,x.child_contract_number,x.actor_display_name,(x.from_status||'—')+' ← '+(x.to_status||'—')].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('eventRows').appendChild(tr)});if(!data.items.length)$('eventRows').innerHTML='<tr><td colspan="7">رخدادی در این بازه ثبت نشده است.</td></tr>';}
 
+  function renderContractImportPreview(data) {
+    $('contractImportPreviewPanel').classList.remove('hidden');
+    $('contractImportRows').innerHTML = '';
+    data.rows.forEach((row, index) => {
+      const tr = document.createElement('tr');
+      const addTextCell = value => {
+        const td = document.createElement('td');
+        td.textContent = value ?? '—';
+        tr.appendChild(td);
+        return td;
+      };
+      addTextCell(row.row_number);
+      addTextCell(row.contract_number);
+      const addEditableCell = (field, value, label) => {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value ?? '';
+        input.setAttribute('aria-label', label + '، ردیف ' + row.row_number);
+        input.dataset.importIndex = String(index);
+        input.dataset.importField = field;
+        input.style.minWidth = '90px';
+        input.addEventListener('input', () => {
+          stagedContractImport.rows[index][field] = input.value.trim();
+          tr.children[1].textContent = 'پس از اعتبارسنجی';
+          $('contractImportConfirm').disabled = true;
+          $('contractImportRevalidate').disabled = false;
+          $('contractImportIssues').style.display = 'block';
+          $('contractImportIssues').textContent = 'ردیف‌ها تغییر کرده‌اند؛ پیش از ثبت، اعتبارسنجی مجدد را اجرا کنید.';
+        });
+        td.appendChild(input);
+        tr.appendChild(td);
+      };
+      addEditableCell('suffix', row.suffix, 'پسوند قرارداد');
+      addEditableCell('initial_person_id', row.initial_person_id, 'شناسه شخص اولیه');
+      addEditableCell('property_id', row.property_id ?? '', 'شناسه ملک');
+      addTextCell(row.valid ? 'معتبر' : (row.issues || []).join('، '));
+      $('contractImportRows').appendChild(tr);
+    });
+    $('contractImportMeta').textContent = 'کل ردیف‌ها: ' + data.row_count + ' | معتبر: ' + data.valid_count + ' | دارای خطا: ' + data.invalid_count;
+    $('contractImportIssues').style.display = data.can_confirm ? 'none' : 'block';
+    $('contractImportIssues').textContent = data.can_confirm ? '' : 'ردیف‌های دارای خطا را اصلاح و سپس اعتبارسنجی مجدد کنید.';
+    $('contractImportConfirm').disabled = !data.can_confirm;
+    $('contractImportRevalidate').disabled = false;
+  }
+
   $('contractImportPreview').addEventListener('click', async () => {
     clearError();
     const file = $('contractImportFile').files[0];
@@ -233,22 +280,32 @@
       const data = await response.json().catch(() => ({detail:'پاسخ نامعتبر از سرور'}));
       if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || 'پیش‌نمایش ناموفق بود'));
       stagedContractImport = data;
-      $('contractImportPreviewPanel').classList.remove('hidden');
-      $('contractImportRows').innerHTML = '';
-      data.rows.forEach(row => {
-        const tr = document.createElement('tr');
-        [row.row_number, row.contract_number, row.suffix, row.initial_person_id, row.property_id ?? '—',
-          row.valid ? 'معتبر' : row.issues.join('، ')].forEach(value => {
-          const td = document.createElement('td'); td.textContent = value ?? '—'; tr.appendChild(td);
-        });
-        $('contractImportRows').appendChild(tr);
-      });
-      $('contractImportMeta').textContent = 'کل ردیف‌ها: ' + data.row_count + ' | معتبر: ' + data.valid_count + ' | دارای خطا: ' + data.invalid_count;
-      $('contractImportIssues').style.display = data.can_confirm ? 'none' : 'block';
-      $('contractImportIssues').textContent = data.can_confirm ? '' : 'تا رفع همه خطاها، ثبت گروهی غیرفعال است.';
-      $('contractImportConfirm').disabled = !data.can_confirm;
+      renderContractImportPreview(data);
     } catch (err) { stagedContractImport = null; $('contractImportConfirm').disabled = true; showError(err.message); }
   });
+  $('contractImportRevalidate').addEventListener('click', async () => {
+    if (!stagedContractImport) return;
+    $('contractImportRevalidate').disabled = true;
+    $('contractImportConfirm').disabled = true;
+    try {
+      const data = await api('/contracts/parent/import/validate', {
+        method: 'POST',
+        body: JSON.stringify({
+          project_id: Number($('projectId').value),
+          rows: stagedContractImport.rows
+        })
+      });
+      stagedContractImport = data;
+      renderContractImportPreview(data);
+      clearError();
+    } catch (err) {
+      $('contractImportRevalidate').disabled = false;
+      $('contractImportConfirm').disabled = true;
+      $('contractImportIssues').style.display = 'block';
+      $('contractImportIssues').textContent = 'اعتبارسنجی ناموفق بود: ' + err.message;
+    }
+  });
+
   $('contractImportConfirm').addEventListener('click', async () => {
     if (!stagedContractImport || !stagedContractImport.can_confirm) return;
     if (!window.confirm('آیا ثبت تمام ' + stagedContractImport.row_count + ' قرارداد را تأیید می‌کنید؟')) return;
