@@ -48,6 +48,38 @@ async def preview_import(
         await file.close()
 
 
+@router.post("/validate")
+def validate_import_rows(
+    payload: ImportConfirmation,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Revalidate edited preview rows without creating or modifying contracts."""
+    try:
+        normalized = []
+        for index, row in enumerate(payload.rows, start=2):
+            try:
+                suffix = validate_parent_contract_suffix(str(row.get("suffix", "")).strip())
+                person_id = int(row.get("initial_person_id"))
+                property_value = row.get("property_id")
+                property_id = int(property_value) if property_value not in (None, "") else None
+                if person_id <= 0 or (property_id is not None and property_id <= 0):
+                    raise ValueError
+            except (ValueError, TypeError) as exc:
+                raise ContractImportError(f"import_row_invalid:{index}") from exc
+            normalized.append({
+                "row_number": index,
+                "suffix": suffix,
+                "initial_person_id": person_id,
+                "property_id": property_id,
+            })
+        return preview_parent_contract_import(db, user, payload.project_id, normalized)
+    except (ContractImportError, ValueError, TypeError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
 @router.post("/confirm")
 def confirm_import(
     payload: ImportConfirmation,
