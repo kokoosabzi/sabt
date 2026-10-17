@@ -268,3 +268,11 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Add Playwright/Chromium browser coverage for invalid Jalali dates, Persian-digit input, and successful report loading with a Jalali date range.
 - [x] Update the README to describe current date handling and separate implemented from planned export/event work.
 - [x] Verified GitHub Actions run [39057009090](https://github.com/kokoosabzi/sabt/actions/runs/39057009090) on commit `1d7aa9dd922cd7914c6b5ca3b1494eafdde67dea`: **137 tests passed, 2 warnings**; Chromium browser E2E passed and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade all passed.
+
+
+## Shared date/time picker standard — 2026-10-17
+- [x] Replace manual Jalali date text entry with a read-only, keyboard-accessible calendar picker; dates are selected from valid Jalali calendar days only.
+- [x] Replace free-entry time fields with hour/minute selection controls in 24-hour format; initialize from the selected project's timezone.
+- [x] Use the browser's built-in Persian calendar data (Intl) without CDN or runtime network dependency, preserving offline/LAN compatibility.
+- [x] Keep UTC storage/API timestamps and project-timezone conversion unchanged; add Chromium browser E2E coverage for picker-only date entry and hour/minute controls.
+- [ ] Await CI for codex/native-jalali-date-time-pickers; merge after full test suite and SQLite migration round-trip pass.
