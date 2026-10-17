@@ -218,3 +218,20 @@ def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(
     page.get_by_role("button", name="دریافت گزارش").click()
     expect(page.locator("#globalError")).to_be_hidden()
     expect(page.locator("#createdMetric")).not_to_have_text("—")
+
+
+
+def test_browser_summary_print_view_is_rtl_and_pdf_ready(browser_app, page: Page):
+    page.goto(browser_app["base_url"] + "/portal/")
+    page.get_by_label("نام کاربری").fill("browser-import-admin")
+    page.get_by_label("گذرواژه").fill("e2e-test-password")
+    page.get_by_role("button", name="ورود امن").click()
+    expect(page.locator("#createdMetric")).not_to_have_text("—")
+
+    with page.expect_popup() as popup_info:
+        page.locator("#summaryPrint").click()
+    print_page = popup_info.value
+    expect(print_page.get_by_role("heading", name="گزارش شاخص‌های مدیریتی")).to_be_visible()
+    expect(print_page.locator("html")).to_have_attribute("dir", "rtl")
+    expect(print_page.get_by_role("button", name="چاپ / ذخیره PDF")).to_be_visible()
+    expect(print_page.locator("table")).to_contain_text("عملیات ایجادشده")
