@@ -220,4 +220,6 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Add portal download buttons for workflow and event reports; downloads reuse the visible filters and bearer session.
 - [x] Add tests for CSV encoding, response headers, and project access denial.
 - [x] GitHub Actions run [39053557591](https://github.com/kokoosabzi/sabt/actions/runs/39053557591) passed after fixing the BOM test expectation. PR validation is being checked separately.
-- [ ] Add CSV formula-injection protection for cells originating from user-controlled text before exposing exports to broader data.
+- [x] Neutralize spreadsheet formula injection in text cells beginning with `=`, `+`, `-` or `@`; add a regression test.
+
+- [x] Added a regression test for spreadsheet formula injection protection in commit `df5751b3b3a5cbc7ca58ea5885624499ff39905f`; final CI verification is pending.
