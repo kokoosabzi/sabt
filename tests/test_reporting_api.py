@@ -301,7 +301,7 @@ def test_management_summary_xlsx_export_is_valid_and_permission_scoped():
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         assert 'filename="sabt-management-summary.xlsx"' in response.headers["content-disposition"]
-        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        workbook = load_workbook(BytesIO(response.content))
         sheet = workbook.active
         assert sheet.sheet_view.rightToLeft is True
         assert [sheet.cell(row=1, column=i).value for i in (1, 2)] == ["شاخص", "مقدار"]
@@ -326,7 +326,7 @@ def test_workflow_xlsx_export_contains_persian_headers_and_is_project_scoped():
         assert response.status_code == 200
         assert response.content.startswith(b"PK")
         assert 'filename="sabt-workflow-report.xlsx"' in response.headers["content-disposition"]
-        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        workbook = load_workbook(BytesIO(response.content))
         sheet = workbook.active
         assert sheet.cell(row=1, column=1).value == "شناسه عملیات"
         assert sheet.auto_filter.ref
@@ -347,7 +347,7 @@ def test_workflow_events_xlsx_export_contains_event_headers():
             "end_at": "2026-11-01T00:00:00+00:00",
         })
         assert response.status_code == 200
-        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        workbook = load_workbook(BytesIO(response.content))
         assert workbook.active.cell(row=1, column=1).value == "شناسه رخداد"
         workbook.close()
     finally:
@@ -398,7 +398,7 @@ def test_management_summary_xlsx_export_is_valid_and_permission_scoped():
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         assert 'filename="sabt-management-summary.xlsx"' in response.headers["content-disposition"]
-        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        workbook = load_workbook(BytesIO(response.content))
         sheet = workbook.active
         assert sheet.sheet_view.rightToLeft is True
         assert [sheet.cell(row=1, column=i).value for i in (1, 2)] == ["شاخص", "مقدار"]
@@ -423,7 +423,7 @@ def test_workflow_xlsx_export_contains_persian_headers_and_is_project_scoped():
         assert response.status_code == 200
         assert response.content.startswith(b"PK")
         assert 'filename="sabt-workflow-report.xlsx"' in response.headers["content-disposition"]
-        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        workbook = load_workbook(BytesIO(response.content))
         sheet = workbook.active
         assert sheet.cell(row=1, column=1).value == "شناسه عملیات"
         assert sheet.auto_filter.ref
@@ -444,7 +444,7 @@ def test_workflow_events_xlsx_export_contains_event_headers():
             "end_at": "2026-11-01T00:00:00+00:00",
         })
         assert response.status_code == 200
-        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        workbook = load_workbook(BytesIO(response.content))
         assert workbook.active.cell(row=1, column=1).value == "شناسه رخداد"
         workbook.close()
     finally:
