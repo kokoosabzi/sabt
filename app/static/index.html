@@ -181,6 +181,94 @@
     const pad = value => String(value).padStart(2, '0');
     return String(parts.year).padStart(4, '0') + '/' + pad(parts.month) + '/' + pad(parts.day);
   }
+  function toPersianDigits(value) {
+    return String(value).replace(/[0-9]/g, digit => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
+  }
+  function formatJalali(year, month, day) {
+    const pad = value => String(value).padStart(2, '0');
+    return String(year).padStart(4, '0') + '/' + pad(month) + '/' + pad(day);
+  }
+  function selectedJalaliParts(inputId) {
+    const match = /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/.exec(normalizeDigits($(inputId).value).trim());
+    if (!match) return null;
+    return {year:Number(match[1]),month:Number(match[2]),day:Number(match[3])};
+  }
+  function jalaliMonthDates(year, month) {
+    const firstDay = Date.UTC(year + 621, 0, 1, 12);
+    const dates = [];
+    for (let offset=0; offset<460; offset++) {
+      const date = new Date(firstDay + offset * 86400000);
+      const parts = calendarParts(date);
+      if (parts.year===year && parts.month===month) {
+        dates.push({year:date.getUTCFullYear(),month:date.getUTCMonth()+1,day:date.getUTCDate(),jalaliDay:parts.day,weekday:date.getUTCDay()});
+      }
+    }
+    return dates;
+  }
+  let jalaliPickerTarget = null;
+  let jalaliPickerMonth = null;
+  function closeJalaliPicker() {
+    $('jalaliPicker').classList.add('hidden');
+    if (jalaliPickerTarget) $(jalaliPickerTarget).setAttribute('aria-expanded','false');
+    jalaliPickerTarget = null;
+  }
+  function renderJalaliPicker() {
+    if (!jalaliPickerMonth) return;
+    const {year,month}=jalaliPickerMonth;
+    $('jalaliMonthTitle').textContent=toPersianDigits(year+'/'+String(month).padStart(2,'0'));
+    const days=$('jalaliDays'); days.innerHTML='';
+    const dates=jalaliMonthDates(year,month);
+    if (!dates.length) return;
+    const offset=(dates[0].weekday+1)%7;
+    for(let i=0;i<offset;i++){const blank=document.createElement('span');blank.className='empty';blank.setAttribute('aria-hidden','true');days.appendChild(blank);}
+    const todayParts=calendarParts(new Date());
+    const selected=selectedJalaliParts(jalaliPickerTarget);
+    for(const date of dates){
+      const button=document.createElement('button');button.type='button';
+      const value=formatJalali(year,month,date.jalaliDay);
+      button.dataset.jalaliDate=value;
+      button.textContent=toPersianDigits(date.jalaliDay);
+      button.setAttribute('aria-label','انتخاب تاریخ '+value);
+      if(todayParts.year===year&&todayParts.month===month&&todayParts.day===date.jalaliDay)button.classList.add('today');
+      if(selected&&selected.year===year&&selected.month===month&&selected.day===date.jalaliDay)button.classList.add('selected');
+      button.addEventListener('click',()=>{
+        $(jalaliPickerTarget).value=toPersianDigits(value);
+        $(jalaliPickerTarget).dispatchEvent(new Event('change',{bubbles:true}));
+        closeJalaliPicker();
+      });
+      days.appendChild(button);
+    }
+  }
+  function openJalaliPicker(inputId) {
+    jalaliPickerTarget=inputId;
+    const selected=selectedJalaliParts(inputId)||calendarParts(new Date());
+    jalaliPickerMonth={year:selected.year,month:selected.month};
+    const popup=$('jalaliPicker');popup.classList.remove('hidden');
+    $(inputId).setAttribute('aria-expanded','true');
+    const rect=$(inputId).getBoundingClientRect();
+    const width=290;
+    popup.style.left=Math.max(8,Math.min(window.innerWidth-width-8,rect.left))+'px';
+    popup.style.top=Math.max(8,Math.min(window.innerHeight-360-8,rect.bottom+6))+'px';
+    renderJalaliPicker();
+    const first=popup.querySelector('[data-jalali-date]');
+    if(first) first.focus();
+  }
+  function initializeTimeSelects() {
+    for(const prefix of ['start','end']){
+      for(const [suffix,max] of [['Hour',23],['Minute',59]]){
+        const select=$(prefix+suffix);
+        for(let value=0;value<=max;value++){
+          const option=document.createElement('option');
+          option.value=String(value).padStart(2,'0');
+          option.textContent=toPersianDigits(option.value);
+          select.appendChild(option);
+        }
+      }
+    }
+  }
+  function selectedTime(prefix) {
+    return $(prefix+'Hour').value+':'+$(prefix+'Minute').value;
+  }
   function localInputToUtc(dateValue, timeValue) {
     const gregorian = jalaliDateToGregorian(dateValue);
     const time = /^(\d{2}):(\d{2})$/.exec(normalizeDigits(timeValue).trim());
@@ -219,9 +307,9 @@
   function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); }
   function period() {
     const start=$('startAt').value, end=$('endAt').value;
-    if(!start||!end||!$('startTime').value||!$('endTime').value) throw new Error('تاریخ و ساعت شروع و پایان را مشخص کنید.');
-    const startUtc=localInputToUtc(start, $('startTime').value);
-    const endUtc=localInputToUtc(end, $('endTime').value);
+    if(!start||!end) throw new Error('تاریخ شروع و پایان را از تقویم انتخاب کنید.');
+    const startUtc=localInputToUtc(start, selectedTime('start'));
+    const endUtc=localInputToUtc(end, selectedTime('end'));
     if(new Date(startUtc)>=new Date(endUtc)) throw new Error('تاریخ و ساعت شروع باید قبل از پایان باشد.');
     return {start_at:startUtc,end_at:endUtc,project_id:$('projectId').value};
   }
@@ -230,10 +318,10 @@
     const z=n=>String(n).padStart(2,'0');
     const nowParts=zonedParts(new Date(),projectTimezone);
     const startDate=new Date(Date.UTC(nowParts.year,nowParts.month-1,nowParts.day-7,12));
-    $('startAt').value=gregorianDateToJalali(startDate.getUTCFullYear(),startDate.getUTCMonth()+1,startDate.getUTCDate());
-    $('endAt').value=gregorianDateToJalali(nowParts.year,nowParts.month,nowParts.day);
-    $('startTime').value=z(nowParts.hour)+':'+z(nowParts.minute);
-    $('endTime').value=z(nowParts.hour)+':'+z(nowParts.minute);
+    $('startAt').value=toPersianDigits(gregorianDateToJalali(startDate.getUTCFullYear(),startDate.getUTCMonth()+1,startDate.getUTCDate()));
+    $('endAt').value=toPersianDigits(gregorianDateToJalali(nowParts.year,nowParts.month,nowParts.day));
+    $('startHour').value=z(nowParts.hour);$('startMinute').value=z(nowParts.minute);
+    $('endHour').value=z(nowParts.hour);$('endMinute').value=z(nowParts.minute);
   }
   async function loadProjectContext(){
     const raw=$('projectId').value;
@@ -246,6 +334,17 @@
     $('sessionStatus').textContent='منطقه زمانی: '+projectTimezone;
     if(!defaultsInitialized){setDefaults();defaultsInitialized=true;}
   }
+  initializeTimeSelects();
+  $('startAt').addEventListener('click',()=>openJalaliPicker('startAt'));
+  $('endAt').addEventListener('click',()=>openJalaliPicker('endAt'));
+  $('startAt').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openJalaliPicker('startAt')}});
+  $('endAt').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openJalaliPicker('endAt')}});
+  $('jalaliPrev').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===1){jalaliPickerMonth.month=12;jalaliPickerMonth.year--}else jalaliPickerMonth.month--;renderJalaliPicker()});
+  $('jalaliNext').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===12){jalaliPickerMonth.month=1;jalaliPickerMonth.year++}else jalaliPickerMonth.month++;renderJalaliPicker()});
+  $('jalaliToday').addEventListener('click',()=>{if(jalaliPickerTarget){const p=calendarParts(new Date());$(jalaliPickerTarget).value=toPersianDigits(formatJalali(p.year,p.month,p.day));closeJalaliPicker()}});
+  $('jalaliClose').addEventListener('click',closeJalaliPicker);
+  document.addEventListener('pointerdown',e=>{if(!$('jalaliPicker').contains(e.target)&&e.target!==$('startAt')&&e.target!==$('endAt'))closeJalaliPicker()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeJalaliPicker()});
   $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();await loadActivePage()}catch(err){showError(err.message,'loginError')}});
   $('logoutButton').addEventListener('click',async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}token='';sessionStorage.removeItem('sabt_token');showLogin()});
   document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===button));activePage=button.dataset.page;document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));$(activePage+'Page').classList.remove('hidden');clearError();loadActivePage()}));
