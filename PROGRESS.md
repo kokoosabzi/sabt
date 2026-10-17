@@ -154,8 +154,8 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Registered the contract-history router in the FastAPI app.
 - [x] Specified a Persian RTL management portal, daily/date-range workflow reports, contract transfer-chain report, ad-hoc reports, drill-down behavior, permissions, timezone/Jalali date handling, pagination, and export/audit rules in `UI_FLOW.md`.
 - [x] Add API tests for contract-history route authentication, authorization, invalid numbers, not-found responses, and response shape.
-- [ ] Implement portal summary/report APIs only from verified source data and enforce project scope in every query.
-- [ ] Implement contract-history UI and portal/report screens; the repository currently has no frontend application files.
+- [x] Implement portal summary/report APIs from verified stored data with project-scope and permission checks.
+- [x] Implement initial contract-history UI and Persian RTL portal/report screens; advanced UI and browser end-to-end tests remain.
 - [ ] Implement staged Excel/CSV import with validation, preview, explicit confirmation, transactional persistence, and import result report.
 - [ ] Keep PR #1 draft and do not merge until tests and review are complete.
 
@@ -209,5 +209,15 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Add responsive Persian RTL interface at `/portal/` with login/logout, management summary, paginated workflow report, persisted workflow events and Parent Contract history lookup.
 - [x] Add a smoke test confirming the portal is served as Persian RTL HTML.
 - [x] GitHub Actions run [38881571821](https://github.com/kokoosabzi/sabt/actions/runs/38881571821) passed on the portal implementation commit; the workflow runs pytest and SQLite migration round-trip checks.
-- [ ] Add CSV/Excel/PDF export, Jalali calendar and project-timezone-aware date display.
+- [x] Add permission-scoped CSV exports for workflow and workflow-event reports, with UTF-8 BOM for Persian text and a 5,000-row export ceiling.\n- [ ] Add Excel/PDF export, Jalali calendar and project-timezone-aware date display.
 - [ ] Add browser end-to-end tests and graphical transfer-tree visualization.
+
+
+## CSV report exports — 2026-10-17
+- [x] Add `GET /reports/workflow/export.csv` and `GET /reports/workflow/events/export.csv`, reusing the report service's project and permission checks.
+- [x] Preserve filters and time bounds in exported data; export all matching rows up to 5,000 and reject larger exports instead of silently truncating them.
+- [x] Emit UTF-8 CSV with BOM for Persian-compatible spreadsheet opening and safe CSV escaping via Python's csv writer.
+- [x] Add portal download buttons for workflow and event reports; downloads reuse the visible filters and bearer session.
+- [x] Add tests for CSV encoding, response headers, and project access denial.
+- [x] GitHub Actions run [39053557591](https://github.com/kokoosabzi/sabt/actions/runs/39053557591) passed after fixing the BOM test expectation. PR validation is being checked separately.
+- [ ] Add CSV formula-injection protection for cells originating from user-controlled text before exposing exports to broader data.
