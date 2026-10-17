@@ -284,4 +284,4 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Create right-to-left worksheets with Persian headers, freeze panes, filters, and bounded column widths.
 - [x] Neutralize formula-like untrusted text cells and serialize structured event metadata safely.
 - [x] Add API tests that reopen generated workbooks, validate Persian headers/content type, and verify project authorization.
-- [ ] Await CI for codex/report-excel-and-pdf-exports; PDF/print exports remain a separate next slice.
+- [x] GitHub Actions run [39058257642](https://github.com/kokoosabzi/sabt/actions/runs/39058257642) passed on commit `63cf8589a78545a07598db0780155dd364d7ebfe`: **142 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed. PDF/print exports remain the next slice.
