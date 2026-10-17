@@ -234,3 +234,13 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Added API tests for timezone context, workflow-only permission, and denial without report permissions.
 - [x] CI run [39054310436](https://github.com/kokoosabzi/sabt/actions/runs/39054310436): test suite passed; fresh SQLite migration, Alembic head, downgrade and re-upgrade steps all passed on commit `338e414d10a017ea0c82f80c812010b83c4cace8`.
 - [ ] Add Jalali calendar input controls; current browser datetime-local controls still use Gregorian entry even though displayed timestamps use the Persian locale.
+
+## Latest work — staged contract import API
+
+- [ ] Bulk-import feature is not complete until integration/UI coverage and CI verification pass.
+- [x] Added a bounded CSV/XLSX parser for parent-contract import rows (`suffix`, `initial_person_id`, optional `property_id`), including strict column checks, row limits, file-size limits, and row-level format validation.
+- [x] Added an authenticated preview endpoint that checks project authorization, project status/code, existing duplicates, active people/project membership, and optional property/project association without writing records.
+- [x] Added a confirmation endpoint that revalidates client-submitted rows and attempts all contract creations within one transaction; it relies on existing parent-contract service rules and database constraints.
+- [x] Added parser tests for CSV/XLSX success, invalid columns/data, unsupported file types, encoding, empty data, and size limits.
+- [ ] Not run in this session: Python test suite, API integration tests, and GitHub Actions CI.
+- [ ] Remaining for this feature: API transaction/authorization/duplicate regression tests, frontend preview/edit/confirm workflow, and CI verification.
