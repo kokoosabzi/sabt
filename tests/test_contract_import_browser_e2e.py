@@ -175,3 +175,28 @@ def test_browser_contract_import_full_preview_correct_revalidate_confirm(browser
             select(ParentContract.contract_number).order_by(ParentContract.contract_number)
         )
     ) == ["760123", "760124"]
+
+
+
+def test_browser_jalali_date_controls_validate_and_submit_project_local_period(browser_app, page: Page):
+    page.goto(browser_app["base_url"] + "/portal/")
+    page.get_by_label("نام کاربری").fill("browser-import-admin")
+    page.get_by_label("گذرواژه").fill("e2e-test-password")
+    page.get_by_role("button", name="ورود امن").click()
+
+    expect(page.locator("#startAt")).to_have_attribute("placeholder", "۱۴۰۵/۰۷/۲۵")
+    expect(page.locator("#startTime")).to_have_value("00:00")
+
+    page.locator("#startAt").fill("1405/13/01")
+    page.locator("#endAt").fill("1405/08/01")
+    page.get_by_role("button", name="دریافت گزارش").click()
+    expect(page.locator("#globalError")).to_contain_text("تاریخ شمسی معتبر نیست")
+
+    # Persian digits are accepted as well as Latin digits.
+    page.locator("#startAt").fill("۱۴۰۵/۰۷/۰۱")
+    page.locator("#endAt").fill("۱۴۰۵/۰۸/۰۱")
+    page.locator("#startTime").fill("00:00")
+    page.locator("#endTime").fill("00:00")
+    page.get_by_role("button", name="دریافت گزارش").click()
+    expect(page.locator("#globalError")).to_be_hidden()
+    expect(page.locator("#createdMetric")).not_to_have_text("—")
