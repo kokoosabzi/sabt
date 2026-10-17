@@ -217,3 +217,17 @@ def test_workflow_csv_export_enforces_project_permission():
         db.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+def test_csv_export_neutralizes_spreadsheet_formula_cells():
+    from app.reports.routes import _csv_response
+
+    response = _csv_response("test.csv", [("value", "value")], [
+        {"value": "=HYPERLINK(\"https://example.invalid\",\"click\")"},
+        {"value": "ordinary text"},
+        {"value": 42},
+    ])
+    body = response.body.decode("utf-8-sig")
+    assert "'=HYPERLINK(" in body
+    assert "ordinary text" in body
+    assert "42" in body
