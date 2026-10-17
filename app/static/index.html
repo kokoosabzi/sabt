@@ -62,9 +62,9 @@
           <div class="section-title"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
           <div class="filters">
             <div><label for="projectId">شناسه پروژه</label><input id="projectId" type="number" min="1" step="1" value="1" required></div>
-            <div><label for="startAt">از تاریخ و ساعت</label><input id="startAt" type="datetime-local" required></div>
-            <div><label for="endAt">تا تاریخ و ساعت</label><input id="endAt" type="datetime-local" required></div>
-            <div><button id="loadButton" class="btn">دریافت گزارش</button></div>
+            <div><label for="startAt">از تاریخ شمسی</label><input id="startAt" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۷/۲۵" aria-describedby="dateInputHelp" required><label for="startTime">ساعت شروع</label><input id="startTime" type="time" value="00:00" required></div>
+            <div><label for="endAt">تا تاریخ شمسی</label><input id="endAt" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۸/۲۵" aria-describedby="dateInputHelp" required><label for="endTime">ساعت پایان</label><input id="endTime" type="time" value="00:00" required></div>
+            <div><p id="dateInputHelp" class="muted">تاریخ را به شمسی و به شکل سال/ماه/روز وارد کنید؛ ساعت بر اساس منطقه زمانی پروژه است.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
           </div>
         </section>
         <section id="dashboardPage" class="page">
@@ -142,10 +142,51 @@
     for (const part of parts) if (part.type !== 'literal') result[part.type] = Number(part.value);
     return result;
   }
-  function localInputToUtc(value) {
-    const match = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/.exec(value);
-    if (!match) throw new Error('فرمت تاریخ و ساعت معتبر نیست.');
-    const desired = {year:+match[1], month:+match[2], day:+match[3], hour:+match[4], minute:+match[5]};
+  const persianCalendar = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', {
+    timeZone: 'UTC', year: 'numeric', month: 'numeric', day: 'numeric'
+  });
+  function normalizeDigits(value) {
+    return String(value).replace(/[۰-۹]/g, c => String(c.charCodeAt(0)-0x06f0))
+      .replace(/[٠-٩]/g, c => String(c.charCodeAt(0)-0x0660));
+  }
+  function calendarParts(date) {
+    const parts = {};
+    for (const part of persianCalendar.formatToParts(date)) {
+      if (part.type !== 'literal') parts[part.type] = Number(part.value);
+    }
+    return {year: parts.year, month: parts.month, day: parts.day};
+  }
+  function jalaliDateToGregorian(value) {
+    const match = /^(\\d{4})[\\/-](\\d{1,2})[\\/-](\\d{1,2})$/.exec(normalizeDigits(value).trim());
+    if (!match) throw new Error('تاریخ شمسی را به شکل سال/ماه/روز وارد کنید؛ مثال: ۱۴۰۵/۰۷/۲۵.');
+    const wanted = {year:Number(match[1]), month:Number(match[2]), day:Number(match[3])};
+    if (wanted.year < 1200 || wanted.year > 1600 || wanted.month < 1 || wanted.month > 12 ||
+        wanted.day < 1 || wanted.day > 31) {
+      throw new Error('تاریخ شمسی معتبر نیست.');
+    }
+    // Use the browser's built-in Persian calendar data to find the matching civil date.
+    const firstDay = Date.UTC(wanted.year + 621, 0, 1, 12);
+    for (let offset = 0; offset < 460; offset++) {
+      const candidate = new Date(firstDay + offset * 86400000);
+      const parts = calendarParts(candidate);
+      if (parts.year === wanted.year && parts.month === wanted.month && parts.day === wanted.day) {
+        return {year:candidate.getUTCFullYear(), month:candidate.getUTCMonth()+1, day:candidate.getUTCDate()};
+      }
+    }
+    throw new Error('تاریخ شمسی معتبر نیست.');
+  }
+  function gregorianDateToJalali(year, month, day) {
+    const parts = calendarParts(new Date(Date.UTC(year, month-1, day, 12)));
+    const pad = value => String(value).padStart(2, '0');
+    return String(parts.year).padStart(4, '0') + '/' + pad(parts.month) + '/' + pad(parts.day);
+  }
+  function localInputToUtc(dateValue, timeValue) {
+    const gregorian = jalaliDateToGregorian(dateValue);
+    const time = /^(\\d{2}):(\\d{2})$/.exec(normalizeDigits(timeValue).trim());
+    if (!time || Number(time[1]) > 23 || Number(time[2]) > 59) {
+      throw new Error('ساعت معتبر نیست.');
+    }
+    const desired = {...gregorian, hour:Number(time[1]), minute:Number(time[2])};
     const target = Date.UTC(desired.year, desired.month-1, desired.day, desired.hour, desired.minute);
     let guess = target;
     for (let i=0; i<5; i++) {
@@ -177,19 +218,21 @@
   function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); }
   function period() {
     const start=$('startAt').value, end=$('endAt').value;
-    if(!start||!end) throw new Error('تاریخ شروع و پایان را مشخص کنید.');
-    const startUtc=localInputToUtc(start), endUtc=localInputToUtc(end);
-    if(new Date(startUtc)>=new Date(endUtc)) throw new Error('تاریخ شروع باید قبل از تاریخ پایان باشد.');
+    if(!start||!end||!$('startTime').value||!$('endTime').value) throw new Error('تاریخ و ساعت شروع و پایان را مشخص کنید.');
+    const startUtc=localInputToUtc(start, $('startTime').value);
+    const endUtc=localInputToUtc(end, $('endTime').value);
+    if(new Date(startUtc)>=new Date(endUtc)) throw new Error('تاریخ و ساعت شروع باید قبل از پایان باشد.');
     return {start_at:startUtc,end_at:endUtc,project_id:$('projectId').value};
   }
   function query(values){const p=new URLSearchParams();Object.entries(values).forEach(([k,v])=>{if(v!==''&&v!==null&&v!==undefined)p.set(k,v)});return p.toString();}
   function setDefaults(){
     const z=n=>String(n).padStart(2,'0');
     const nowParts=zonedParts(new Date(),projectTimezone);
-    const input=p=>p.year+'-'+z(p.month)+'-'+z(p.day)+'T'+z(p.hour)+':'+z(p.minute);
-    const startDate=new Date(Date.UTC(nowParts.year,nowParts.month-1,nowParts.day-7,nowParts.hour,nowParts.minute));
-    const startParts={year:startDate.getUTCFullYear(),month:startDate.getUTCMonth()+1,day:startDate.getUTCDate(),hour:startDate.getUTCHours(),minute:startDate.getUTCMinutes()};
-    $('startAt').value=input(startParts);$('endAt').value=input(nowParts);
+    const startDate=new Date(Date.UTC(nowParts.year,nowParts.month-1,nowParts.day-7,12));
+    $('startAt').value=gregorianDateToJalali(startDate.getUTCFullYear(),startDate.getUTCMonth()+1,startDate.getUTCDate());
+    $('endAt').value=gregorianDateToJalali(nowParts.year,nowParts.month,nowParts.day);
+    $('startTime').value=z(nowParts.hour)+':'+z(nowParts.minute);
+    $('endTime').value=z(nowParts.hour)+':'+z(nowParts.minute);
   }
   async function loadProjectContext(){
     const raw=$('projectId').value;
