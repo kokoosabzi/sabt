@@ -74,8 +74,6 @@ def _xlsx_response(filename: str, columns: list[tuple[str, str]], rows: list[dic
     sheet.sheet_view.rightToLeft = True
     sheet.freeze_panes = "A2"
     sheet.append([label for label, _ in columns])
-    for cell in sheet[1]:
-        cell.font = cell.font.copy(bold=True)
     for row in rows:
         sheet.append([_safe_xlsx_cell(row.get(key)) for _, key in columns])
     if columns:
