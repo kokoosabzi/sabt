@@ -200,16 +200,14 @@ def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(
     page.locator("#startAt").click()
     expect(page.locator("#jalaliPicker")).to_be_visible()
     page.locator(f'#jalaliDays button[data-jalali-date="{start_date}"]').click()
-    expect(page.locator("#startAt")).to_have_value("۱۴۰۰/۰۱/۰۱" if False else "".join(
-        "۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in start_date
-    ))
+    expected_start = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in start_date)
+    expect(page.locator("#startAt")).to_have_value(expected_start)
 
     page.locator("#endAt").click()
     page.locator("#jalaliNext").click()
     page.locator(f'#jalaliDays button[data-jalali-date="{end_date}"]').click()
-    expect(page.locator("#endAt")).to_have_value("".join(
-        "۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in end_date
-    ))
+    expected_end = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in end_date)
+    expect(page.locator("#endAt")).to_have_value(expected_end)
 
     page.locator("#startHour").select_option("00")
     page.locator("#startMinute").select_option("00")
