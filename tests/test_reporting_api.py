@@ -160,3 +160,60 @@ def test_workflow_events_api_returns_persisted_events_only():
         db.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+def test_workflow_csv_export_is_utf8_and_permission_scoped():
+    engine, db, client, project = _context()
+    try:
+        response = client.get("/reports/workflow/export.csv", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 200
+        assert response.content.startswith(b"\\xef\\xbb\\xbf")
+        assert "attachment; filename=\"sabt-workflow-report.csv\"" == response.headers["content-disposition"]
+        assert "شناسه عملیات".encode("utf-8") in response.content
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_workflow_events_csv_export_is_available_and_project_scoped():
+    engine, db, client, project = _context()
+    try:
+        response = client.get("/reports/workflow/events/export.csv", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 200
+        assert response.content.startswith(b"\\xef\\xbb\\xbf")
+        assert "sabt-workflow-events.csv" in response.headers["content-disposition"]
+        assert "شناسه رخداد".encode("utf-8") in response.content
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_workflow_csv_export_enforces_project_permission():
+    engine, db, client, project = _context()
+    try:
+        db.query(ProjectAccess).delete()
+        db.commit()
+        response = client.get("/reports/workflow/export.csv", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 403
+        assert response.json()["detail"] == "forbidden"
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
