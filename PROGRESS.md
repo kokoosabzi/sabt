@@ -2,11 +2,18 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
-## Current status
+## Current status — reconciled 2026-10-17
 
-- **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** Parent Contract creation, project-code immutability, atomic transfer numbering, and Buyer / Transferee-based current-owner derivation are implemented on `codex/foundation-audit`. CI run `38596512913` passed **87 tests, 2 warnings**, plus fresh SQLite upgrade and downgrade/re-upgrade through `0008_transfer_sequence_counter`. Implementation remains incomplete; PR #1 stays draft and unmerged.
-- **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
+- **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
+- **Current `main`:** `2c6cd7533a67f070322d8077b324a50ecba72170`.
+- **Latest verified CI:** [run 39058901990](https://github.com/kokoosabzi/sabt/actions/runs/39058901990) passed **143 tests, 2 warnings**, including Chromium browser E2E and fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
+- **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
+- **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
+- **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle/finalization guarantees; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
+- **Working rule:** Treat current code, tests, and migration evidence as implementation facts; treat architecture documents as requirements. Do not infer unrecorded events or time-in-state. Do not guess unresolved business rules.
+- **Merge rule:** After a focused change passes required CI/tests and review, merge it promptly; do not leave stable PRs open by default. Never merge failing or unverified work.
+
+> Historical notes below are retained as an audit trail. Where an older unchecked item or status statement conflicts with this reconciled section or a later dated entry, treat it as superseded and update it when its section is next touched.
 
 ## Phase plan
 
@@ -131,14 +138,16 @@
 - [x] Confirmed the four-digit parent suffix may be entered manually or imported from Excel/CSV; imports may also include optional unit/property details.
 - [x] Distinguished a genuine transfer (new Operation) from a correction to an existing finalized transfer (OperationVersion/correction workflow).
 - [x] Documented parent-number search/history, current-owner derivation, transactional child numbering, and staged Excel/CSV import as design targets.
-- [ ] Resolve the remaining business decisions: global uniqueness/immutability of Project codes, child-number gaps/width, ownership-effective state, legacy import ordering, and exact import columns/person duplicate matching.
-- [x] Implement schema and core service behavior for Parent Contract creation and child-number allocation.
-- [ ] Implement current-owner derivation from latest valid finalized transfers; recipient/owner role policy must be explicitly defined rather than guessed.
-- [ ] Add authorized search/history APIs, UI, and staged Excel/CSV import.
+- [x] Freeze Project contract-code rules: unique two-digit codes from `10` to `99`; a code cannot be changed or cleared after a Parent Contract uses it.
+- [x] Freeze child numbering as positive decimal suffixes (`/1`, `/2`, `/10`); allocation is transactional and issued child numbers are never reused.
+- [x] Confirm ownership changes only from a valid finalized transfer and the `BUYER_TRANSFEREE` role; draft/non-finalized operations do not change the current owner.
+- [ ] Resolve remaining import policy questions: legacy historical ordering, duplicate Person/Property matching, and whether later import-template versions should accept additional source columns.
+- [x] Implement Parent Contract schema, create service, child-number allocation, authorized history/current-owner query, and staged CSV/XLSX import with preview, revalidation, explicit confirmation, and transaction rollback coverage.
+- [x] Expose authorized Parent Contract history and current-owner information in the reporting portal.
 
 ## Next task
 
-Define how the transferee is identified in operation parties and implement current-owner/history queries; keep the pull request open and unmerged until the new checks and risks are reviewed.
+Continue Phase 0 foundation audit: verify authorization/project isolation across service and resource lookups, operation creation/finalization transaction boundaries, registration-number allocation rollback/concurrency assumptions, and ORM/migration parity. Keep event-coverage limitations explicit; do not report time-in-state until all relevant transitions are persisted.
 
 
 ## Confirmed ownership rule — 2026-10-14
@@ -209,8 +218,9 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Add responsive Persian RTL interface at `/portal/` with login/logout, management summary, paginated workflow report, persisted workflow events and Parent Contract history lookup.
 - [x] Add a smoke test confirming the portal is served as Persian RTL HTML.
 - [x] GitHub Actions run [38881571821](https://github.com/kokoosabzi/sabt/actions/runs/38881571821) passed on the portal implementation commit; the workflow runs pytest and SQLite migration round-trip checks.
-- [x] Add permission-scoped CSV exports for workflow and workflow-event reports, with UTF-8 BOM for Persian text and a 5,000-row export ceiling.\n- [ ] Add Excel/PDF export, Jalali calendar and project-timezone-aware date display.
-- [ ] Add browser end-to-end tests and graphical transfer-tree visualization.
+- [x] Add permission-scoped CSV exports for workflow and workflow-event reports, with UTF-8 BOM for Persian text and a 5,000-row export ceiling.\n- [x] Add Excel exports, Jalali calendar/time controls, and project-timezone-aware date display (completed in later entries below).
+- [x] Add Chromium browser E2E coverage for critical reporting/import flows.
+- [ ] Add a dedicated graphical transfer-tree visualization; current portal supports parent-contract history lookup but this does not imply a full graphical tree.
 
 
 ## CSV report exports — 2026-10-17
@@ -233,7 +243,7 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Default report range is now initialized in project-local time after authorized project context loads.
 - [x] Added API tests for timezone context, workflow-only permission, and denial without report permissions.
 - [x] CI run [39054310436](https://github.com/kokoosabzi/sabt/actions/runs/39054310436): test suite passed; fresh SQLite migration, Alembic head, downgrade and re-upgrade steps all passed on commit `338e414d10a017ea0c82f80c812010b83c4cace8`.
-- [ ] Add Jalali calendar input controls; current browser datetime-local controls still use Gregorian entry even though displayed timestamps use the Persian locale.
+- [x] Superseded by the shared Jalali date/time picker standard recorded below; report dates are selected from a Jalali calendar and time uses controlled hour/minute selectors.
 
 ## Latest work — staged contract import API
 
@@ -293,3 +303,4 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Keep dynamic report values in text nodes rather than injecting them as HTML; enforce project-scoped APIs and a 5,000-row limit for bulk print reports.
 - [x] Add a Chromium E2E check for the RTL, PDF-ready management print view.
 - [x] GitHub Actions run [39058723867](https://github.com/kokoosabzi/sabt/actions/runs/39058723867) passed on commit `1344fe479d6d973225b4c8d50b27773899a96301`: **143 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
+- [x] Final merged `main` verification: [GitHub Actions run 39058901990](https://github.com/kokoosabzi/sabt/actions/runs/39058901990) passed **143 tests, 2 warnings** after PR #9 was merged.
