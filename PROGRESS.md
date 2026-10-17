@@ -234,3 +234,28 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Added API tests for timezone context, workflow-only permission, and denial without report permissions.
 - [x] CI run [39054310436](https://github.com/kokoosabzi/sabt/actions/runs/39054310436): test suite passed; fresh SQLite migration, Alembic head, downgrade and re-upgrade steps all passed on commit `338e414d10a017ea0c82f80c812010b83c4cace8`.
 - [ ] Add Jalali calendar input controls; current browser datetime-local controls still use Gregorian entry even though displayed timestamps use the Persian locale.
+
+## Latest work — staged contract import API
+
+- [ ] Bulk-import feature remains incomplete until browser end-to-end automation is added and verified.
+- [x] Added a bounded CSV/XLSX parser for parent-contract import rows (`suffix`, `initial_person_id`, optional `property_id`), including strict column checks, row limits, file-size limits, and row-level format validation.
+- [x] Added an authenticated preview endpoint that checks project authorization, project status/code, existing duplicates, active people/project membership, and optional property/project association without writing records.
+- [x] Added a confirmation endpoint that revalidates client-submitted rows and attempts all contract creations within one transaction; it relies on existing parent-contract service rules and database constraints.
+- [x] Added parser tests for CSV/XLSX success, invalid columns/data, unsupported file types, encoding, empty data, and size limits.
+- [x] Added a Persian RTL portal page for file selection, preview table, validation issues, explicit confirmation, and success/error feedback.
+- [x] Added API tests for preview-without-writes, successful confirmation, duplicate rows, and missing create permission.
+- [x] Added API regression tests that force a failure on the second row and simulate a uniqueness conflict arising after preflight; both assert that the entire batch is rolled back with zero persisted contracts.
+- [x] Added inline editable fields for suffix, initial person ID, and optional property ID in the preview table, plus a no-write `/contracts/parent/import/validate` endpoint to refresh duplicate and association checks after edits.
+- [x] Added API regression coverage proving duplicate suffixes can be corrected and revalidated without creating records, plus a portal smoke test for the inline-edit/revalidate controls.
+- [x] Inline preview correction and server-side revalidation are implemented and covered by API/UI smoke tests; malformed file structure/columns still require fixing the source file and uploading again.
+- [x] Hardened parser resource limits: CSV rows are processed incrementally, the 2,000-row cap is enforced during parsing, duplicate/blank headers and mismatched row widths are rejected, and XLSX archives are screened for encryption, excessive ZIP entries, and expanded size above 50 MiB.
+- [x] Added regression tests for malformed CSV headers/rows, the row cap, and invalid XLSX ZIP content.
+- [x] CI run [39055555558](https://github.com/kokoosabzi/sabt/actions/runs/39055555558) passed: **135 tests passed**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
+- [ ] Browser end-to-end automation has not yet been added or run.
+- [x] GitHub Actions run [39055125021](https://github.com/kokoosabzi/sabt/actions/runs/39055125021) passed on commit `583878d27e93b75c71ebf00e657fe58f5bed4c3d`: **128 tests passed**, fresh SQLite migration upgrade, Alembic head verification, and downgrade/re-upgrade all succeeded (2 deprecation warnings).
+- [x] GitHub Actions run [39055134348](https://github.com/kokoosabzi/sabt/actions/runs/39055134348) also passed on the latest documentation commit `f18768092ceb1a925e9fe1eb00266b4f121bd214`.
+- [x] GitHub Actions run [39055279448](https://github.com/kokoosabzi/sabt/actions/runs/39055279448) passed after inline correction and UI smoke-test additions: **130 tests passed**, fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade all succeeded.
+- [x] Latest progress-documentation CI run [39055286369](https://github.com/kokoosabzi/sabt/actions/runs/39055286369) passed on commit `cb8606c253057654bea74f5be636eed52f14c253`.
+- [ ] Do not mark the feature complete until browser end-to-end automation is implemented and verified.
+- **Review:** Draft PR #2 targets `codex/foundation-audit`: https://github.com/kokoosabzi/sabt/pull/2
+- **Parser hardening review:** Draft PR #3 targets `codex/contract-bulk-import`: https://github.com/kokoosabzi/sabt/pull/3
