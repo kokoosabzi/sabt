@@ -275,4 +275,4 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Replace free-entry time fields with hour/minute selection controls in 24-hour format; initialize from the selected project's timezone.
 - [x] Use the browser's built-in Persian calendar data (Intl) without CDN or runtime network dependency, preserving offline/LAN compatibility.
 - [x] Keep UTC storage/API timestamps and project-timezone conversion unchanged; add Chromium browser E2E coverage for picker-only date entry and hour/minute controls.
-- [ ] Await CI for codex/native-jalali-date-time-pickers; merge after full test suite and SQLite migration round-trip pass.
+- [x] GitHub Actions run [39057857094](https://github.com/kokoosabzi/sabt/actions/runs/39057857094) passed on commit `b6152b0dc0a1c4aaedab877af0ac03e346b37627`: **137 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
