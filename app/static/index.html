@@ -54,6 +54,7 @@
         <button data-page="workflow">گزارش گردش کار</button>
         <button data-page="events">رخدادهای گردش کار</button>
         <button data-page="contract">گردش قرارداد</button>
+        <button data-page="contractImport">ورود گروهی قراردادها</button>
       </nav>
       <main>
         <div id="globalError" class="error"></div>
@@ -99,6 +100,24 @@
           <section class="panel"><h2>جست‌وجوی گردش قرارداد</h2><p style="margin-bottom:14px">شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p><form id="contractForm" class="row"><input id="contractNumber" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required><button class="btn" type="submit">جست‌وجو</button></form></section>
           <section id="contractResult" class="panel hidden"><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
         </section>
+
+        <section id="contractImportPage" class="page hidden">
+          <section class="panel">
+            <h2>ورود گروهی قراردادهای مادر</h2>
+            <p style="margin-bottom:14px">فایل CSV یا Excel با ستون‌های suffix و initial_person_id و ستون اختیاری property_id انتخاب کنید. ابتدا پیش‌نمایش و خطاها را بررسی کنید؛ تا زمان تأیید نهایی هیچ قراردادی ثبت نمی‌شود.</p>
+            <div class="row">
+              <input id="contractImportFile" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها">
+              <button id="contractImportPreview" class="btn">بارگذاری و پیش‌نمایش</button>
+              <button id="contractImportConfirm" class="btn" disabled>تأیید و ثبت همه قراردادها</button>
+            </div>
+            <p id="contractImportMeta" class="muted" style="margin-top:12px"></p>
+            <div id="contractImportIssues" class="error"></div>
+          </section>
+          <section id="contractImportPreviewPanel" class="panel hidden">
+            <h2>پیش‌نمایش ردیف‌ها</h2>
+            <div class="table-wrap"><table><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
+          </section>
+        </section>
       </main>
     </div>
     <footer>SABT · نسخه اولیه پرتال گزارش‌ها · تمام داده‌ها از API مجاز سامانه دریافت می‌شوند.</footer>
@@ -108,6 +127,7 @@
   const $ = id => document.getElementById(id);
   let token = sessionStorage.getItem('sabt_token') || '';
   let page = 0, limit = 50, activePage = 'dashboard';
+  let stagedContractImport = null;
   let projectTimezone = 'Asia/Tehran', contextProjectId = null, defaultsInitialized = false;
   const fmt = value => value ? new Intl.DateTimeFormat('fa-IR', {
     timeZone: projectTimezone, dateStyle: 'short', timeStyle: 'medium'
@@ -197,6 +217,57 @@
   async function downloadCsv(path,filters){clearError();try{const response=await fetch(path+'?'+query(filters),{headers:token?{Authorization:'Bearer '+token}:{}});if(!response.ok){const body=await response.json().catch(()=>({}));if(response.status===401){token='';sessionStorage.removeItem('sabt_token');showLogin()}throw new Error(body.detail||'دریافت فایل گزارش ناموفق بود')}const blob=await response.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;const disposition=response.headers.get('Content-Disposition')||'';a.download=disposition.includes('filename=')?disposition.split('filename=')[1].replaceAll('"',''):'sabt-report.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}catch(err){showError(err.message)}}
   async function loadWorkflow(){await loadProjectContext();const p={...workflowFilters(),limit,offset:page*limit};const data=await api('/reports/workflow?'+query(p));$('workflowMeta').textContent='تعداد کل: '+data.pagination.total+' | بازه بر اساس تاریخ ایجاد عملیات';$('workflowRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.operation_type_name,x.status,x.parent_contract_number,x.child_contract_number,x.created_by_display_name,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('workflowRows').appendChild(tr)});if(!data.items.length)$('workflowRows').innerHTML='<tr><td colspan="8">موردی در این بازه پیدا نشد.</td></tr>';$('pageMeta').textContent='صفحه '+(page+1)+' · '+data.pagination.total+' ردیف';$('prevPage').disabled=page===0;$('nextPage').disabled=(page+1)*limit>=data.pagination.total;}
   async function loadEvents(){await loadProjectContext();const p={...eventFilters(),limit:100,offset:0};const data=await api('/reports/workflow/events?'+query(p));$('eventsMeta').textContent='تعداد کل رخدادهای ثبت‌شده: '+data.pagination.total;$('eventRows').innerHTML='';data.items.forEach(x=>{const tr=document.createElement('tr');[fmt(x.occurred_at),x.event_type,x.operation_id,x.parent_contract_number,x.child_contract_number,x.actor_display_name,(x.from_status||'—')+' ← '+(x.to_status||'—')].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('eventRows').appendChild(tr)});if(!data.items.length)$('eventRows').innerHTML='<tr><td colspan="7">رخدادی در این بازه ثبت نشده است.</td></tr>';}
+
+  $('contractImportPreview').addEventListener('click', async () => {
+    clearError();
+    const file = $('contractImportFile').files[0];
+    if (!file) { showError('ابتدا فایل CSV یا Excel را انتخاب کنید.'); return; }
+    if (file.size > 5 * 1024 * 1024) { showError('حجم فایل نباید بیشتر از ۵ مگابایت باشد.'); return; }
+    try {
+      await loadProjectContext();
+      const form = new FormData();
+      form.append('file', file);
+      const response = await fetch('/contracts/parent/import/preview?project_id=' + encodeURIComponent($('projectId').value), {
+        method: 'POST', headers: token ? {Authorization: 'Bearer ' + token} : {}, body: form
+      });
+      const data = await response.json().catch(() => ({detail:'پاسخ نامعتبر از سرور'}));
+      if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || 'پیش‌نمایش ناموفق بود'));
+      stagedContractImport = data;
+      $('contractImportPreviewPanel').classList.remove('hidden');
+      $('contractImportRows').innerHTML = '';
+      data.rows.forEach(row => {
+        const tr = document.createElement('tr');
+        [row.row_number, row.contract_number, row.suffix, row.initial_person_id, row.property_id ?? '—',
+          row.valid ? 'معتبر' : row.issues.join('، ')].forEach(value => {
+          const td = document.createElement('td'); td.textContent = value ?? '—'; tr.appendChild(td);
+        });
+        $('contractImportRows').appendChild(tr);
+      });
+      $('contractImportMeta').textContent = 'کل ردیف‌ها: ' + data.row_count + ' | معتبر: ' + data.valid_count + ' | دارای خطا: ' + data.invalid_count;
+      $('contractImportIssues').style.display = data.can_confirm ? 'none' : 'block';
+      $('contractImportIssues').textContent = data.can_confirm ? '' : 'تا رفع همه خطاها، ثبت گروهی غیرفعال است.';
+      $('contractImportConfirm').disabled = !data.can_confirm;
+    } catch (err) { stagedContractImport = null; $('contractImportConfirm').disabled = true; showError(err.message); }
+  });
+  $('contractImportConfirm').addEventListener('click', async () => {
+    if (!stagedContractImport || !stagedContractImport.can_confirm) return;
+    if (!window.confirm('آیا ثبت تمام ' + stagedContractImport.row_count + ' قرارداد را تأیید می‌کنید؟')) return;
+    $('contractImportConfirm').disabled = true;
+    try {
+      const result = await api('/contracts/parent/import/confirm', {
+        method: 'POST',
+        body: JSON.stringify({project_id: Number($('projectId').value), rows: stagedContractImport.rows})
+      });
+      $('contractImportMeta').textContent = 'ثبت موفق: ' + result.created_count + ' قرارداد. شماره‌ها: ' + result.contracts.map(x => x.contract_number).join('، ');
+      $('contractImportIssues').style.display = 'none';
+      stagedContractImport = null;
+      $('contractImportFile').value = '';
+    } catch (err) {
+      showError(err.message);
+      $('contractImportConfirm').disabled = false;
+    }
+  });
+
   $('contractForm').addEventListener('submit',async e=>{e.preventDefault();clearError();try{const number=$('contractNumber').value.trim();const data=await api('/contracts/parent/'+encodeURIComponent(number)+'/history');$('contractResult').classList.remove('hidden');$('contractSummary').innerHTML='';const p=data.parent,o=data.current_owner;const lines=[['شماره قرارداد مادر',p.contract_number],['شناسه پروژه',p.project_id],['وضعیت',p.status],['مبنای مالک فعلی',o.source==='initial_contract'?'قرارداد اولیه':'آخرین انتقال نهایی معتبر']];lines.forEach(([label,value])=>{const el=document.createElement('p');el.textContent=label+' : '+(value??'—');$('contractSummary').appendChild(el)});const people=o.people||[];people.forEach(person=>{const el=document.createElement('p');el.textContent='مالک فعلی: '+[person.first_name,person.last_name].filter(Boolean).join(' ');$('contractSummary').appendChild(el)});$('contractRows').innerHTML='';data.transfers.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.child_contract_number,x.status,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('contractRows').appendChild(tr)});if(!data.transfers.length)$('contractRows').innerHTML='<tr><td colspan="5">هنوز انتقالی برای این قرارداد ثبت نشده است.</td></tr>';}catch(err){showError(err.message)}})
   if(token){showApp();loadActivePage().catch(()=>showLogin())}else showLogin();
 })();
