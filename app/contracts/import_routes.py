@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.auth.authorization import AuthorizationContext, authorize
 from app.auth.dependencies import current_user, get_db
 from app.contracts.import_service import (
     ContractImportError,
@@ -14,6 +13,7 @@ from app.contracts.import_service import (
     parse_parent_contract_import,
     preview_parent_contract_import,
 )
+from app.contracts.numbering import validate_parent_contract_suffix
 from app.contracts.service import (
     ParentContractConflictError,
     ParentContractValidationError,
@@ -56,14 +56,17 @@ def confirm_import(
 ) -> dict:
     """Revalidate client-submitted preview rows, then commit all-or-nothing."""
     try:
-        # Do not trust preview data sent back by the browser; normalize the
-        # business-critical fields and re-run all project/duplicate checks.
         normalized = []
         for index, row in enumerate(payload.rows, start=2):
-            suffix = str(row.get("suffix", "")).strip()
-            person_id = int(row.get("initial_person_id"))
-            property_value = row.get("property_id")
-            property_id = int(property_value) if property_value not in (None, "") else None
+            try:
+                suffix = validate_parent_contract_suffix(str(row.get("suffix", "")).strip())
+                person_id = int(row.get("initial_person_id"))
+                property_value = row.get("property_id")
+                property_id = int(property_value) if property_value not in (None, "") else None
+                if person_id <= 0 or (property_id is not None and property_id <= 0):
+                    raise ValueError
+            except (ValueError, TypeError) as exc:
+                raise ContractImportError(f"import_row_invalid:{index}") from exc
             normalized.append({
                 "row_number": index,
                 "suffix": suffix,
