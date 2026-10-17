@@ -63,11 +63,15 @@ def browser_app():
         is_active=True,
     )
     role = Role(code="browser-import-admin", name="Browser Import Admin", active=True)
-    permission = Permission(code="parent_contract.create", name="Create Parent Contract")
-    db.add_all([user, project, person, role, permission])
+    permissions = [
+        Permission(code="parent_contract.create", name="Create Parent Contract"),
+        Permission(code="management_dashboard.view", name="View Management Dashboard"),
+        Permission(code="workflow_report.view", name="View Workflow Reports"),
+    ]
+    db.add_all([user, project, person, role, *permissions])
     db.flush()
     db.add_all([
-        RolePermission(role_id=role.id, permission_id=permission.id),
+        *(RolePermission(role_id=role.id, permission_id=permission.id) for permission in permissions),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
         ProjectPerson(
