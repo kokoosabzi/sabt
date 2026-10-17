@@ -28,12 +28,23 @@ def _report_response(fn):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+def _safe_csv_cell(value):
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        return value
+    # Prevent spreadsheet formula execution for untrusted text fields.
+    if value.lstrip(" \\t\\r\\n").startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value
+
+
 def _csv_response(filename: str, columns: list[tuple[str, str]], rows: list[dict]) -> Response:
     buffer = io.StringIO(newline="")
     writer = csv.writer(buffer)
     writer.writerow([label for label, _ in columns])
     for row in rows:
-        writer.writerow([row.get(key, "") if row.get(key) is not None else "" for _, key in columns])
+        writer.writerow([_safe_csv_cell(row.get(key)) for _, key in columns])
     # UTF-8 BOM helps desktop Excel identify Persian text correctly.
     return Response(
         content="\ufeff" + buffer.getvalue(),
