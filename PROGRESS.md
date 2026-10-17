@@ -292,4 +292,4 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Provide an explicit “Print / Save PDF” action in the print view; use the browser/Windows print engine so the user can choose “Save as PDF” without a server-side PDF dependency or internet access.
 - [x] Keep dynamic report values in text nodes rather than injecting them as HTML; enforce project-scoped APIs and a 5,000-row limit for bulk print reports.
 - [x] Add a Chromium E2E check for the RTL, PDF-ready management print view.
-- [ ] Await CI for codex/pdf-print-exports; merge after full test suite, Chromium E2E, and SQLite migration round-trip pass.
+- [x] GitHub Actions run [39058723867](https://github.com/kokoosabzi/sabt/actions/runs/39058723867) passed on commit `1344fe479d6d973225b4c8d50b27773899a96301`: **143 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
