@@ -223,3 +223,14 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Neutralize spreadsheet formula injection in text cells beginning with `=`, `+`, `-` or `@`; add a regression test.
 
 - [x] Added a regression test for spreadsheet formula injection protection in commit `df5751b3b3a5cbc7ca58ea5885624499ff39905f`; final CI verification is pending.
+
+
+## Project-timezone reporting update — 2026-10-17
+- [x] Added authenticated `GET /reports/project-context?project_id=...`; it returns the project's configured timezone only to users who have dashboard or workflow-report permission and active project access.
+- [x] Reject invalid configured timezone identifiers rather than silently displaying timestamps in another timezone.
+- [x] Updated the portal to format displayed timestamps in the selected project's IANA timezone.
+- [x] Updated datetime-local report filters to interpret entered wall-clock times in the project's timezone and convert them to UTC before calling report APIs; nonexistent local times caused by timezone transitions are rejected with a user-facing message.
+- [x] Default report range is now initialized in project-local time after authorized project context loads.
+- [x] Added API tests for timezone context, workflow-only permission, and denial without report permissions.
+- [ ] Verify the latest CI after these changes.
+- [ ] Add Jalali calendar input controls; current browser datetime-local controls still use Gregorian entry even though displayed timestamps use the Persian locale.
