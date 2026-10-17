@@ -157,11 +157,30 @@
   function period() {
     const start=$('startAt').value, end=$('endAt').value;
     if(!start||!end) throw new Error('تاریخ شروع و پایان را مشخص کنید.');
-    if(new Date(start)>=new Date(end)) throw new Error('تاریخ شروع باید قبل از تاریخ پایان باشد.');
-    return {start_at:new Date(start).toISOString(),end_at:new Date(end).toISOString(),project_id:$('projectId').value};
+    const startUtc=localInputToUtc(start), endUtc=localInputToUtc(end);
+    if(new Date(startUtc)>=new Date(endUtc)) throw new Error('تاریخ شروع باید قبل از تاریخ پایان باشد.');
+    return {start_at:startUtc,end_at:endUtc,project_id:$('projectId').value};
   }
   function query(values){const p=new URLSearchParams();Object.entries(values).forEach(([k,v])=>{if(v!==''&&v!==null&&v!==undefined)p.set(k,v)});return p.toString();}
-  function setDefaults(){const now=new Date(), start=new Date(now);start.setDate(start.getDate()-7);const local=d=>{const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes())};$('startAt').value=local(start);$('endAt').value=local(now);}
+  function setDefaults(){
+    const z=n=>String(n).padStart(2,'0');
+    const nowParts=zonedParts(new Date(),projectTimezone);
+    const input=p=>p.year+'-'+z(p.month)+'-'+z(p.day)+'T'+z(p.hour)+':'+z(p.minute);
+    const startDate=new Date(Date.UTC(nowParts.year,nowParts.month-1,nowParts.day-7,nowParts.hour,nowParts.minute));
+    const startParts={year:startDate.getUTCFullYear(),month:startDate.getUTCMonth()+1,day:startDate.getUTCDate(),hour:startDate.getUTCHours(),minute:startDate.getUTCMinutes()};
+    $('startAt').value=input(startParts);$('endAt').value=input(nowParts);
+  }
+  async function loadProjectContext(){
+    const raw=$('projectId').value;
+    if(!raw || !Number.isInteger(Number(raw)) || Number(raw)<1) throw new Error('شناسه پروژه معتبر نیست.');
+    const id=Number(raw);
+    if(contextProjectId===id) return;
+    const data=await api('/reports/project-context?'+query({project_id:id}));
+    projectTimezone=data.project.timezone;
+    contextProjectId=id;
+    $('sessionStatus').textContent='منطقه زمانی: '+projectTimezone;
+    if(!defaultsInitialized){setDefaults();defaultsInitialized=true;}
+  }
   $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();await loadActivePage()}catch(err){showError(err.message,'loginError')}});
   $('logoutButton').addEventListener('click',async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}token='';sessionStorage.removeItem('sabt_token');showLogin()});
   document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===button));activePage=button.dataset.page;document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));$(activePage+'Page').classList.remove('hidden');clearError();loadActivePage()}));
