@@ -232,5 +232,5 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Updated datetime-local report filters to interpret entered wall-clock times in the project's timezone and convert them to UTC before calling report APIs; nonexistent local times caused by timezone transitions are rejected with a user-facing message.
 - [x] Default report range is now initialized in project-local time after authorized project context loads.
 - [x] Added API tests for timezone context, workflow-only permission, and denial without report permissions.
-- [ ] Verify the latest CI after these changes.
+- [x] CI run [39054310436](https://github.com/kokoosabzi/sabt/actions/runs/39054310436): test suite passed; fresh SQLite migration, Alembic head, downgrade and re-upgrade steps all passed on commit `338e414d10a017ea0c82f80c812010b83c4cace8`.
 - [ ] Add Jalali calendar input controls; current browser datetime-local controls still use Gregorian entry even though displayed timestamps use the Persian locale.
