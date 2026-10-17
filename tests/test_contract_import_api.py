@@ -113,3 +113,76 @@ def test_contract_import_requires_create_permission():
         assert response.status_code == 403
     finally:
         close_import_api_context(context)
+
+
+def test_contract_import_rolls_back_every_row_when_a_later_row_fails(monkeypatch):
+    import app.contracts.import_routes as import_routes
+    from app.contracts.service import ParentContractValidationError
+
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    original_create = import_routes.create_parent_contract
+    calls = 0
+
+    def fail_on_second_row(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise ParentContractValidationError("simulated_second_row_failure")
+        return original_create(*args, **kwargs)
+
+    monkeypatch.setattr(import_routes, "create_parent_contract", fail_on_second_row)
+    try:
+        response = client.post(
+            "/contracts/parent/import/confirm",
+            json={
+                "project_id": project.id,
+                "rows": [
+                    {"suffix": "0123", "initial_person_id": person.id, "property_id": None},
+                    {"suffix": "0124", "initial_person_id": person.id, "property_id": None},
+                ],
+            },
+        )
+        assert response.status_code == 409
+        assert db.scalar(select(ParentContract.id)) is None
+        assert calls == 2
+    finally:
+        close_import_api_context(context)
+
+
+def test_contract_import_rolls_back_if_a_duplicate_appears_after_preview(monkeypatch):
+    import app.contracts.import_routes as import_routes
+    from app.contracts.service import ParentContractConflictError
+
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    original_create = import_routes.create_parent_contract
+    calls = 0
+
+    def simulate_concurrent_duplicate(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            # Simulates a uniqueness conflict detected during the write, after
+            # the request's initial preview/revalidation has already succeeded.
+            raise ParentContractConflictError("parent_contract_number_conflict")
+        return original_create(*args, **kwargs)
+
+    monkeypatch.setattr(import_routes, "create_parent_contract", simulate_concurrent_duplicate)
+    try:
+        response = client.post(
+            "/contracts/parent/import/confirm",
+            json={
+                "project_id": project.id,
+                "rows": [
+                    {"suffix": "0123", "initial_person_id": person.id, "property_id": None},
+                    {"suffix": "0124", "initial_person_id": person.id, "property_id": None},
+                ],
+            },
+        )
+        assert response.status_code == 409
+        assert db.scalar(select(ParentContract.id)) is None
+        assert calls == 2
+    finally:
+        close_import_api_context(context)
+
