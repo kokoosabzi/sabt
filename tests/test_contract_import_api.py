@@ -186,3 +186,32 @@ def test_contract_import_rolls_back_if_a_duplicate_appears_after_preview(monkeyp
     finally:
         close_import_api_context(context)
 
+
+def test_contract_import_rows_can_be_corrected_and_revalidated_without_writes():
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    try:
+        preview_response = client.post(
+            f"/contracts/parent/import/preview?project_id={project.id}",
+            files={"file": ("contracts.csv",
+                            f"suffix,initial_person_id\n0123,{person.id}\n0123,{person.id}\n".encode(),
+                            "text/csv")},
+        )
+        assert preview_response.status_code == 200
+        staged = preview_response.json()
+        assert staged["can_confirm"] is False
+
+        corrected = [dict(row, suffix=suffix) for row, suffix in zip(staged["rows"], ["0123", "0124"])]
+        response = client.post(
+            "/contracts/parent/import/validate",
+            json={"project_id": project.id, "rows": corrected},
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result["can_confirm"] is True
+        assert result["valid_count"] == 2
+        assert [row["contract_number"] for row in result["rows"]] == ["760123", "760124"]
+        assert db.scalar(select(ParentContract.id)) is None
+    finally:
+        close_import_api_context(context)
+
