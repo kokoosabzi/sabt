@@ -19,6 +19,8 @@ jobs:
           cache: pip
       - name: Install package and test dependencies
         run: python -m pip install -e ".[test]"
+      - name: Install Chromium for browser E2E tests
+        run: python -m playwright install --with-deps chromium
       - name: Run test suite
         run: pytest
       - name: Upgrade a fresh SQLite database
