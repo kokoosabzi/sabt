@@ -237,7 +237,7 @@ Define how the transferee is identified in operation parties and implement curre
 
 ## Latest work — staged contract import API
 
-- [ ] Bulk-import feature remains incomplete until browser end-to-end automation is added and verified.
+- [x] Bulk-import feature browser end-to-end automation is implemented and verified on Chromium.
 - [x] Added a bounded CSV/XLSX parser for parent-contract import rows (`suffix`, `initial_person_id`, optional `property_id`), including strict column checks, row limits, file-size limits, and row-level format validation.
 - [x] Added an authenticated preview endpoint that checks project authorization, project status/code, existing duplicates, active people/project membership, and optional property/project association without writing records.
 - [x] Added a confirmation endpoint that revalidates client-submitted rows and attempts all contract creations within one transaction; it relies on existing parent-contract service rules and database constraints.
@@ -251,11 +251,11 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Hardened parser resource limits: CSV rows are processed incrementally, the 2,000-row cap is enforced during parsing, duplicate/blank headers and mismatched row widths are rejected, and XLSX archives are screened for encryption, excessive ZIP entries, and expanded size above 50 MiB.
 - [x] Added regression tests for malformed CSV headers/rows, the row cap, and invalid XLSX ZIP content.
 - [x] CI run [39055555558](https://github.com/kokoosabzi/sabt/actions/runs/39055555558) passed: **135 tests passed**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
-- [ ] Browser end-to-end automation has not yet been added or run.
+- [x] Added a real Playwright/Chromium browser E2E covering sign-in, CSV selection, duplicate preview, inline correction, server revalidation, explicit confirmation, and persisted contract-number verification.
 - [x] GitHub Actions run [39055125021](https://github.com/kokoosabzi/sabt/actions/runs/39055125021) passed on commit `583878d27e93b75c71ebf00e657fe58f5bed4c3d`: **128 tests passed**, fresh SQLite migration upgrade, Alembic head verification, and downgrade/re-upgrade all succeeded (2 deprecation warnings).
 - [x] GitHub Actions run [39055134348](https://github.com/kokoosabzi/sabt/actions/runs/39055134348) also passed on the latest documentation commit `f18768092ceb1a925e9fe1eb00266b4f121bd214`.
 - [x] GitHub Actions run [39055279448](https://github.com/kokoosabzi/sabt/actions/runs/39055279448) passed after inline correction and UI smoke-test additions: **130 tests passed**, fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade all succeeded.
 - [x] Latest progress-documentation CI run [39055286369](https://github.com/kokoosabzi/sabt/actions/runs/39055286369) passed on commit `cb8606c253057654bea74f5be636eed52f14c253`.
-- [ ] Do not mark the feature complete until browser end-to-end automation is implemented and verified.
-- **Review:** Draft PR #2 targets `codex/foundation-audit`: https://github.com/kokoosabzi/sabt/pull/2
-- **Parser hardening review:** Draft PR #3 targets `codex/contract-bulk-import`: https://github.com/kokoosabzi/sabt/pull/3
+- [x] Browser E2E verified in CI run [39056308692](https://github.com/kokoosabzi/sabt/actions/runs/39056308692): **136 tests passed**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
+- **Integrated:** PR #4 (browser E2E) merged into PR #3; PR #3 (parser hardening) merged into PR #2; PR #2 (staged import) merged into PR #1.
+- **Stable foundation milestone:** PR #1 merged into `main` as commit `083f6728adf3107c04535b05fe944f94b5b0b802` after the combined 136-test CI and SQLite migration round-trip passed.
