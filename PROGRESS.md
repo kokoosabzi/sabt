@@ -276,3 +276,12 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Use the browser's built-in Persian calendar data (Intl) without CDN or runtime network dependency, preserving offline/LAN compatibility.
 - [x] Keep UTC storage/API timestamps and project-timezone conversion unchanged; add Chromium browser E2E coverage for picker-only date entry and hour/minute controls.
 - [x] GitHub Actions run [39057857094](https://github.com/kokoosabzi/sabt/actions/runs/39057857094) passed on commit `b6152b0dc0a1c4aaedab877af0ac03e346b37627`: **137 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
+
+
+## Excel report exports — 2026-10-17
+- [x] Add permission-scoped Excel (.xlsx) export for management summary metrics, workflow operations, and persisted workflow events.
+- [x] Reuse the same project authorization and report filters as the corresponding JSON/CSV endpoints; cap bulk exports at 5,000 rows.
+- [x] Create right-to-left worksheets with Persian headers, freeze panes, filters, and bounded column widths.
+- [x] Neutralize formula-like untrusted text cells and serialize structured event metadata safely.
+- [x] Add API tests that reopen generated workbooks, validate Persian headers/content type, and verify project authorization.
+- [ ] Await CI for codex/report-excel-and-pdf-exports; PDF/print exports remain a separate next slice.
