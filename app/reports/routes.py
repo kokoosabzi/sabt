@@ -260,6 +260,39 @@ def export_management_summary_xlsx(
     return _report_response(build)
 
 
+@router.get("/workflow/export.xlsx")
+def export_workflow_xlsx(
+    project_id: int = Query(..., ge=1),
+    start_at: datetime = Query(...),
+    end_at: datetime = Query(...),
+    status: str | None = Query(None, min_length=1, max_length=32),
+    operation_type_id: int | None = Query(None, ge=1),
+    parent_contract_number: str | None = Query(None, min_length=6, max_length=6),
+    child_contract_number: str | None = Query(None, min_length=8, max_length=32),
+    property_id: int | None = Query(None, ge=1),
+    created_by: int | None = Query(None, ge=1),
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    def build():
+        items = _collect_pages(lambda offset: get_workflow_report(
+            db, user, project_id, start_at, end_at, status=status,
+            operation_type_id=operation_type_id, parent_contract_number=parent_contract_number,
+            child_contract_number=child_contract_number, property_id=property_id,
+            created_by=created_by, limit=EXPORT_PAGE_SIZE, offset=offset,
+        ))
+        columns = [
+            ("شناسه عملیات", "operation_id"), ("نوع عملیات", "operation_type_name"),
+            ("وضعیت", "status"), ("وضعیت گردش کار", "workflow_state"),
+            ("شناسه ملک", "property_id"), ("شماره قرارداد مادر", "parent_contract_number"),
+            ("شماره انتقال", "child_contract_number"), ("ثبت‌کننده", "created_by_display_name"),
+            ("تاریخ ایجاد", "created_at"), ("تاریخ به‌روزرسانی", "updated_at"),
+            ("تاریخ نهایی‌شدن", "finalized_at"), ("شماره نسخه", "current_version_number"),
+        ]
+        return _xlsx_response("sabt-workflow-report.xlsx", columns, items)
+    return _report_response(build)
+
+
 @router.get("/project-context")
 def report_project_context(
     project_id: int = Query(..., ge=1),
