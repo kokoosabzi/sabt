@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -7,7 +7,9 @@ class Project(Base):
     __tablename__ = "projects"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    contract_code: Mapped[str | None] = mapped_column(String(2), unique=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    __table_args__ = (CheckConstraint("contract_code IS NULL OR contract_code GLOB '[1-9][0-9]'", name="ck_projects_contract_code_format"),)
     description: Mapped[str | None] = mapped_column(Text())
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="Asia/Tehran")
@@ -173,6 +175,13 @@ class Operation(Base):
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     current_version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    parent_contract_id: Mapped[int | None] = mapped_column(ForeignKey("parent_contracts.id", ondelete="RESTRICT"))
+    transfer_sequence: Mapped[int | None] = mapped_column(Integer)
+    child_contract_number: Mapped[str | None] = mapped_column(String(32))
+    __table_args__ = (
+        UniqueConstraint("child_contract_number", name="uq_operations_child_contract_number"),
+        UniqueConstraint("parent_contract_id", "transfer_sequence", name="uq_operations_parent_transfer_sequence"),
+    )
 
 class OperationParty(Base):
     __tablename__ = "operation_parties"
@@ -199,6 +208,28 @@ class Contract(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+class ParentContract(Base):
+    """Stable six-digit business root for a member's transfer history."""
+    __tablename__ = "parent_contracts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False)
+    contract_number: Mapped[str] = mapped_column(String(6), unique=True, nullable=False)
+    suffix: Mapped[str] = mapped_column(String(4), nullable=False)
+    initial_person_id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"), nullable=False)
+    property_id: Mapped[int | None] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"))
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
+    next_transfer_sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __table_args__ = (
+        CheckConstraint("next_transfer_sequence >= 1", name="ck_parent_contract_next_transfer_sequence_positive"),
+        UniqueConstraint("project_id", "suffix", name="uq_parent_contract_project_suffix"),
+        CheckConstraint("contract_number GLOB '[1-9][0-9][0-9][0-9][0-9][0-9]'", name="ck_parent_contract_number_format"),
+        CheckConstraint("suffix GLOB '[0-9][0-9][0-9][0-9]'", name="ck_parent_contract_suffix_format"),
+    )
+
 
 class OperationVersion(Base):
     __tablename__ = "operation_versions"
@@ -338,3 +369,17 @@ class OperationAppointment(Base):
     operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     __table_args__ = (UniqueConstraint("appointment_id", "operation_id", name="uq_appointment_operation_link"),)
+
+
+class WorkflowEvent(Base):
+    """Immutable audit record for a real workflow/activity event."""
+    __tablename__ = "workflow_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False)
+    operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
+    actor_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    from_status: Mapped[str | None] = mapped_column(String(32))
+    to_status: Mapped[str | None] = mapped_column(String(32))
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    metadata_json: Mapped[str | None] = mapped_column(Text())

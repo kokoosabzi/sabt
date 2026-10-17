@@ -24,8 +24,8 @@ Core project records.
 
 Columns:
 - id
-- code
-- name
+- code (existing general-purpose project code; preserved for backward compatibility)
+- contract_code (nullable, unique, two-digit numeric code used for Parent Contract numbering)
 - description
 - status
 - timezone
@@ -35,7 +35,10 @@ Columns:
 - version
 
 Constraints:
-- code should be unique.
+- Existing `code` remains a general-purpose identifier and is not silently converted.
+- `contract_code` is a two-character numeric string from `10` through `99`, unique when present; `01`–`09` are invalid.
+- The same `contract_code` prefixes every Parent Contract in that Project.
+- The `set_project_contract_code` service requires project-scoped `project.edit` authorization and an expected project version; it prevents changing the code after any Parent Contract exists.
 - name should be indexed.
 
 ### persons
@@ -212,7 +215,6 @@ Columns:
 - id
 - project_id
 - operation_type_id
-- appointment_id (nullable)
 - status
 - current_workflow_state
 - property_id (nullable until required by workflow)
@@ -223,6 +225,9 @@ Columns:
 - finalized_at
 - version
 - current_version_number
+- parent_contract_id (nullable; set for transfer Operations)
+- transfer_sequence (nullable; allocated when a linked transfer is finalized)
+- child_contract_number (nullable; e.g. `760123/1`)
 
 Important:
 - One Appointment may have many Operations.
@@ -324,6 +329,33 @@ Unique:
 - numbering_policy_id + scope_key
 
 Allocation is transactional and must not use MAX()+1.
+
+### workflow_events
+
+Immutable activity records used by date-scoped workflow reports.
+
+Columns:
+- id (internal primary key)
+- project_id
+- operation_id
+- actor_user_id
+- event_type (for example OPERATION_CREATED, PARTY_ADDED, OPERATION_FINALIZED)
+- from_status (nullable)
+- to_status (nullable)
+- occurred_at (timezone-aware timestamp)
+- metadata_json (optional non-sensitive event context)
+
+Indexes:
+- project_id + occurred_at
+- operation_id + occurred_at
+- actor_user_id + occurred_at
+
+Rules:
+- Events are written in the same transaction as the operation action that produced them.
+- Current initial event coverage: operation creation, party addition, and operation finalization.
+- Draft/finalized timestamps alone are not a substitute for a workflow event stream.
+- Events are append-only; corrections or reversals must be represented by new events, not by rewriting prior history.
+- Event reports are restricted by project authorization and use occurred_at for date-range filtering.
 
 ### operation_versions
 Immutable finalized/correction versions.
@@ -820,3 +852,41 @@ Every schema change must have:
 - downgrade strategy where practical
 - data migration if required
 - test coverage for critical constraints
+
+
+## Parent Contract transfer chain — implementation status
+
+Migrations `0007_parent_contracts` and `0008_transfer_sequence_counter` and their matching ORM models now exist on the foundation branch. Authorized Parent Contract creation and transactional child-number allocation during Operation finalization have been implemented in services, with focused tests added. CI verification is pending; ownership derivation, import staging and UI are still pending.
+
+### projects.contract_code
+- Separate from the legacy general-purpose `projects.code`; existing project codes are not auto-converted.
+- Nullable and unique until a Parent Contract is created for the Project.
+- Two-character numeric string from `10` through `99`; `01`–`09` are invalid.
+- `set_project_contract_code` prevents changing/clearing this value after a Parent Contract exists and requires an expected Project version.
+
+### parent_contracts
+- `id`: internal primary key.
+- `project_id`: required Project reference.
+- `contract_number`: globally unique six-character string, formed from `contract_code + suffix`.
+- `suffix`: four-character string; preserve leading zeroes (for example `0123`).
+- `initial_person_id`: required Person reference.
+- `property_id`: optional Property reference.
+- `status`, `next_transfer_sequence` (starts at 1 and is atomically incremented when a transfer is finalized), `created_at`, `updated_at`, `version`.
+
+The database currently enforces uniqueness of `contract_number` and `project_id + suffix`, and basic number/suffix formatting. Service-level validation must additionally verify that the first two digits of `contract_number` equal the associated Project's `contract_code`.
+
+### operations transfer-chain fields
+- `parent_contract_id`: nullable for operations that are not transfers.
+- `transfer_sequence`: nullable positive integer for a transfer.
+- `child_contract_number`: nullable unique string such as `760123/1`.
+
+The schema prevents duplicate child numbers and duplicate `parent_contract_id + transfer_sequence` pairs. Finalization atomically increments `next_transfer_sequence` and records the child number in the same transaction as the OperationVersion snapshot. Rolling back that transaction also rolls back the counter. A transfer-linked operation must have at least one party. Ownership derivation from the latest valid finalized transfer is still pending.
+
+### Still future work
+- Service-level project-code immutability after first Parent Contract.
+- A transactional per-parent counter and transfer finalization integration; never use `MAX()+1`.
+- Ownership derivation from the latest valid finalized transfer only.
+- Parent-level parties/immutable owner snapshots where needed.
+- Authorized search/history APIs and UI.
+- Excel/CSV staging, mapping, duplicate review, preview, explicit confirmation, transactional persistence and audit report.
+- Tests for business constraints and rollback behavior.

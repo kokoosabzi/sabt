@@ -1,32 +1,43 @@
 # SABT Development Progress
 
-> This file is the living execution ledger. A checked item means it is completed at the stated verification level, not merely planned. Never record tests as passing unless they were actually run.
+> This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
 ## Current status
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization
-- **Overall status:** In progress; repository implementation has not yet been verified by a local test run in this work session.
-- **Current working rule:** Stabilize the existing foundation before adding more business features.
+- **Overall status:** Parent Contract creation, project-code immutability, atomic transfer numbering, and Buyer / Transferee-based current-owner derivation are implemented on `codex/foundation-audit`. CI run `38596512913` passed **87 tests, 2 warnings**, plus fresh SQLite upgrade and downgrade/re-upgrade through `0008_transfer_sequence_counter`. Implementation remains incomplete; PR #1 stays draft and unmerged.
+- **Working rule:** Stabilize the foundation, make missing guarantees explicit, and do not resolve business-policy questions by guessing.
 
 ## Phase plan
 
 ### Phase 0 — Foundation audit and stabilization
-- [ ] Run the existing test suite and record the real output.
-- [ ] Verify that all Alembic migrations upgrade a fresh SQLite database successfully.
-- [ ] Compare ORM metadata against migrations, including constraints, foreign keys, indexes, and nullability.
-- [ ] Fix migration/model drift and add regression tests.
-- [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization.
+- [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization beyond the current unit coverage.
 - [ ] Verify project isolation for every service and resource lookup.
-- [ ] Test registration-number allocation for policy selection, ambiguity, scope, rollback, and concurrency assumptions.
+- [ ] Test registration-number allocation concurrency assumptions.
 - [ ] Review operation creation/finalization transaction boundaries and validation order.
-- [ ] Update this file with verified findings and exact test commands.
+- [ ] Compare ORM metadata against migrations for tables, columns, nullability, foreign keys, and indexes/constraints.
+- [x] Add CI for tests and fresh-database migration round-trip.
+- [x] Add regression tests for authorization, session expiry/revocation, numbering behavior, operation project isolation, and ORM/migration parity.
+- [x] Require active ProjectPerson membership before adding an OperationParty; reject missing, inactive, or cross-project membership before writes.
+- [x] Require an expected operation version for party edits and finalization; reject stale party edits without side effects.
+- [x] Record the verified findings and exact CI evidence in this progress ledger.
+
+### Parent Contract schema foundation
+- [x] Add additive Alembic migration for Project.contract_code, ParentContract, and Operation transfer-chain fields.
+- [x] Add matching ORM models/constraints and update the logical ERD/database schema documentation.
+- [x] Verify migration upgrade/downgrade/re-upgrade and ORM table/column/foreign-key/nullability parity in CI (run `38590960614`).
+- [x] Add pure validation/formatting helpers and tests for two-digit Project contract codes, six-digit Parent Contract numbers, four-digit suffixes, and positive child sequences.\n- [ ] Integrate validation helpers into authorized Parent Contract creation and enforce project-code immutability after first use.
+- [ ] Add transactional transfer child-number allocation on finalization; never use MAX()+1.
+- [x] Add service tests for authorized Parent Contract creation, leading-zero preservation, missing project code, invalid suffixes, project membership/property association, duplicate suffix, and missing project access.
+- [x] Add tests for project-code immutability, stale project versions, and invalid project contract codes.
+- [ ] Add tests for transfer sequence uniqueness and rollback.
 
 ### Phase 1 — Complete operation lifecycle
 - [ ] Define and implement working snapshots at operation creation.
 - [ ] Validate required parties, documents, fields, and workflow before finalization.
 - [ ] Integrate registration-number allocation into finalization with safe rollback semantics.
 - [ ] Include optional Contract and required historical data in operation snapshots.
-- [ ] Add optimistic-locking checks to all mutating operation services.
+- [ ] Make optimistic-locking guarantees mandatory for mutating operation services where required.
 - [ ] Add tests for finalization failures, success, idempotency/conflict, and immutable version snapshots.
 
 ### Phase 2 — Contracts and restrictions
@@ -71,43 +82,180 @@
 
 ## Verified baseline
 
-### Repository work already committed
-- [x] Architecture and domain documentation established.
-- [x] FastAPI/SQLAlchemy/Alembic foundation files added.
-- [x] Authentication, password hashing, session, and authorization foundation added.
-- [x] Operation core service and version/snapshot structures added.
-- [x] Appointment/Operation many-to-many model and migration added; redundant direct operation appointment column removed.
-- [x] Initial transactional registration-number allocator added; currently supports only reset policy NEVER.
+### Implemented foundation components
+- [x] Architecture/domain documentation and coding-agent guidance.
+- [x] FastAPI, SQLAlchemy, Alembic model/migration foundation.
+- [x] Password hashing, bearer sessions, and authorization foundation.
+- [x] Operation create/party/finalize service skeleton and snapshot structures.
+- [x] Operation–Appointment many-to-many association; redundant direct appointment FK removed.
+- [x] Transactional registration-number allocator with policy/scope checks; currently supports reset policy `NEVER` only.
+- [x] CI workflow runs pytest and Alembic upgrade/downgrade/re-upgrade checks on pushes and pull requests.
 
-### Verification status
-- [ ] Python test suite: **Not run in this session.**
-- [ ] Fresh-database Alembic upgrade: **Not run in this session.**
-- [ ] Alembic downgrade/upgrade round trip: **Not run in this session.**
-- [ ] Numbering concurrency test: **Not run in this session.**
-- [ ] ORM/migration parity check: **Not run in this session.**
+### Verified on GitHub Actions
+- [x] On commit `e5a882401f62c1f68c302ea94c89783bff5ef73e`: **25 passed, 2 warnings**; Python test suite passed.
+- [x] On commit `1b1903875e7ddcfe4bcfc2289324aafae9ad76a8`: **27 passed, 2 warnings**; added tests for inactive roles and revoked project access.
+- [x] Fresh SQLite Alembic upgrade reached `0006_remove_operation_appointment_id (head)`.
+- [x] Alembic downgrade to base and re-upgrade to head passed.
+- [x] ORM/migration parity test passed for table names, column names, foreign keys, and column nullability (run `38343796388`, commit `1cc1ed2b946db611d7af6bbb751f7020fbd74fdc`).
+- [x] Latest branch head `014e868cf88bd0e10332986abf081f2c25165319`: GitHub Actions run **38343582096 completed successfully**. This commit only updates progress documentation; the run verifies the current branch's CI workflow.
+- [x] Latest test run `38343819274` succeeded on commit `1b1903875e7ddcfe4bcfc2289324aafae9ad76a8`: 27 tests passed, fresh migration succeeded, and downgrade/re-upgrade round trip succeeded.
 
-## Known review items
-- [x] Operation creation now validates a supplied Appointment before the first Operation write (commit `2e50f55`); regression/integration verification is still pending.
-- [ ] Registration-number allocation exists but is not yet integrated into finalization.
-- [ ] Finalization currently lacks required party/document/workflow/restriction validation.
-- [ ] Snapshot at operation creation is not yet implemented.
-- [ ] Finalization snapshot currently does not include Contract data.
-- [ ] Numbering scope-key unit tests were added (`tests/test_numbering_unit.py`, commit `b2ad999`); tests have not been executed. Policy precedence and allowed persisted values still need tests/documentation.
-- [ ] OperationTypeWorkflow uniqueness with nullable project_id needs review for SQLite NULL uniqueness behavior.
-- [ ] Migration 0006 downgrade adds the legacy appointment_id column without restoring its former foreign-key behavior.
-- [ ] Runtime database URL is currently hard-coded and should move to validated configuration before deployment.
+## Known implementation gaps and risks
+
+- [ ] Registration-number allocation is not integrated into finalization.
+- [ ] Finalization does not yet validate required party/document/workflow/restriction rules.
+- [ ] Working snapshot at operation creation is not implemented.
+- [ ] Finalization snapshot does not include Contract data.
+- [ ] Numbering concurrency has not been tested in this workstream.
+- [ ] `OperationTypeWorkflow` uniqueness with nullable `project_id` needs review because SQLite permits multiple NULL values in unique keys.
+- [ ] Migration 0006 downgrade re-adds legacy `appointment_id` without restoring the former foreign-key behavior.
+- [ ] Runtime database URL is hard-coded as `sqlite:///./sabt.db`; validated environment configuration is still needed.
+- [ ] Authorization guard currently accepts a fixed `project_id`; it does not yet resolve project scope dynamically from a request path/body.
+- [ ] Optimistic locking is optional in current operation-service calls when `expected_version` is omitted.
 
 ## Decision log
-- 2026-10-09: Added SKILL.md as the coding-agent operating contract and AGENTS.md as the repository entry point.
-- 2026-10-09: Added this progress ledger. Test status remains explicitly unverified until a runner executes the commands.
 
-## Latest phase entry
+- 2026-10-09: Added `SKILL.md`, `AGENTS.md`, and initial progress tracking.
+- 2026-10-13: Added CI and expanded foundation regression tests on `codex/foundation-audit`.
+- 2026-10-13: CI run `38343582096` passed for branch head `014e868cf88bd0e10332986abf081f2c25165319`.
+- 2026-10-13: CI run `38343819274` passed with 27 tests, including revoked-project-access/inactive-role checks and schema nullability parity.
+- 2026-10-13: CI run `38468577088` passed with 36 tests and SQLite migration upgrade/downgrade/re-upgrade checks. Added project-membership validation for OperationParty writes and mandatory optimistic version checks for party edits/finalization.
+- 2026-10-13: Documented the Parent Contract / transfer Operation architecture proposal; implementation and numbering edge cases remain open.
+- 2026-10-14: Added `create_parent_contract` and `set_project_contract_code` services on `codex/foundation-audit`, including authorization, project/person/property association checks, string-safe six-digit number creation, duplicate safeguards, optimistic project version checks, and project-code immutability after first use.
+- 2026-10-14: Added migration `0008_transfer_sequence_counter`, the ParentContract counter, validation when linking an Operation to a Parent Contract, atomic child-number allocation during finalization, and rollback/sequential-number tests. CI run `38594111665` passed 85 tests and the migration upgrade/downgrade/re-upgrade round-trip through `0008_transfer_sequence_counter`.
 
-### Phase 0 — In progress (2026-10-09)
-**Delivered:** agent guidance and progress tracking files.
+## Parent Contract transfer-chain design update — 2026-10-13
 
-**Verification evidence:** GitHub file creation commits only; no Python tests or migration commands were executed in this session.
+- [x] Recorded the proposed stable six-digit Parent Contract root and per-transfer child business number convention in architecture/domain/workflow/schema documents.
+- [x] Confirmed Project codes are two numeric digits starting at `10`; `01`–`09` are not used. The code is shared by all members/contracts in a Project.
+- [x] Confirmed the four-digit parent suffix may be entered manually or imported from Excel/CSV; imports may also include optional unit/property details.
+- [x] Distinguished a genuine transfer (new Operation) from a correction to an existing finalized transfer (OperationVersion/correction workflow).
+- [x] Documented parent-number search/history, current-owner derivation, transactional child numbering, and staged Excel/CSV import as design targets.
+- [ ] Resolve the remaining business decisions: global uniqueness/immutability of Project codes, child-number gaps/width, ownership-effective state, legacy import ordering, and exact import columns/person duplicate matching.
+- [x] Implement schema and core service behavior for Parent Contract creation and child-number allocation.
+- [ ] Implement current-owner derivation from latest valid finalized transfers; recipient/owner role policy must be explicitly defined rather than guessed.
+- [ ] Add authorized search/history APIs, UI, and staged Excel/CSV import.
 
-**Remaining risks:** foundation correctness, migration parity, and service transaction boundaries remain unverified.
+## Next task
 
-**Next task:** run the audit prompt in Codex against a separate branch, fix the highest-risk test/migration failures, and update this ledger with exact output.
+Define how the transferee is identified in operation parties and implement current-owner/history queries; keep the pull request open and unmerged until the new checks and risks are reviewed.
+
+
+## Confirmed ownership rule — 2026-10-14
+- [x] User confirmed the owner-changing party role is **Buyer / Transferee**.
+- [x] Canonical role code is `BUYER_TRANSFEREE`; a Parent Contract transfer cannot be finalized without at least one active party with this role.
+- [x] Current owner is derived from the latest valid finalized transfer with a finalized current OperationVersion and Buyer / Transferee party; draft operations do not change ownership.
+- [x] Parent Contract history response includes the current owner and identifies whether it came from the initial contract or a finalized transfer.
+- [ ] Verify latest CI for the buyer/transferee rule and current-owner derivation; then expose the history service through an authorized API route.
+
+
+## API and management reporting update — 2026-10-14
+- [x] Added authenticated `GET /contracts/parent/{contract_number}/history` route using the authorized service; maps invalid number, missing contract, and forbidden access to HTTP 422/404/403.
+- [x] Registered the contract-history router in the FastAPI app.
+- [x] Specified a Persian RTL management portal, daily/date-range workflow reports, contract transfer-chain report, ad-hoc reports, drill-down behavior, permissions, timezone/Jalali date handling, pagination, and export/audit rules in `UI_FLOW.md`.
+- [x] Add API tests for contract-history route authentication, authorization, invalid numbers, not-found responses, and response shape.
+- [x] Implement portal summary/report APIs from verified stored data with project-scope and permission checks.
+- [x] Implement initial contract-history UI and Persian RTL portal/report screens; advanced UI and browser end-to-end tests remain.
+- [ ] Implement staged Excel/CSV import with validation, preview, explicit confirmation, transactional persistence, and import result report.
+- [ ] Keep PR #1 draft and do not merge until tests and review are complete.
+
+- [x] GitHub Actions run [38602455911](https://github.com/kokoosabzi/sabt/actions/runs/38602455911) passed on API route/test commit `814f87851f9c439bb66c22b83e6f5d255088834d`; the CI workflow includes the full pytest suite and SQLite migration round-trip.
+
+
+
+## Reporting implementation (2026-10-15)
+- [x] Add project-scoped management summary indicators and paginated workflow report queries with status/type/contract/property/creator filters.
+- [x] Expose `/reports/management/summary` and `/reports/workflow`; retain `/reports/management-summary` as a deprecated compatibility alias.
+- [x] Add service tests for metrics, project permission, range validation, filters and pagination, plus route-registration checks.
+- [x] Add route-level tests for report permissions, range validation, empty metrics and paginated results.
+- [x] Verify GitHub Actions run [38636249232](https://github.com/kokoosabzi/sabt/actions/runs/38636249232): 105 tests passed; fresh SQLite upgrade, Alembic head, downgrade and re-upgrade passed.
+- [x] Check report authorization before resolving the requested Project, avoiding disclosure of inaccessible Project existence; add a cross-project regression test.
+- [x] Add WorkflowEvent records for operation creation/finalization and a project-scoped, paginated `/reports/workflow/events` API; report only persisted events.
+- [ ] Extend event capture to all relevant lifecycle changes (party edits, cancellation/rejection, assignments and appointment transitions) before claiming comprehensive workflow history or time-in-state.
+
+
+## Management and workflow reports — 2026-10-15
+- [x] Implement project-scoped management summary from stored operation and Parent Contract records.
+- [x] Implement a paginated workflow report with time range, status, operation type, Parent Contract/child number, property and creator filters.
+- [x] Expose authenticated report endpoints; permission checks and project scope are enforced in the service.
+- [x] Add report service/API tests and fix route-registration test compatibility with current FastAPI.
+- [x] CI run [38635961043](https://github.com/kokoosabzi/sabt/actions/runs/38635961043) passed: 104 tests, 2 warnings; fresh SQLite migration, Alembic head, downgrade and re-upgrade checks also passed.
+- [x] Add workflow event history endpoint based on persisted events; no inferred events or hidden time-in-state estimates.
+- [ ] Extend event recording to every relevant workflow transition before offering a comprehensive event timeline.
+- [ ] Build the Persian RTL portal and report pages; add CSV/Excel/PDF export after UI/API contract review.
+
+- [x] Require timezone-aware report range bounds and normalize them to UTC; add malformed parent/child contract filter validation.
+- [x] Add dashboard counts for currently open operations and parent-contract transfers finalized in the selected period, without inferring unrecorded state transitions.
+- [x] Latest verification: [GitHub Actions run 38636446498](https://github.com/kokoosabzi/sabt/actions/runs/38636446498) passed **105 tests, 2 warnings**, plus fresh SQLite upgrade, Alembic head, downgrade and re-upgrade checks.
+
+
+## Workflow event audit stream — 2026-10-15
+- [x] Add migration `0009_workflow_events` and matching `WorkflowEvent` ORM model with project/operation/actor references and time indexes.
+- [x] Record `OPERATION_CREATED`, `PARTY_ADDED`, and `OPERATION_FINALIZED` in the same database transaction as their source actions.
+- [x] Add project-scoped, time-filtered, paginated `GET /reports/workflow/events` using event occurrence time rather than operation creation time.
+- [x] Document the event table, transaction behavior, and current event coverage in `DATABASE_SCHEMA.md`.
+- [x] Verify CI run [38636861666](https://github.com/kokoosabzi/sabt/actions/runs/38636861666): 106 tests passed; migration upgrade/downgrade/re-upgrade checks passed.
+- [x] Verify latest CI run [38637141106](https://github.com/kokoosabzi/sabt/actions/runs/38637141106): 106 tests passed, including registration of the event report endpoint; SQLite migration round-trip passed.
+- [ ] Extend event recording to every implemented workflow state transition as the workflow engine grows; do not report time-in-state until all required transitions and timestamps are persisted.
+- [ ] Build the Persian RTL portal UI after the foundation stabilization gate; the repository currently has no frontend application.
+
+- [x] Latest workflow-event verification: [GitHub Actions run 38636873310](https://github.com/kokoosabzi/sabt/actions/runs/38636873310) passed **106 tests, 2 warnings**, including fresh SQLite migration and downgrade/re-upgrade checks.
+
+- [x] Add API regression coverage for `GET /reports/workflow/events` and ensure both event and linked Operation queries are scoped to the authorized project.
+- [x] Latest verified branch checks: [GitHub Actions run 38637248974](https://github.com/kokoosabzi/sabt/actions/runs/38637248974) passed **107 tests, 2 warnings**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
+
+
+## Persian reporting portal UI — 2026-10-16
+- [x] Add responsive Persian RTL interface at `/portal/` with login/logout, management summary, paginated workflow report, persisted workflow events and Parent Contract history lookup.
+- [x] Add a smoke test confirming the portal is served as Persian RTL HTML.
+- [x] GitHub Actions run [38881571821](https://github.com/kokoosabzi/sabt/actions/runs/38881571821) passed on the portal implementation commit; the workflow runs pytest and SQLite migration round-trip checks.
+- [x] Add permission-scoped CSV exports for workflow and workflow-event reports, with UTF-8 BOM for Persian text and a 5,000-row export ceiling.\n- [ ] Add Excel/PDF export, Jalali calendar and project-timezone-aware date display.
+- [ ] Add browser end-to-end tests and graphical transfer-tree visualization.
+
+
+## CSV report exports — 2026-10-17
+- [x] Add `GET /reports/workflow/export.csv` and `GET /reports/workflow/events/export.csv`, reusing the report service's project and permission checks.
+- [x] Preserve filters and time bounds in exported data; export all matching rows up to 5,000 and reject larger exports instead of silently truncating them.
+- [x] Emit UTF-8 CSV with BOM for Persian-compatible spreadsheet opening and safe CSV escaping via Python's csv writer.
+- [x] Add portal download buttons for workflow and event reports; downloads reuse the visible filters and bearer session.
+- [x] Add tests for CSV encoding, response headers, and project access denial.
+- [x] GitHub Actions run [39053557591](https://github.com/kokoosabzi/sabt/actions/runs/39053557591) passed after fixing the BOM test expectation. PR validation is being checked separately.
+- [x] Neutralize spreadsheet formula injection in text cells beginning with `=`, `+`, `-` or `@`; add a regression test.
+
+- [x] Added a regression test for spreadsheet formula injection protection in commit `df5751b3b3a5cbc7ca58ea5885624499ff39905f`; final CI verification is pending.
+
+
+## Project-timezone reporting update — 2026-10-17
+- [x] Added authenticated `GET /reports/project-context?project_id=...`; it returns the project's configured timezone only to users who have dashboard or workflow-report permission and active project access.
+- [x] Reject invalid configured timezone identifiers rather than silently displaying timestamps in another timezone.
+- [x] Updated the portal to format displayed timestamps in the selected project's IANA timezone.
+- [x] Updated datetime-local report filters to interpret entered wall-clock times in the project's timezone and convert them to UTC before calling report APIs; nonexistent local times caused by timezone transitions are rejected with a user-facing message.
+- [x] Default report range is now initialized in project-local time after authorized project context loads.
+- [x] Added API tests for timezone context, workflow-only permission, and denial without report permissions.
+- [x] CI run [39054310436](https://github.com/kokoosabzi/sabt/actions/runs/39054310436): test suite passed; fresh SQLite migration, Alembic head, downgrade and re-upgrade steps all passed on commit `338e414d10a017ea0c82f80c812010b83c4cace8`.
+- [ ] Add Jalali calendar input controls; current browser datetime-local controls still use Gregorian entry even though displayed timestamps use the Persian locale.
+
+## Latest work — staged contract import API
+
+- [ ] Bulk-import feature remains incomplete until browser end-to-end automation is added and verified.
+- [x] Added a bounded CSV/XLSX parser for parent-contract import rows (`suffix`, `initial_person_id`, optional `property_id`), including strict column checks, row limits, file-size limits, and row-level format validation.
+- [x] Added an authenticated preview endpoint that checks project authorization, project status/code, existing duplicates, active people/project membership, and optional property/project association without writing records.
+- [x] Added a confirmation endpoint that revalidates client-submitted rows and attempts all contract creations within one transaction; it relies on existing parent-contract service rules and database constraints.
+- [x] Added parser tests for CSV/XLSX success, invalid columns/data, unsupported file types, encoding, empty data, and size limits.
+- [x] Added a Persian RTL portal page for file selection, preview table, validation issues, explicit confirmation, and success/error feedback.
+- [x] Added API tests for preview-without-writes, successful confirmation, duplicate rows, and missing create permission.
+- [x] Added API regression tests that force a failure on the second row and simulate a uniqueness conflict arising after preflight; both assert that the entire batch is rolled back with zero persisted contracts.
+- [x] Added inline editable fields for suffix, initial person ID, and optional property ID in the preview table, plus a no-write `/contracts/parent/import/validate` endpoint to refresh duplicate and association checks after edits.
+- [x] Added API regression coverage proving duplicate suffixes can be corrected and revalidated without creating records, plus a portal smoke test for the inline-edit/revalidate controls.
+- [x] Inline preview correction and server-side revalidation are implemented and covered by API/UI smoke tests; malformed file structure/columns still require fixing the source file and uploading again.
+- [x] Hardened parser resource limits: CSV rows are processed incrementally, the 2,000-row cap is enforced during parsing, duplicate/blank headers and mismatched row widths are rejected, and XLSX archives are screened for encryption, excessive ZIP entries, and expanded size above 50 MiB.
+- [x] Added regression tests for malformed CSV headers/rows, the row cap, and invalid XLSX ZIP content.
+- [x] CI run [39055555558](https://github.com/kokoosabzi/sabt/actions/runs/39055555558) passed: **135 tests passed**, plus fresh SQLite migration, Alembic head, downgrade and re-upgrade checks.
+- [ ] Browser end-to-end automation has not yet been added or run.
+- [x] GitHub Actions run [39055125021](https://github.com/kokoosabzi/sabt/actions/runs/39055125021) passed on commit `583878d27e93b75c71ebf00e657fe58f5bed4c3d`: **128 tests passed**, fresh SQLite migration upgrade, Alembic head verification, and downgrade/re-upgrade all succeeded (2 deprecation warnings).
+- [x] GitHub Actions run [39055134348](https://github.com/kokoosabzi/sabt/actions/runs/39055134348) also passed on the latest documentation commit `f18768092ceb1a925e9fe1eb00266b4f121bd214`.
+- [x] GitHub Actions run [39055279448](https://github.com/kokoosabzi/sabt/actions/runs/39055279448) passed after inline correction and UI smoke-test additions: **130 tests passed**, fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade all succeeded.
+- [x] Latest progress-documentation CI run [39055286369](https://github.com/kokoosabzi/sabt/actions/runs/39055286369) passed on commit `cb8606c253057654bea74f5be636eed52f14c253`.
+- [ ] Do not mark the feature complete until browser end-to-end automation is implemented and verified.
+- **Review:** Draft PR #2 targets `codex/foundation-audit`: https://github.com/kokoosabzi/sabt/pull/2
+- **Parser hardening review:** Draft PR #3 targets `codex/contract-bulk-import`: https://github.com/kokoosabzi/sabt/pull/3

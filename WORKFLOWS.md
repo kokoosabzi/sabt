@@ -43,3 +43,29 @@ Backup includes database, documents, generated PDFs, templates and branding/sett
 
 ## Concurrency
 Normal edits use optimistic concurrency. Sensitive forms may use short-lived application locks. Version conflicts are shown to the user; silent overwrites are prohibited.
+
+
+## Parent Contract and transfer workflow — proposed
+
+### Create/import Parent Contract
+1. Select the Project (its two-digit code must be from `10` onward; `01`–`09` are invalid). Enter the four-digit member/contract suffix manually, or import a six-digit Parent Contract number from Excel/CSV. The two-digit Project code is shared by all members/contracts in that Project. The import file may also include optional unit/property details and initial owner/member information.
+2. Validate that the six-digit number begins with the selected Project's two-digit code, the suffix is four digits, numbers are unique, required fields are present, and any supplied people/property/unit references are resolvable.
+3. Preview all rows and errors before confirmation. On confirmation, persist the accepted batch transactionally and record an import/audit report.
+4. Preserve imported business numbers; do not silently renumber historical records.
+
+### Register a transfer
+1. Open the Parent Contract and start a new transfer Operation, or find the parent by number and start from its transfer history.
+2. Capture the transfer's parties (including prior/new owner roles), property context, documents, custom fields, and workflow data.
+3. Allocate the next child number under the parent using transactional sequence state. Do not calculate it with `MAX()+1`; gaps from cancelled or rejected records must not cause number reuse.
+4. Finalize only after configured validation succeeds. The transfer's finalized snapshot preserves the business state at that point.
+5. Only a transfer in the agreed ownership-effective state changes the derived current-owner summary. Draft, rejected, or cancelled transfers do not.
+6. A later real transfer creates another Operation. A correction to an already finalized transfer uses the correction/version process and preserves the old version.
+
+The exact moment of number allocation, policy for cancelled child numbers, child sequence width, and ownership-effective status remain open decisions; this workflow is a design target, not a claim of current implementation.
+
+### Search and transfer history
+- Searching by a six-digit Parent Contract number returns the parent summary and its authorized transfer history.
+- Child rows are ordered by transfer sequence, with dates and status displayed separately; sequence is the canonical business ordering when legacy dates are inconsistent.
+- Selecting a child opens its detail page, including parties, documents, workflow/audit history, and immutable finalized snapshot.
+- The parent summary shows the initial owner separately from the derived current owner and makes the derivation traceable to the latest valid finalized transfer.
+- Search and detail access must enforce Project access and authorization on the server; hiding a row in the UI is not a security boundary.
