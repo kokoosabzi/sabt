@@ -178,25 +178,43 @@ def test_browser_contract_import_full_preview_correct_revalidate_confirm(browser
 
 
 
-def test_browser_jalali_date_controls_validate_and_submit_project_local_period(browser_app, page: Page):
+def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(browser_app, page: Page):
     page.goto(browser_app["base_url"] + "/portal/")
     page.get_by_label("نام کاربری").fill("browser-import-admin")
     page.get_by_label("گذرواژه").fill("e2e-test-password")
     page.get_by_role("button", name="ورود امن").click()
 
-    expect(page.locator("#startAt")).to_have_attribute("placeholder", "۱۴۰۵/۰۷/۲۵")
-    expect(page.locator("#startTime")).to_have_value("00:00")
+    expect(page.locator("#startAt")).to_have_attribute("readonly", "")
+    expect(page.locator("#startAt")).to_have_attribute("aria-haspopup", "dialog")
+    expect(page.locator("#startHour option")).to_have_count(24)
+    expect(page.locator("#startMinute option")).to_have_count(60)
+    expect(page.locator("#startAt")).not_to_have_value("")
+    expect(page.locator("#endAt")).not_to_have_value("")
 
-    page.locator("#startAt").fill("1405/13/01")
-    page.locator("#endAt").fill("1405/08/01")
-    page.get_by_role("button", name="دریافت گزارش").click()
-    expect(page.locator("#globalError")).to_contain_text("تاریخ شمسی معتبر نیست")
+    # Select dates through the picker only; derive the test dates from its current Jalali month.
+    to_latin = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
+    year_text, month_text, _ = page.locator("#startAt").input_value().translate(to_latin).split("/")
+    year, month = int(year_text), int(month_text)
+    start_date = f"{year:04d}/{month:02d}/01"
+    next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
+    end_date = f"{next_year:04d}/{next_month:02d}/01"
 
-    # Persian digits are accepted as well as Latin digits.
-    page.locator("#startAt").fill("۱۴۰۵/۰۷/۰۱")
-    page.locator("#endAt").fill("۱۴۰۵/۰۸/۰۱")
-    page.locator("#startTime").fill("00:00")
-    page.locator("#endTime").fill("00:00")
+    page.locator("#startAt").click()
+    expect(page.locator("#jalaliPicker")).to_be_visible()
+    page.locator(f'#jalaliDays button[data-jalali-date="{start_date}"]').click()
+    expected_start = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in start_date)
+    expect(page.locator("#startAt")).to_have_value(expected_start)
+
+    page.locator("#endAt").click()
+    page.locator("#jalaliNext").click()
+    page.locator(f'#jalaliDays button[data-jalali-date="{end_date}"]').click()
+    expected_end = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in end_date)
+    expect(page.locator("#endAt")).to_have_value(expected_end)
+
+    page.locator("#startHour").select_option("00")
+    page.locator("#startMinute").select_option("00")
+    page.locator("#endHour").select_option("00")
+    page.locator("#endMinute").select_option("00")
     page.get_by_role("button", name="دریافت گزارش").click()
     expect(page.locator("#globalError")).to_be_hidden()
     expect(page.locator("#createdMetric")).not_to_have_text("—")

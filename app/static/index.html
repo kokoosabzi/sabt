@@ -22,7 +22,7 @@
     .btn{border:0;border-radius:9px;padding:11px 15px;background:#183b56;color:white;cursor:pointer;font-weight:700}.btn.secondary{background:#edf2f7;color:#263b50}.btn:disabled{opacity:.5;cursor:not-allowed}
     .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.metric{padding:17px}.metric span{display:block;color:#667085;font-size:12px}.metric strong{display:block;font-size:27px;margin-top:12px;font-weight:800;color:#173d57}
     .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,td{padding:12px 10px;text-align:right;border-bottom:1px solid #edf0f4}th{color:#667085;font-weight:700;background:#f9fafb}
-    .muted{color:#667085;font-size:12px}.error{color:#b42318;background:#fff1f0;border-radius:9px;padding:10px;margin-bottom:12px;display:none}.success{color:#067647}.hidden{display:none!important}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{max-width:250px}
+    .date-control{position:relative}.date-control input{cursor:pointer;background:#fff;padding-left:38px}.time-selects{display:flex;align-items:center;gap:6px}.time-selects select{min-width:0;flex:1;padding:10px;border:1px solid #d0d8e2;border-radius:9px;background:#fff;color:#182230;font:inherit}.date-picker-popover{position:fixed;z-index:1000;width:290px;padding:14px;background:#fff;border:1px solid #d0d8e2;border-radius:14px;box-shadow:0 14px 40px #172b4d24}.date-picker-heading,.date-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.date-picker-heading strong{font-size:14px}.date-picker-heading .btn,.date-picker-footer .btn{padding:7px 10px}.date-picker-weekdays,.date-picker-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px;text-align:center}.date-picker-weekdays{font-size:11px;color:#667085}.date-picker-days button{border:0;border-radius:8px;padding:8px 0;background:#f5f7fa;color:#182230;cursor:pointer}.date-picker-days button:hover,.date-picker-days button:focus{background:#dcecf4;outline:2px solid #7199ae}.date-picker-days button.selected{background:#183b56;color:white}.date-picker-days button.today{box-shadow:inset 0 0 0 1px #183b56}.date-picker-days .empty{min-height:32px}.date-picker-footer{margin-top:12px}.muted{color:#667085;font-size:12px}.error{color:#b42318;background:#fff1f0;border-radius:9px;padding:10px;margin-bottom:12px;display:none}.success{color:#067647}.hidden{display:none!important}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{max-width:250px}
     .login{max-width:520px;margin:48px auto}.login .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.login .fields .full{grid-column:1/-1}
     .section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
     footer{color:#98a2b3;font-size:11px;text-align:center;padding:10px}
@@ -62,9 +62,9 @@
           <div class="section-title"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
           <div class="filters">
             <div><label for="projectId">شناسه پروژه</label><input id="projectId" type="number" min="1" step="1" value="1" required></div>
-            <div><label for="startAt">از تاریخ شمسی</label><input id="startAt" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۷/۲۵" aria-describedby="dateInputHelp" required><label for="startTime">ساعت شروع</label><input id="startTime" type="time" value="00:00" required></div>
-            <div><label for="endAt">تا تاریخ شمسی</label><input id="endAt" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۸/۲۵" aria-describedby="dateInputHelp" required><label for="endTime">ساعت پایان</label><input id="endTime" type="time" value="00:00" required></div>
-            <div><p id="dateInputHelp" class="muted">تاریخ را به شمسی و به شکل سال/ماه/روز وارد کنید؛ ساعت بر اساس منطقه زمانی پروژه است.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
+            <div><label for="startAt">از تاریخ شمسی</label><div class="date-control"><input id="startAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="startHour">ساعت شروع (۲۴ ساعته)</label><div class="time-selects"><select id="startHour" aria-label="ساعت شروع"></select><span>:</span><select id="startMinute" aria-label="دقیقه شروع"></select></div></div>
+            <div><label for="endAt">تا تاریخ شمسی</label><div class="date-control"><input id="endAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="endHour">ساعت پایان (۲۴ ساعته)</label><div class="time-selects"><select id="endHour" aria-label="ساعت پایان"></select><span>:</span><select id="endMinute" aria-label="دقیقه پایان"></select></div></div>
+            <div><p id="dateInputHelp" class="muted">تاریخ را از تقویم شمسی انتخاب کنید و ساعت را از فهرست ساعت و دقیقه برگزینید؛ منطقه زمانی پروژه اعمال می‌شود.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
           </div>
         </section>
         <section id="dashboardPage" class="page">
@@ -123,6 +123,7 @@
     </div>
     <footer>SABT · نسخه اولیه پرتال گزارش‌ها · تمام داده‌ها از API مجاز سامانه دریافت می‌شوند.</footer>
   </div>
+<div id="jalaliPicker" class="date-picker-popover hidden" role="dialog" aria-label="انتخاب تاریخ شمسی" aria-modal="false"><div class="date-picker-heading"><button id="jalaliPrev" type="button" class="btn secondary" aria-label="ماه قبل">‹</button><strong id="jalaliMonthTitle"></strong><button id="jalaliNext" type="button" class="btn secondary" aria-label="ماه بعد">›</button></div><div class="date-picker-weekdays" aria-hidden="true"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div><div id="jalaliDays" class="date-picker-days"></div><div class="date-picker-footer"><button id="jalaliToday" type="button" class="btn secondary">امروز</button><button id="jalaliClose" type="button" class="btn secondary">بستن</button></div></div>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -156,6 +157,10 @@
     }
     return {year: parts.year, month: parts.month, day: parts.day};
   }
+  function projectJalaliToday() {
+    const p=zonedParts(new Date(),projectTimezone);
+    return calendarParts(new Date(Date.UTC(p.year,p.month-1,p.day,12)));
+  }
   function jalaliDateToGregorian(value) {
     const match = /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/.exec(normalizeDigits(value).trim());
     if (!match) throw new Error('تاریخ شمسی را به شکل سال/ماه/روز وارد کنید؛ مثال: ۱۴۰۵/۰۷/۲۵.');
@@ -179,6 +184,94 @@
     const parts = calendarParts(new Date(Date.UTC(year, month-1, day, 12)));
     const pad = value => String(value).padStart(2, '0');
     return String(parts.year).padStart(4, '0') + '/' + pad(parts.month) + '/' + pad(parts.day);
+  }
+  function toPersianDigits(value) {
+    return String(value).replace(/[0-9]/g, digit => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
+  }
+  function formatJalali(year, month, day) {
+    const pad = value => String(value).padStart(2, '0');
+    return String(year).padStart(4, '0') + '/' + pad(month) + '/' + pad(day);
+  }
+  function selectedJalaliParts(inputId) {
+    const match = /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/.exec(normalizeDigits($(inputId).value).trim());
+    if (!match) return null;
+    return {year:Number(match[1]),month:Number(match[2]),day:Number(match[3])};
+  }
+  function jalaliMonthDates(year, month) {
+    const firstDay = Date.UTC(year + 621, 0, 1, 12);
+    const dates = [];
+    for (let offset=0; offset<460; offset++) {
+      const date = new Date(firstDay + offset * 86400000);
+      const parts = calendarParts(date);
+      if (parts.year===year && parts.month===month) {
+        dates.push({year:date.getUTCFullYear(),month:date.getUTCMonth()+1,day:date.getUTCDate(),jalaliDay:parts.day,weekday:date.getUTCDay()});
+      }
+    }
+    return dates;
+  }
+  let jalaliPickerTarget = null;
+  let jalaliPickerMonth = null;
+  function closeJalaliPicker() {
+    $('jalaliPicker').classList.add('hidden');
+    if (jalaliPickerTarget) $(jalaliPickerTarget).setAttribute('aria-expanded','false');
+    jalaliPickerTarget = null;
+  }
+  function renderJalaliPicker() {
+    if (!jalaliPickerMonth) return;
+    const {year,month}=jalaliPickerMonth;
+    $('jalaliMonthTitle').textContent=toPersianDigits(year+'/'+String(month).padStart(2,'0'));
+    const days=$('jalaliDays'); days.innerHTML='';
+    const dates=jalaliMonthDates(year,month);
+    if (!dates.length) return;
+    const offset=(dates[0].weekday+1)%7;
+    for(let i=0;i<offset;i++){const blank=document.createElement('span');blank.className='empty';blank.setAttribute('aria-hidden','true');days.appendChild(blank);}
+    const todayParts=projectJalaliToday();
+    const selected=selectedJalaliParts(jalaliPickerTarget);
+    for(const date of dates){
+      const button=document.createElement('button');button.type='button';
+      const value=formatJalali(year,month,date.jalaliDay);
+      button.dataset.jalaliDate=value;
+      button.textContent=toPersianDigits(date.jalaliDay);
+      button.setAttribute('aria-label','انتخاب تاریخ '+value);
+      if(todayParts.year===year&&todayParts.month===month&&todayParts.day===date.jalaliDay)button.classList.add('today');
+      if(selected&&selected.year===year&&selected.month===month&&selected.day===date.jalaliDay)button.classList.add('selected');
+      button.addEventListener('click',()=>{
+        $(jalaliPickerTarget).value=toPersianDigits(value);
+        $(jalaliPickerTarget).dispatchEvent(new Event('change',{bubbles:true}));
+        closeJalaliPicker();
+      });
+      days.appendChild(button);
+    }
+  }
+  function openJalaliPicker(inputId) {
+    jalaliPickerTarget=inputId;
+    const selected=selectedJalaliParts(inputId)||projectJalaliToday();
+    jalaliPickerMonth={year:selected.year,month:selected.month};
+    const popup=$('jalaliPicker');popup.classList.remove('hidden');
+    $(inputId).setAttribute('aria-expanded','true');
+    const rect=$(inputId).getBoundingClientRect();
+    const width=290;
+    popup.style.left=Math.max(8,Math.min(window.innerWidth-width-8,rect.left))+'px';
+    popup.style.top=Math.max(8,Math.min(window.innerHeight-360-8,rect.bottom+6))+'px';
+    renderJalaliPicker();
+    const first=popup.querySelector('[data-jalali-date]');
+    if(first) first.focus();
+  }
+  function initializeTimeSelects() {
+    for(const prefix of ['start','end']){
+      for(const [suffix,max] of [['Hour',23],['Minute',59]]){
+        const select=$(prefix+suffix);
+        for(let value=0;value<=max;value++){
+          const option=document.createElement('option');
+          option.value=String(value).padStart(2,'0');
+          option.textContent=toPersianDigits(option.value);
+          select.appendChild(option);
+        }
+      }
+    }
+  }
+  function selectedTime(prefix) {
+    return $(prefix+'Hour').value+':'+$(prefix+'Minute').value;
   }
   function localInputToUtc(dateValue, timeValue) {
     const gregorian = jalaliDateToGregorian(dateValue);
@@ -218,9 +311,9 @@
   function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); }
   function period() {
     const start=$('startAt').value, end=$('endAt').value;
-    if(!start||!end||!$('startTime').value||!$('endTime').value) throw new Error('تاریخ و ساعت شروع و پایان را مشخص کنید.');
-    const startUtc=localInputToUtc(start, $('startTime').value);
-    const endUtc=localInputToUtc(end, $('endTime').value);
+    if(!start||!end) throw new Error('تاریخ شروع و پایان را از تقویم انتخاب کنید.');
+    const startUtc=localInputToUtc(start, selectedTime('start'));
+    const endUtc=localInputToUtc(end, selectedTime('end'));
     if(new Date(startUtc)>=new Date(endUtc)) throw new Error('تاریخ و ساعت شروع باید قبل از پایان باشد.');
     return {start_at:startUtc,end_at:endUtc,project_id:$('projectId').value};
   }
@@ -229,10 +322,10 @@
     const z=n=>String(n).padStart(2,'0');
     const nowParts=zonedParts(new Date(),projectTimezone);
     const startDate=new Date(Date.UTC(nowParts.year,nowParts.month-1,nowParts.day-7,12));
-    $('startAt').value=gregorianDateToJalali(startDate.getUTCFullYear(),startDate.getUTCMonth()+1,startDate.getUTCDate());
-    $('endAt').value=gregorianDateToJalali(nowParts.year,nowParts.month,nowParts.day);
-    $('startTime').value=z(nowParts.hour)+':'+z(nowParts.minute);
-    $('endTime').value=z(nowParts.hour)+':'+z(nowParts.minute);
+    $('startAt').value=toPersianDigits(gregorianDateToJalali(startDate.getUTCFullYear(),startDate.getUTCMonth()+1,startDate.getUTCDate()));
+    $('endAt').value=toPersianDigits(gregorianDateToJalali(nowParts.year,nowParts.month,nowParts.day));
+    $('startHour').value=z(nowParts.hour);$('startMinute').value=z(nowParts.minute);
+    $('endHour').value=z(nowParts.hour);$('endMinute').value=z(nowParts.minute);
   }
   async function loadProjectContext(){
     const raw=$('projectId').value;
@@ -245,6 +338,17 @@
     $('sessionStatus').textContent='منطقه زمانی: '+projectTimezone;
     if(!defaultsInitialized){setDefaults();defaultsInitialized=true;}
   }
+  initializeTimeSelects();
+  $('startAt').addEventListener('click',()=>openJalaliPicker('startAt'));
+  $('endAt').addEventListener('click',()=>openJalaliPicker('endAt'));
+  $('startAt').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openJalaliPicker('startAt')}});
+  $('endAt').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openJalaliPicker('endAt')}});
+  $('jalaliPrev').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===1){jalaliPickerMonth.month=12;jalaliPickerMonth.year--}else jalaliPickerMonth.month--;renderJalaliPicker()});
+  $('jalaliNext').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===12){jalaliPickerMonth.month=1;jalaliPickerMonth.year++}else jalaliPickerMonth.month++;renderJalaliPicker()});
+  $('jalaliToday').addEventListener('click',()=>{if(jalaliPickerTarget){const p=projectJalaliToday();$(jalaliPickerTarget).value=toPersianDigits(formatJalali(p.year,p.month,p.day));closeJalaliPicker()}});
+  $('jalaliClose').addEventListener('click',closeJalaliPicker);
+  document.addEventListener('pointerdown',e=>{if(!$('jalaliPicker').contains(e.target)&&e.target!==$('startAt')&&e.target!==$('endAt'))closeJalaliPicker()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeJalaliPicker()});
   $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();await loadActivePage()}catch(err){showError(err.message,'loginError')}});
   $('logoutButton').addEventListener('click',async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}token='';sessionStorage.removeItem('sabt_token');showLogin()});
   document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===button));activePage=button.dataset.page;document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));$(activePage+'Page').classList.remove('hidden');clearError();loadActivePage()}));
