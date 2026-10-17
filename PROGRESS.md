@@ -243,6 +243,7 @@ Define how the transferee is identified in operation parties and implement curre
 - [x] Added a confirmation endpoint that revalidates client-submitted rows and attempts all contract creations within one transaction; it relies on existing parent-contract service rules and database constraints.
 - [x] Added parser tests for CSV/XLSX success, invalid columns/data, unsupported file types, encoding, empty data, and size limits.
 - [x] Added a Persian RTL portal page for file selection, preview table, validation issues, explicit confirmation, and success/error feedback.
-- [ ] Not run in this session: API integration tests and browser/UI automation tests.
-- [ ] Remaining for this feature: API transaction/authorization/duplicate regression tests, editable row correction, browser/UI automation tests, and CI verification.
+- [x] Added API tests for preview-without-writes, successful confirmation, duplicate rows, and missing create permission.
+- [ ] Browser/UI automation tests have not been added or run; preview rows currently require correcting the source file and uploading again rather than inline editing.
+- [ ] CI for the newest API-test commit is pending; do not mark the feature complete until its result is confirmed.
 - **Review:** Draft PR #2 targets `codex/foundation-audit`: https://github.com/kokoosabzi/sabt/pull/2
