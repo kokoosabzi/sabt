@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+from io import BytesIO
+
+from openpyxl import load_workbook
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -279,3 +282,100 @@ def test_report_project_context_denies_users_without_report_permission():
         db.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+
+def test_management_summary_xlsx_export_is_valid_and_permission_scoped():
+    engine, db, client, project = _context()
+    try:
+        response = client.get("/reports/management/summary/export.xlsx", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        assert 'filename="sabt-management-summary.xlsx"' in response.headers["content-disposition"]
+        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        sheet = workbook.active
+        assert sheet.sheet_view.rightToLeft is True
+        assert [sheet.cell(row=1, column=i).value for i in (1, 2)] == ["شاخص", "مقدار"]
+        labels = [sheet.cell(row=row, column=1).value for row in range(2, sheet.max_row + 1)]
+        assert "عملیات ایجادشده" in labels
+        workbook.close()
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_workflow_xlsx_export_contains_persian_headers_and_is_project_scoped():
+    engine, db, client, project = _context()
+    try:
+        response = client.get("/reports/workflow/export.xlsx", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 200
+        assert response.content.startswith(b"PK")
+        assert 'filename="sabt-workflow-report.xlsx"' in response.headers["content-disposition"]
+        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        sheet = workbook.active
+        assert sheet.cell(row=1, column=1).value == "شناسه عملیات"
+        assert sheet.auto_filter.ref
+        workbook.close()
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_workflow_events_xlsx_export_contains_event_headers():
+    engine, db, client, project = _context()
+    try:
+        response = client.get("/reports/workflow/events/export.xlsx", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 200
+        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        assert workbook.active.cell(row=1, column=1).value == "شناسه رخداد"
+        workbook.close()
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_xlsx_export_enforces_project_permissions():
+    engine, db, client, project = _context()
+    try:
+        db.query(ProjectAccess).delete()
+        db.commit()
+        response = client.get("/reports/workflow/export.xlsx", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 403
+        assert response.json()["detail"] == "forbidden"
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+def test_xlsx_export_neutralizes_formula_cells():
+    from app.reports.routes import _safe_xlsx_cell
+
+    assert _safe_xlsx_cell("=1+1") == "'=1+1"
+    assert _safe_xlsx_cell("ordinary text") == "ordinary text"
+    assert _safe_xlsx_cell({"detail": "جزئیات"}) == '{"detail": "جزئیات"}'
