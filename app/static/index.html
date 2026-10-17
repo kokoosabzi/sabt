@@ -80,7 +80,7 @@
         </section>
         <section id="workflowPage" class="page hidden">
           <section class="panel">
-            <div class="section-title"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
+            <div class="section-title"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
             <div class="filters">
               <div><label for="statusFilter">وضعیت</label><select id="statusFilter"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
               <div><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" type="number" min="1"></div>
@@ -92,14 +92,14 @@
         </section>
         <section id="eventsPage" class="page hidden">
           <section class="panel">
-            <div class="section-title"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
+            <div class="section-title"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
             <div class="filters"><div><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" type="number" min="1"></div><div><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" type="number" min="1"></div></div>
           </section>
           <section class="panel"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
         </section>
         <section id="contractPage" class="page hidden">
           <section class="panel"><h2>جست‌وجوی گردش قرارداد</h2><p style="margin-bottom:14px">شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p><form id="contractForm" class="row"><input id="contractNumber" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required><button class="btn" type="submit">جست‌وجو</button></form></section>
-          <section id="contractResult" class="panel hidden"><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
+          <section id="contractResult" class="panel hidden"><div class="row" style="justify-content:flex-end;margin-bottom:12px"><button id="contractPrint" class="btn secondary">چاپ / ذخیره PDF</button></div><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
         </section>
 
         <section id="contractImportPage" class="page hidden">
