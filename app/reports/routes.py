@@ -1,10 +1,13 @@
 from datetime import datetime
 import csv
 import io
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 
 from app.auth.dependencies import current_user, get_db
 from app.reports.service import (
@@ -52,6 +55,44 @@ def _csv_response(filename: str, columns: list[tuple[str, str]], rows: list[dict
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
+
+
+def _safe_xlsx_cell(value):
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list, tuple)):
+        value = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    if isinstance(value, str) and value.lstrip(" \t\r\n").startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value
+
+
+def _xlsx_response(filename: str, columns: list[tuple[str, str]], rows: list[dict]) -> Response:
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "گزارش"
+    sheet.sheet_view.rightToLeft = True
+    sheet.freeze_panes = "A2"
+    sheet.append([label for label, _ in columns])
+    for cell in sheet[1]:
+        cell.font = cell.font.copy(bold=True)
+    for row in rows:
+        sheet.append([_safe_xlsx_cell(row.get(key)) for _, key in columns])
+    if columns:
+        sheet.auto_filter.ref = sheet.dimensions
+        for index, (label, key) in enumerate(columns, start=1):
+            max_length = len(label)
+            for row in rows[:200]:
+                value = _safe_xlsx_cell(row.get(key))
+                max_length = max(max_length, len(str(value)) if value is not None else 0)
+            sheet.column_dimensions[get_column_letter(index)].width = min(max(max_length + 2, 12), 42)
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return Response(
+        content=buffer.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 def _collect_pages(fetch_page):
     first = fetch_page(0)
