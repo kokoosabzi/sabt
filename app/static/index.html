@@ -157,6 +157,10 @@
     }
     return {year: parts.year, month: parts.month, day: parts.day};
   }
+  function projectJalaliToday() {
+    const p=zonedParts(new Date(),projectTimezone);
+    return calendarParts(new Date(Date.UTC(p.year,p.month-1,p.day,12)));
+  }
   function jalaliDateToGregorian(value) {
     const match = /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/.exec(normalizeDigits(value).trim());
     if (!match) throw new Error('تاریخ شمسی را به شکل سال/ماه/روز وارد کنید؛ مثال: ۱۴۰۵/۰۷/۲۵.');
@@ -221,7 +225,7 @@
     if (!dates.length) return;
     const offset=(dates[0].weekday+1)%7;
     for(let i=0;i<offset;i++){const blank=document.createElement('span');blank.className='empty';blank.setAttribute('aria-hidden','true');days.appendChild(blank);}
-    const todayParts=calendarParts(new Date());
+    const todayParts=projectJalaliToday();
     const selected=selectedJalaliParts(jalaliPickerTarget);
     for(const date of dates){
       const button=document.createElement('button');button.type='button';
@@ -241,7 +245,7 @@
   }
   function openJalaliPicker(inputId) {
     jalaliPickerTarget=inputId;
-    const selected=selectedJalaliParts(inputId)||calendarParts(new Date());
+    const selected=selectedJalaliParts(inputId)||projectJalaliToday();
     jalaliPickerMonth={year:selected.year,month:selected.month};
     const popup=$('jalaliPicker');popup.classList.remove('hidden');
     $(inputId).setAttribute('aria-expanded','true');
@@ -341,7 +345,7 @@
   $('endAt').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openJalaliPicker('endAt')}});
   $('jalaliPrev').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===1){jalaliPickerMonth.month=12;jalaliPickerMonth.year--}else jalaliPickerMonth.month--;renderJalaliPicker()});
   $('jalaliNext').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===12){jalaliPickerMonth.month=1;jalaliPickerMonth.year++}else jalaliPickerMonth.month++;renderJalaliPicker()});
-  $('jalaliToday').addEventListener('click',()=>{if(jalaliPickerTarget){const p=calendarParts(new Date());$(jalaliPickerTarget).value=toPersianDigits(formatJalali(p.year,p.month,p.day));closeJalaliPicker()}});
+  $('jalaliToday').addEventListener('click',()=>{if(jalaliPickerTarget){const p=projectJalaliToday();$(jalaliPickerTarget).value=toPersianDigits(formatJalali(p.year,p.month,p.day));closeJalaliPicker()}});
   $('jalaliClose').addEventListener('click',closeJalaliPicker);
   document.addEventListener('pointerdown',e=>{if(!$('jalaliPicker').contains(e.target)&&e.target!==$('startAt')&&e.target!==$('endAt'))closeJalaliPicker()});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeJalaliPicker()});
