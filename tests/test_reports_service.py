@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from app.auth.authorization import AuthorizationContext, authorize
 from app.db.base import Base
 from app.db.models import (
-    Operation, OperationType, Permission, Project, ProjectAccess, Role, RolePermission,
+    Operation, OperationType, ParentContract, Permission, Project, ProjectAccess, Role, RolePermission,
     User, UserRole, WorkflowEvent,
 )
 from app.reports.service import ReportValidationError, get_management_summary, get_workflow_events_report, get_workflow_report
@@ -134,6 +134,45 @@ def test_cross_project_report_access_denied(report_context):
     db.commit()
     with pytest.raises(PermissionError, match="forbidden"):
         get_management_summary(db, user, other.id, now - timedelta(hours=1), now + timedelta(hours=1))
+
+
+def test_reports_do_not_expose_a_parent_contract_from_another_project(report_context):
+    db, user, project, now, operation, _ = report_context
+    other = Project(code="OTHER-CONTRACT-P", name="Other Contract Project", status="ACTIVE",
+                    timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+    db.add(other)
+    db.flush()
+    foreign_parent = ParentContract(
+        project_id=other.id, contract_number="880123", suffix="0123", initial_person_id=1,
+        status="ACTIVE", next_transfer_sequence=1, created_at=now, updated_at=now, version=1,
+    )
+    db.add(foreign_parent)
+    db.flush()
+
+    # Simulate an inconsistent legacy/direct DB write: operation belongs to the
+    # authorized project, but its parent-contract reference belongs to another.
+    operation.parent_contract_id = foreign_parent.id
+    operation.child_contract_number = "880123/1"
+    db.add(WorkflowEvent(
+        project_id=project.id, operation_id=operation.id, actor_user_id=user.id,
+        event_type="OPERATION_CREATED", to_status="DRAFT", occurred_at=now,
+    ))
+    db.commit()
+
+    workflow = get_workflow_report(
+        db, user, project.id, now - timedelta(minutes=1), now + timedelta(minutes=1),
+        parent_contract_number="880123",
+    )
+    assert workflow["pagination"]["total"] == 0
+    own_report = get_workflow_report(
+        db, user, project.id, now - timedelta(minutes=1), now + timedelta(minutes=1),
+    )
+    assert own_report["items"][0]["parent_contract_number"] is None
+
+    events = get_workflow_events_report(
+        db, user, project.id, now - timedelta(minutes=1), now + timedelta(minutes=1),
+    )
+    assert events["items"][0]["parent_contract_number"] is None
 
 
 def test_workflow_event_report_uses_event_time(report_context):

@@ -143,8 +143,8 @@ def workflow_operations_report(
     query = select(Operation)
     count_query = select(func.count()).select_from(Operation)
     if parent_contract_number is not None:
-        query = query.join(ParentContract, ParentContract.id == Operation.parent_contract_id)
-        count_query = count_query.join(ParentContract, ParentContract.id == Operation.parent_contract_id)
+        query = query.join(ParentContract, (ParentContract.id == Operation.parent_contract_id) & (ParentContract.project_id == Operation.project_id))
+        count_query = count_query.join(ParentContract, (ParentContract.id == Operation.parent_contract_id) & (ParentContract.project_id == Operation.project_id))
     query = query.where(*conditions)
     count_query = count_query.where(*conditions)
     total = db.scalar(count_query) or 0

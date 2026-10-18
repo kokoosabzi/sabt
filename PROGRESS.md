@@ -19,7 +19,7 @@
 
 ### Phase 0 — Foundation audit and stabilization
 - [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization beyond the current unit coverage.
-- [ ] Verify project isolation for every service and resource lookup.
+- [ ] Verify project isolation for every service and resource lookup; audit found report/history joins that trusted `parent_contract_id` without also matching the owning project, and a focused fix with cross-project regression tests is in review.
 - [ ] Test registration-number allocation concurrency assumptions.
 - [ ] Review operation creation/finalization transaction boundaries and validation order.
 - [x] Reject inactive Property records during operation creation, with a regression test that verifies no Operation row is written (PR #11; CI passed in [run 39147040578](https://github.com/kokoosabzi/sabt/actions/runs/39147040578)).
