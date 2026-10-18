@@ -172,7 +172,7 @@ def get_workflow_report(
         select(Operation, OperationType.name, ParentContract.contract_number, User.display_name)
         .join(OperationType, OperationType.id == Operation.operation_type_id)
         .join(User, User.id == Operation.created_by)
-        .outerjoin(ParentContract, ParentContract.id == Operation.parent_contract_id)
+        .outerjoin(ParentContract, (ParentContract.id == Operation.parent_contract_id) & (ParentContract.project_id == Operation.project_id))
         .where(
             Operation.project_id == project_id,
             Operation.created_at >= start_at,
@@ -182,7 +182,7 @@ def get_workflow_report(
     count_stmt = (
         select(func.count(Operation.id))
         .select_from(Operation)
-        .outerjoin(ParentContract, ParentContract.id == Operation.parent_contract_id)
+        .outerjoin(ParentContract, (ParentContract.id == Operation.parent_contract_id) & (ParentContract.project_id == Operation.project_id))
         .where(
             Operation.project_id == project_id,
             Operation.created_at >= start_at,
@@ -300,7 +300,7 @@ def get_workflow_events_report(
         .join(Operation, Operation.id == WorkflowEvent.operation_id)
         .join(OperationType, OperationType.id == Operation.operation_type_id)
         .join(User, User.id == WorkflowEvent.actor_user_id)
-        .outerjoin(ParentContract, ParentContract.id == Operation.parent_contract_id)
+        .outerjoin(ParentContract, (ParentContract.id == Operation.parent_contract_id) & (ParentContract.project_id == Operation.project_id))
         .where(*filters, Operation.project_id == project_id)
     )
     total = db.scalar(count_stmt) or 0
