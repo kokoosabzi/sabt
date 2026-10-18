@@ -76,3 +76,13 @@ def test_expired_session_is_rejected_with_sqlite_naive_datetime(db: Session) -> 
 def test_unknown_session_token_is_rejected(db: Session) -> None:
     make_user(db)
     assert get_user_by_token(db, "unknown-token") is None
+
+
+def test_session_is_rejected_after_user_is_deactivated(db: Session) -> None:
+    user = make_user(db)
+    token = create_session(db, user)
+
+    user.active = False
+    db.commit()
+
+    assert get_user_by_token(db, token) is None
