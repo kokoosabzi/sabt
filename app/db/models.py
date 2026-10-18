@@ -179,6 +179,7 @@ class Operation(Base):
     transfer_sequence: Mapped[int | None] = mapped_column(Integer)
     child_contract_number: Mapped[str | None] = mapped_column(String(32))
     __table_args__ = (
+        UniqueConstraint("project_id", "id", name="uq_operations_project_id_id"),
         UniqueConstraint("child_contract_number", name="uq_operations_child_contract_number"),
         UniqueConstraint("parent_contract_id", "transfer_sequence", name="uq_operations_parent_transfer_sequence"),
         # A globally valid property/parent ID must also belong to this operation's project.
@@ -397,3 +398,11 @@ class WorkflowEvent(Base):
     to_status: Mapped[str | None] = mapped_column(String(32))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     metadata_json: Mapped[str | None] = mapped_column(Text())
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "operation_id"],
+            ["operations.project_id", "operations.id"],
+            ondelete="RESTRICT",
+            name="fk_workflow_events_project_operation",
+        ),
+    )
