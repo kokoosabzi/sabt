@@ -184,6 +184,41 @@ def test_create_operation_links_appointment_from_same_project(db: Session) -> No
     assert created_event.to_status == "DRAFT"
 
 
+def test_inactive_property_is_rejected_before_operation_write(db: Session) -> None:
+    user, project, operation_type, _, appointment, _ = seed_operation_context(db)
+    inactive_property = Property(
+        address="Inactive property",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        version=1,
+        is_active=False,
+    )
+    db.add(inactive_property)
+    db.flush()
+    db.add(
+        ProjectProperty(
+            project_id=project.id,
+            property_id=inactive_property.id,
+            active=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+    )
+    db.flush()
+
+    with pytest.raises(ValidationError, match="property_inactive"):
+        create_operation(
+            db,
+            user,
+            project.id,
+            operation_type.id,
+            property_id=inactive_property.id,
+            appointment_id=appointment.id,
+        )
+
+    assert db.scalar(select(func.count()).select_from(Operation)) == 0
+
+
 def test_cross_project_appointment_is_rejected_before_operation_write(db: Session) -> None:
     user, project, operation_type, property_record, _, other_appointment = seed_operation_context(db)
 
