@@ -211,6 +211,48 @@ def test_parent_contract_history_lists_numbered_transfers_and_drafts(db):
     assert history["current_owner"]["people"][0]["person_id"] == second_buyer.id
 
 
+def test_parent_contract_history_ignores_operations_mislinked_from_another_project(db):
+    user, project, person, _ = seed_context(db)
+    parent = create_parent_contract(db, user, project.id, "0123", person.id)
+    now = datetime.now(timezone.utc)
+    other = Project(code="OTHER", name="Other Project", status="ACTIVE",
+                    timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+    operation_type = OperationType(
+        code="TRANSFER", name="Transfer", active=True, system_defined=True,
+        created_at=now, updated_at=now,
+    )
+    buyer = Person(first_name="Foreign", last_name="Buyer", created_at=now, updated_at=now,
+                   version=1, is_active=True)
+    buyer_role = PartyRole(code="BUYER_TRANSFEREE", name="Buyer / Transferee", active=True,
+                           system_defined=True, created_at=now, updated_at=now)
+    db.add_all([other, operation_type, buyer, buyer_role])
+    db.flush()
+    foreign_operation = Operation(
+        project_id=other.id, operation_type_id=operation_type.id, status="FINALIZED",
+        current_workflow_state="FINALIZED", created_by=user.id, finalized_by=user.id,
+        created_at=now, updated_at=now, finalized_at=now, version=2, current_version_number=1,
+        parent_contract_id=parent.id, transfer_sequence=1, child_contract_number="760123/1",
+    )
+    db.add(foreign_operation)
+    db.flush()
+    db.add_all([
+        OperationVersion(
+            operation_id=foreign_operation.id, version_number=1, created_by=user.id,
+            created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash",
+        ),
+        OperationParty(
+            operation_id=foreign_operation.id, person_id=buyer.id, role_id=buyer_role.id,
+            sequence_no=1, created_at=now, updated_at=now, version=1,
+        ),
+    ])
+    db.flush()
+
+    history = get_parent_contract_history(db, user, parent.contract_number)
+    assert history["transfers"] == []
+    assert history["current_owner"]["source"] == "initial_contract"
+    assert history["current_owner"]["people"][0]["person_id"] == person.id
+
+
 def test_parent_contract_history_rejects_user_without_project_access(db):
     user, project, person, _ = seed_context(db)
     create_parent_contract(db, user, project.id, "0123", person.id)
