@@ -36,7 +36,12 @@ def get_user_by_token(db: Session, token: str) -> User | None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if expires_at <= datetime.now(timezone.utc):
         return None
-    return db.get(User, row.user_id)
+    user = db.get(User, row.user_id)
+    # Enforce account deactivation at the session boundary as well as in the
+    # HTTP dependency, so other callers cannot accidentally accept stale tokens.
+    if user is None or not user.active:
+        return None
+    return user
 
 def revoke_session(db: Session, token: str) -> None:
     token_hash = hashlib.sha256(token.encode()).hexdigest()
