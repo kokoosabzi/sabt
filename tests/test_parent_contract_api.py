@@ -10,7 +10,7 @@ from app.auth.dependencies import current_user, get_db
 from app.db.base import Base
 from app.db.models import (
     ParentContract, Permission, Person, Project, ProjectAccess, Role, RolePermission,
-    User, UserRole,
+    ProjectPerson, User, UserRole,
 )
 from app.main import app
 
@@ -37,6 +37,8 @@ def api_context():
         RolePermission(role_id=role.id, permission_id=report_permission.id),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
+        ProjectPerson(project_id=project.id, person_id=person.id, active=True,
+                      created_at=now, updated_at=now),
         ParentContract(project_id=project.id, contract_number="760123", suffix="0123",
                        initial_person_id=person.id, property_id=None, status="ACTIVE",
                        created_at=now, updated_at=now, version=1, next_transfer_sequence=1),
