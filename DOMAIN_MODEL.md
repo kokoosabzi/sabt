@@ -17,7 +17,7 @@ A lightweight organizational/business context with identity, status, branding re
 Central reusable record. Core structured fields may include first name, last name, father name, national ID, mobile, address and notes. Additional custom fields are supported.
 
 ## Property
-Central reusable record. Core fields include project, block/tower, floor, orientation, unit number/code, plaque/parcel number, address and notes. Additional custom fields are supported. Every Contract has exactly one Property.
+Central reusable master record, not owned by a single Project. Core structured fields may include block/tower, floor, orientation, unit number/code, plaque/parcel number, address and notes. Additional custom fields are supported. Project-specific participation/access/context is represented separately (including `ProjectProperty` where applicable). Every Contract has exactly one Property.
 
 ## Appointment
 Independent from Operation. It contains project, appointment type, date/time, parties/customer references, status and notes. Statuses include Free, Reserved, Present, No-Show, Cancelled and Done. Appointment Type controls the action caused by Present. One Appointment may link to multiple Operations.
@@ -84,7 +84,7 @@ Users may have global roles and project-scoped roles. Project access is separate
 - The UI should show a parent summary and chronologically/sequence-ordered transfer tree. Selecting a child opens its own operation details and immutable finalized snapshot.
 - The parent detail view may show a current-owner summary derived from the latest valid finalized transfer, while preserving the initial owner on the Parent Contract.
 - Bulk import of existing parent contracts and member/owner rows is a staged, auditable import workflow, not direct unvalidated inserts.
-- Project codes are exactly two digits and begin at `10`; `01`–`09` are invalid. The code is shared by all members/contracts within a Project and stored as text. A Parent Contract number is six digits: Project code plus a four-digit member/contract suffix. The suffix may be entered manually or imported from Excel/CSV, optionally alongside unit/property details. Global uniqueness/immutability of Project codes, child-number gap policy, and ownership-effective status remain open.
+- Project contract codes are exactly two digits from `10` through `99`; `01`–`09` are invalid. The code is unique and cannot be changed or cleared after the Project has a Parent Contract. A Parent Contract number is a six-character string: Project contract code plus a four-digit suffix, preserving leading zeroes. Current V1 import accepts a deliberately narrow, versioned row shape (`suffix`, `initial_person_id`, optional `property_id`) rather than every possible legacy spreadsheet layout. Child numbers use positive decimal suffixes and are allocated transactionally without reuse. Ownership changes only through a valid finalized transfer containing the `BUYER_TRANSFEREE` role. Remaining open import decisions are historical ordering and safe duplicate Person/Property matching.
 
 
 ## Confirmed Parent Contract ownership rule — 2026-10-14

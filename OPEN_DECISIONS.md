@@ -47,4 +47,4 @@ The Parent Contract is a distinct entity from the existing optional transaction-
 
 ## Status note
 
-The decisions above are architecture defaults only. The Parent Contract schema, migrations, services, UI, import pipeline and ownership query are **not implemented yet**. The foundation branch remains a draft PR and must stay unmerged until tests and migration round-trip pass.
+The decisions above describe frozen defaults, not a claim that every related product workflow is complete. As of 2026-10-17, the Parent Contract schema/migrations, creation service, child-number allocation, current-owner/history query, authorized history route, initial portal lookup, and staged CSV/XLSX import with preview/confirmation are implemented on `main`. The graphical transfer tree and broader operation/contract/document workflows remain incomplete. PR #1 is merged; use the current `PROGRESS.md` status and CI evidence rather than this historical implementation warning.

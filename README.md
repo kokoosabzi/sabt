@@ -19,7 +19,10 @@ Core documents:
 - [AI_AGENT_INSTRUCTIONS.md](AI_AGENT_INSTRUCTIONS.md) — detailed execution contract
 - [PROGRESS.md](PROGRESS.md) — phased roadmap, verified status, and next tasks
 
-Before implementing a feature, read the development guide and update `PROGRESS.md` with actual verification results.
+Before implementing a feature, read the development guide and update `PROGRESS.md` with actual verification results. `PROGRESS.md` is the current execution ledger; older dated entries are historical and may be superseded by later verified entries.
+
+## Current development status
+The current `main` has a Persian RTL reporting portal, Parent Contract history and staged import, Jalali reporting-period controls, permission-scoped CSV/Excel exports, and browser print-to-PDF views. These are early workflow slices, not a complete production system. The current phase remains foundation audit/stabilization: finish operation lifecycle/finalization guarantees, broaden workflow-event coverage before time-in-state reporting, and then continue with Contracts/restrictions, document storage, appointments/reminders, templates/PDF generation, administration, and backup/restore. See `PROGRESS.md` for verified status and the next concrete task.
 
 ## Core rule
 SABT does not process money. Financial activity occurs outside the system; related receipts or scans may be stored as operation documents.

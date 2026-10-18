@@ -86,7 +86,7 @@ Prioritize tests for:
 6. Run tests and record actual results.
 7. Update PROGRESS.md in the same change: tick completed work, add findings, list the next concrete task, and record commit/PR references if known.
 8. If scope or architecture changes, update the relevant design documents too.
-9. Keep work reviewable; prefer a branch and pull request for substantial changes. Do not merge or force-push without authorization.
+9. Keep work reviewable; use a focused branch and pull request for substantial changes. After the user-requested review gate is satisfied, merge stable changes promptly: required CI/tests are green, migration checks pass when relevant, authorization/project isolation have been reviewed, and no blocking review findings remain. The user has explicitly directed that stable SABT work should be merged rather than left open. Never force-push or merge a failing/unverified change.
 
 ## Progress File Rules
 - PROGRESS.md is the living execution ledger, not a promise that unverified code works.
