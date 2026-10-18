@@ -278,6 +278,36 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
 
+def test_finalize_rejects_property_deactivated_after_draft_creation(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    property_record.is_active = False
+    db.flush()
+
+    with pytest.raises(ValidationError, match="property_inactive"):
+        finalize_operation(db, user, operation.id, expected_version=operation.version)
+
+    db.refresh(operation)
+    assert operation.status == "DRAFT"
+    assert operation.finalized_at is None
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
+
+
+def test_finalize_rejects_deactivated_project_property_association(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    association = db.get(ProjectProperty, (project.id, property_record.id))
+    association.active = False
+    db.flush()
+
+    with pytest.raises(ValidationError, match="property_not_associated_with_project"):
+        finalize_operation(db, user, operation.id, expected_version=operation.version)
+
+    db.refresh(operation)
+    assert operation.status == "DRAFT"
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
+
+
 def test_finalize_rejects_stale_version_without_side_effects(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(
