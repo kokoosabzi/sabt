@@ -253,6 +253,65 @@ def test_parent_contract_history_ignores_operations_mislinked_from_another_proje
     assert history["current_owner"]["people"][0]["person_id"] == person.id
 
 
+def test_parent_contract_history_does_not_expose_foreign_project_transferee(db):
+    user, project, initial_person, _ = seed_context(db)
+    parent = create_parent_contract(db, user, project.id, "0123", initial_person.id)
+    now = datetime.now(timezone.utc)
+    operation_type = OperationType(
+        code="TRANSFER", name="Transfer", active=True, system_defined=True,
+        created_at=now, updated_at=now,
+    )
+    buyer_role = PartyRole(code="BUYER_TRANSFEREE", name="Buyer / Transferee", active=True,
+                           system_defined=True, created_at=now, updated_at=now)
+    foreign_buyer = Person(first_name="Foreign", last_name="Person", national_id="FOREIGN-SECRET",
+                           mobile="555-0100", created_at=now, updated_at=now, version=1, is_active=True)
+    other_project = Project(code="OTHER-OWNER", name="Other Owner Project", status="ACTIVE",
+                            timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+    db.add_all([operation_type, buyer_role, foreign_buyer, other_project])
+    db.flush()
+    db.add(ProjectPerson(project_id=other_project.id, person_id=foreign_buyer.id, active=True,
+                         created_at=now, updated_at=now))
+    operation = Operation(
+        project_id=project.id, operation_type_id=operation_type.id, status="FINALIZED",
+        current_workflow_state="FINALIZED", created_by=user.id, finalized_by=user.id,
+        created_at=now, updated_at=now, finalized_at=now, version=2, current_version_number=1,
+        parent_contract_id=parent.id, transfer_sequence=1, child_contract_number="760123/1",
+    )
+    db.add(operation)
+    db.flush()
+    db.add_all([
+        OperationVersion(operation_id=operation.id, version_number=1, created_by=user.id,
+                         created_at=now, finalized_at=now, snapshot_json="{}", hash="foreign-party-test"),
+        OperationParty(operation_id=operation.id, person_id=foreign_buyer.id, role_id=buyer_role.id,
+                       sequence_no=1, created_at=now, updated_at=now, version=1),
+    ])
+    db.flush()
+
+    history = get_parent_contract_history(db, user, parent.contract_number)
+    assert history["current_owner"]["source"] == "initial_contract"
+    assert history["current_owner"]["people"][0]["person_id"] == initial_person.id
+    assert all(person["national_id"] != "FOREIGN-SECRET" for person in history["current_owner"]["people"])
+
+
+def test_parent_contract_history_hides_initial_person_without_project_membership(db):
+    user, project, initial_person, _ = seed_context(db)
+    parent = create_parent_contract(db, user, project.id, "0123", initial_person.id)
+    other_project = Project(code="OTHER-INITIAL", name="Other Initial Project", status="ACTIVE",
+                            timezone="Asia/Tehran", created_at=datetime.now(timezone.utc),
+                            updated_at=datetime.now(timezone.utc), version=1)
+    db.add(other_project)
+    db.flush()
+    db.add(ProjectPerson(project_id=other_project.id, person_id=initial_person.id, active=True,
+                         created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc)))
+    db.delete(db.get(ProjectPerson, (project.id, initial_person.id)))
+    db.flush()
+
+    history = get_parent_contract_history(db, user, parent.contract_number)
+    assert history["parent"]["id"] == parent.id
+    assert history["current_owner"]["source"] == "initial_contract"
+    assert history["current_owner"]["people"] == []
+
+
 def test_parent_contract_history_rejects_user_without_project_access(db):
     user, project, person, _ = seed_context(db)
     create_parent_contract(db, user, project.id, "0123", person.id)

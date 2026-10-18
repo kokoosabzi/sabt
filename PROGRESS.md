@@ -5,7 +5,7 @@
 ## Current status — reconciled 2026-10-17
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main` code milestone:** `5d453f350039c8cc6f8fb4e879295a66ca19de8d` (PR #15 scopes contract history and report joins to the owning project; PR #14 rejects unsupported number-template fields).
+- **Current `main` code milestone:** `232011d570ff0f312f02192665a1723f94fef502` (PR #15 scopes contract history and report joins to the owning project; PR #14 rejects unsupported number-template fields).
 - **Latest verified CI:** [run 39148879162](https://github.com/kokoosabzi/sabt/actions/runs/39148879162) passed **149 tests, 2 warnings**, including Chromium browser E2E and fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
@@ -19,7 +19,9 @@
 
 ### Phase 0 — Foundation audit and stabilization
 - [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization beyond the current unit coverage.
-- [ ] Verify project isolation for every service and resource lookup; audit found report/history joins that trusted `parent_contract_id` without also matching the owning project, and a focused fix with cross-project regression tests is in review.
+- [ ] Verify project isolation for every service and resource lookup.
+- [x] Scope parent-contract history, current-owner derivation, and report joins to the owning project, with cross-project regression tests (PR #15; CI passed in [run 39148879162](https://github.com/kokoosabzi/sabt/actions/runs/39148879162)).
+- [ ] Harden current-owner person lookups against inconsistent legacy links lacking ProjectPerson membership; focused regression-tested fix is in progress.
 - [ ] Test registration-number allocation concurrency assumptions.
 - [ ] Review operation creation/finalization transaction boundaries and validation order.
 - [x] Reject inactive Property records during operation creation, with a regression test that verifies no Operation row is written (PR #11; CI passed in [run 39147040578](https://github.com/kokoosabzi/sabt/actions/runs/39147040578)).

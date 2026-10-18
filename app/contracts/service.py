@@ -181,6 +181,13 @@ def _derive_current_owner(db: Session, parent: ParentContract) -> dict:
         )
         .join(OperationParty, OperationParty.operation_id == Operation.id)
         .join(PartyRole, PartyRole.id == OperationParty.role_id)
+        # Historical party links can be inconsistent in legacy/direct DB writes.
+        # Require a project membership row before treating a party as an owner.
+        .join(
+            ProjectPerson,
+            (ProjectPerson.person_id == OperationParty.person_id)
+            & (ProjectPerson.project_id == parent.project_id),
+        )
         .where(
             Operation.parent_contract_id == parent.id,
             Operation.project_id == parent.project_id,
@@ -194,19 +201,35 @@ def _derive_current_owner(db: Session, parent: ParentContract) -> dict:
         .order_by(Operation.transfer_sequence.desc(), Operation.finalized_at.desc(), Operation.id.desc())
     )
     if latest is None:
-        person = db.get(Person, parent.initial_person_id)
+        person = db.scalar(
+            select(Person)
+            .join(ProjectPerson, ProjectPerson.person_id == Person.id)
+            .where(
+                Person.id == parent.initial_person_id,
+                ProjectPerson.project_id == parent.project_id,
+            )
+        )
         return {
             "source": "initial_contract",
             "operation_id": None,
             "child_contract_number": None,
-            "people": [{"person_id": person.id, "first_name": person.first_name,
-                        "last_name": person.last_name, "national_id": person.national_id,
-                        "mobile": person.mobile}],
+            # If legacy data violates project membership, fail closed and do not
+            # expose the unrelated person's identifying details.
+            "people": [] if person is None else [{
+                "person_id": person.id, "first_name": person.first_name,
+                "last_name": person.last_name, "national_id": person.national_id,
+                "mobile": person.mobile,
+            }],
         }
     people = db.execute(
         select(Person)
         .join(OperationParty, OperationParty.person_id == Person.id)
         .join(PartyRole, PartyRole.id == OperationParty.role_id)
+        .join(
+            ProjectPerson,
+            (ProjectPerson.person_id == Person.id)
+            & (ProjectPerson.project_id == parent.project_id),
+        )
         .where(OperationParty.operation_id == latest.id, PartyRole.code == BUYER_TRANSFEREE_ROLE_CODE)
         .order_by(OperationParty.sequence_no, OperationParty.id)
     ).scalars().all()
