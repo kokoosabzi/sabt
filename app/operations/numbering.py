@@ -65,6 +65,20 @@ def allocate_registration_number(
 
     scope_key = _scope_key(policy.scope, project_id, operation_type_id)
     timestamp = now or datetime.now(timezone.utc)
+
+    # Validate the configured template before mutating sequence state. If the
+    # caller catches NumberingError and commits other work, an invalid template
+    # must not consume a registration number.
+    values = {
+        "prefix": policy.prefix or "",
+        "sequence": "0".zfill(policy.sequence_width),
+        "project_id": str(project_id),
+        "operation_type_id": str(operation_type_id),
+    }
+    try:
+        policy.format_template.format(**values)
+    except (KeyError, ValueError, IndexError) as exc:
+        raise NumberingError("invalid_number_format_template") from exc
     db.execute(
         sqlite_insert(NumberingState)
         .values(numbering_policy_id=policy.id, scope_key=scope_key, current_value=0,
