@@ -5,8 +5,8 @@
 ## Current status — reconciled 2026-10-17
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main`:** `c3632ea7bc3bb948677623e69553631ead953ba2` (PR #13 validates registration-number templates before sequence mutation).
-- **Latest verified CI:** [run 39058901990](https://github.com/kokoosabzi/sabt/actions/runs/39058901990) passed **143 tests, 2 warnings**, including Chromium browser E2E and fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
+- **Current `main` code milestone:** `5d453f350039c8cc6f8fb4e879295a66ca19de8d` (PR #15 scopes contract history and report joins to the owning project; PR #14 rejects unsupported number-template fields).
+- **Latest verified CI:** [run 39148879162](https://github.com/kokoosabzi/sabt/actions/runs/39148879162) passed **149 tests, 2 warnings**, including Chromium browser E2E and fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
 - **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle/finalization guarantees; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
