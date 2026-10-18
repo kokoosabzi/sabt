@@ -86,7 +86,9 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
         ProjectOperationType.operation_type_id == operation_type_id, ProjectOperationType.enabled.is_(True)))
     if pot is None: raise ValidationError("operation_type_not_enabled_for_project")
     if property_id is not None:
-        if db.get(Property, property_id) is None: raise NotFoundError("property_not_found")
+        property_record = db.get(Property, property_id)
+        if property_record is None: raise NotFoundError("property_not_found")
+        if not property_record.is_active: raise ValidationError("property_inactive")
         association = db.get(ProjectProperty, (project_id, property_id))
         if association is None or not association.active: raise ValidationError("property_not_associated_with_project")
     if parent_contract_id is not None:
