@@ -5,7 +5,7 @@
 ## Current status — reconciled 2026-10-17
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main`:** `a7354a2bb51d9851974c2ad46b5bb36fd87c604a` (PR #11 rejects inactive Property records at operation creation).
+- **Current `main`:** `8ca3d4d927d081d34a090d034eb259c95a819709` (PR #12 revalidates mutable operation references at finalization).
 - **Latest verified CI:** [run 39058901990](https://github.com/kokoosabzi/sabt/actions/runs/39058901990) passed **143 tests, 2 warnings**, including Chromium browser E2E and fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
@@ -23,7 +23,8 @@
 - [ ] Test registration-number allocation concurrency assumptions.
 - [ ] Review operation creation/finalization transaction boundaries and validation order.
 - [x] Reject inactive Property records during operation creation, with a regression test that verifies no Operation row is written (PR #11; CI passed in [run 39147040578](https://github.com/kokoosabzi/sabt/actions/runs/39147040578)).
-- [ ] Revalidate Property, ProjectProperty association, Person, ProjectPerson membership, and PartyRole active/retired state at finalization; a follow-up regression-tested correction is in progress.
+- [x] Revalidate Property, ProjectProperty association, Person, ProjectPerson membership, and PartyRole active/retired state before finalization side effects (PR #12; CI passed in [run 39147926546](https://github.com/kokoosabzi/sabt/actions/runs/39147926546)).
+- [ ] Validate registration-number format configuration before sequence state changes; regression test and fix are being prepared on a focused branch.
 - [ ] Compare ORM metadata against migrations for tables, columns, nullability, foreign keys, and indexes/constraints.
 - [x] Add CI for tests and fresh-database migration round-trip.
 - [x] Add regression tests for authorization, session expiry/revocation, numbering behavior, operation project isolation, and ORM/migration parity.
