@@ -3,7 +3,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "0010_project_scoped_fks"
-down_revision = "0009_workflow_event_log"
+down_revision = "0009_workflow_events"
 branch_labels = None
 depends_on = None
 
