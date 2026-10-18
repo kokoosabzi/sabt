@@ -6,6 +6,7 @@ State rows are updated atomically; MAX(id)+1 is deliberately never used.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from string import Formatter
 from sqlalchemy import select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
@@ -76,8 +77,14 @@ def allocate_registration_number(
         "operation_type_id": str(operation_type_id),
     }
     try:
+        # Restrict placeholders to the documented simple fields. Python's
+        # format mini-language otherwise accepts attribute/index traversal
+        # such as {prefix.upper}, which can silently render a method object.
+        for _, field_name, _, _ in Formatter().parse(policy.format_template):
+            if field_name is not None and field_name not in values:
+                raise ValueError("unsupported template field")
         policy.format_template.format(**values)
-    except (KeyError, ValueError, IndexError) as exc:
+    except (AttributeError, KeyError, ValueError, IndexError) as exc:
         raise NumberingError("invalid_number_format_template") from exc
     db.execute(
         sqlite_insert(NumberingState)
@@ -102,5 +109,5 @@ def allocate_registration_number(
     }
     try:
         return policy.format_template.format(**values)
-    except (KeyError, ValueError, IndexError) as exc:
+    except (AttributeError, KeyError, ValueError, IndexError) as exc:
         raise NumberingError("invalid_number_format_template") from exc

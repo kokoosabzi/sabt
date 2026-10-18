@@ -108,3 +108,11 @@ def test_invalid_format_template_is_rejected_without_consuming_number(db: Sessio
     # The caller may catch the validation error and continue its transaction;
     # invalid configuration must not have created or incremented sequence state.
     assert db.scalar(select(NumberingState)) is None
+
+
+def test_format_template_attribute_access_is_rejected_before_allocation(db: Session) -> None:
+    add_policy(db, format_template="{prefix.upper}")
+    with pytest.raises(NumberingError, match="invalid_number_format_template"):
+        allocate_registration_number(db, 7, 12)
+
+    assert db.scalar(select(NumberingState)) is None
