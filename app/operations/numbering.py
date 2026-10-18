@@ -77,7 +77,7 @@ def allocate_registration_number(
     }
     try:
         policy.format_template.format(**values)
-    except (KeyError, ValueError, IndexError) as exc:
+    except (AttributeError, KeyError, ValueError, IndexError) as exc:
         raise NumberingError("invalid_number_format_template") from exc
     db.execute(
         sqlite_insert(NumberingState)
@@ -102,5 +102,5 @@ def allocate_registration_number(
     }
     try:
         return policy.format_template.format(**values)
-    except (KeyError, ValueError, IndexError) as exc:
+    except (AttributeError, KeyError, ValueError, IndexError) as exc:
         raise NumberingError("invalid_number_format_template") from exc
