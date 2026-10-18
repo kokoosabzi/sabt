@@ -2,11 +2,11 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
-## Current status — reconciled 2026-10-17
+## Current status — reconciled 2026-10-18
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main` code milestone:** `232011d570ff0f312f02192665a1723f94fef502` (PR #15 scopes contract history and report joins to the owning project; PR #14 rejects unsupported number-template fields).
-- **Latest verified CI:** [run 39148879162](https://github.com/kokoosabzi/sabt/actions/runs/39148879162) passed **149 tests, 2 warnings**, including Chromium browser E2E and fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
+- **Current `main` code milestone:** `ea79445bb3fcdabddeb2981eb11ac324f45317be` (PR #17 adds project-scoped composite foreign keys; PR #16 hardens owner/person lookup; PR #15 scopes contract history and reports).
+- **Latest verified CI:** [run 39156689652](https://github.com/kokoosabzi/sabt/actions/runs/39156689652) passed **151 tests, 2 warnings**, including Chromium browser E2E and fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
 - **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle/finalization guarantees; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
@@ -21,13 +21,14 @@
 - [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization beyond the current unit coverage.
 - [ ] Verify project isolation for every service and resource lookup.
 - [x] Scope parent-contract history, current-owner derivation, and report joins to the owning project, with cross-project regression tests (PR #15; CI passed in [run 39148879162](https://github.com/kokoosabzi/sabt/actions/runs/39148879162)).
-- [ ] Harden current-owner person lookups against inconsistent legacy links lacking ProjectPerson membership; focused regression-tested fix is in progress.
+- [x] Harden current-owner person lookups against inconsistent legacy links lacking ProjectPerson membership; foreign-project transferees and missing initial-owner membership are covered by regression tests (PR #16; CI passed in [run 39152941082](https://github.com/kokoosabzi/sabt/actions/runs/39152941082)).
 - [ ] Test registration-number allocation concurrency assumptions.
 - [ ] Review operation creation/finalization transaction boundaries and validation order.
 - [x] Reject inactive Property records during operation creation, with a regression test that verifies no Operation row is written (PR #11; CI passed in [run 39147040578](https://github.com/kokoosabzi/sabt/actions/runs/39147040578)).
 - [x] Revalidate Property, ProjectProperty association, Person, ProjectPerson membership, and PartyRole active/retired state before finalization side effects (PR #12; CI passed in [run 39147926546](https://github.com/kokoosabzi/sabt/actions/runs/39147926546)).
 - [x] Validate registration-number format configuration before sequence state changes (PR #13; CI passed in [run 39148105940](https://github.com/kokoosabzi/sabt/actions/runs/39148105940)). A follow-up edge-case check for attribute access in templates is in progress.
-- [ ] Compare ORM metadata against migrations for tables, columns, nullability, foreign keys, and indexes/constraints.
+- [ ] Compare ORM metadata against migrations for tables, columns, nullability, foreign keys, and indexes/constraints (full parity audit remains open; project-scoped composite foreign keys are now aligned in ORM and migration, PR #17; CI passed in [run 39153566324](https://github.com/kokoosabzi/sabt/actions/runs/39153566324)).
+- [x] Enforce project-scoped composite foreign keys for operation property/parent-contract references and parent-contract initial-person/property references (PR #17; CI passed in [run 39153566324](https://github.com/kokoosabzi/sabt/actions/runs/39153566324)).
 - [x] Add CI for tests and fresh-database migration round-trip.
 - [x] Add regression tests for authorization, session expiry/revocation, numbering behavior, operation project isolation, and ORM/migration parity.
 - [x] Require active ProjectPerson membership before adding an OperationParty; reject missing, inactive, or cross-project membership before writes.
