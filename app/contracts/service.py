@@ -131,7 +131,7 @@ def get_parent_contract_history(
     )
     operations = db.scalars(
         select(Operation)
-        .where(Operation.parent_contract_id == parent.id)
+        .where(Operation.parent_contract_id == parent.id, Operation.project_id == parent.project_id)
         .order_by(
             Operation.transfer_sequence.is_(None),
             Operation.transfer_sequence,
@@ -183,6 +183,7 @@ def _derive_current_owner(db: Session, parent: ParentContract) -> dict:
         .join(PartyRole, PartyRole.id == OperationParty.role_id)
         .where(
             Operation.parent_contract_id == parent.id,
+            Operation.project_id == parent.project_id,
             Operation.status == "FINALIZED",
             Operation.finalized_at.is_not(None),
             Operation.transfer_sequence.is_not(None),
