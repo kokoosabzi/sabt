@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -181,6 +181,13 @@ class Operation(Base):
     __table_args__ = (
         UniqueConstraint("child_contract_number", name="uq_operations_child_contract_number"),
         UniqueConstraint("parent_contract_id", "transfer_sequence", name="uq_operations_parent_transfer_sequence"),
+        # A globally valid property/parent ID must also belong to this operation's project.
+        ForeignKeyConstraint(["project_id", "property_id"],
+                             ["project_properties.project_id", "project_properties.property_id"],
+                             ondelete="RESTRICT", name="fk_operations_project_property"),
+        ForeignKeyConstraint(["project_id", "parent_contract_id"],
+                             ["parent_contracts.project_id", "parent_contracts.id"],
+                             ondelete="RESTRICT", name="fk_operations_project_parent_contract"),
     )
 
 class OperationParty(Base):
@@ -226,8 +233,15 @@ class ParentContract(Base):
     __table_args__ = (
         CheckConstraint("next_transfer_sequence >= 1", name="ck_parent_contract_next_transfer_sequence_positive"),
         UniqueConstraint("project_id", "suffix", name="uq_parent_contract_project_suffix"),
+        UniqueConstraint("project_id", "id", name="uq_parent_contract_project_id_id"),
         CheckConstraint("contract_number GLOB '[1-9][0-9][0-9][0-9][0-9][0-9]'", name="ck_parent_contract_number_format"),
         CheckConstraint("suffix GLOB '[0-9][0-9][0-9][0-9]'", name="ck_parent_contract_suffix_format"),
+        ForeignKeyConstraint(["project_id", "initial_person_id"],
+                             ["project_persons.project_id", "project_persons.person_id"],
+                             ondelete="RESTRICT", name="fk_parent_contract_initial_person_project"),
+        ForeignKeyConstraint(["project_id", "property_id"],
+                             ["project_properties.project_id", "project_properties.property_id"],
+                             ondelete="RESTRICT", name="fk_parent_contract_property_project"),
     )
 
 
