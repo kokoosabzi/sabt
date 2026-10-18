@@ -172,6 +172,31 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
     if op.version != expected_version: raise ConflictError("stale_operation")
     if op.property_id is None: raise ValidationError("property_required")
 
+    # Revalidate mutable master data at finalization time, not only when the
+    # draft was created: associations or records may have been deactivated later.
+    property_record = db.get(Property, op.property_id)
+    if property_record is None:
+        raise NotFoundError("property_not_found")
+    if not property_record.is_active:
+        raise ValidationError("property_inactive")
+    property_link = db.get(ProjectProperty, (op.project_id, op.property_id))
+    if property_link is None or not property_link.active:
+        raise ValidationError("property_not_associated_with_project")
+
+    parties = db.scalars(
+        select(OperationParty).where(OperationParty.operation_id == op.id)
+    ).all()
+    for party in parties:
+        person = db.get(Person, party.person_id)
+        if person is None or not person.is_active:
+            raise ValidationError("person_invalid")
+        membership = db.get(ProjectPerson, (op.project_id, party.person_id))
+        if membership is None or not membership.active:
+            raise ValidationError("person_not_associated_with_project")
+        role = db.get(PartyRole, party.role_id)
+        if role is None or not role.active or role.retired_at is not None:
+            raise ValidationError("party_role_invalid")
+
     now = _now()
     previous_status = op.status
     if op.parent_contract_id is not None:
