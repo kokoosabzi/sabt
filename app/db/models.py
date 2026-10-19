@@ -194,6 +194,7 @@ class Operation(Base):
 class OperationParty(Base):
     __tablename__ = "operation_parties"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False)
     operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
     person_id: Mapped[int] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"), nullable=False)
     role_id: Mapped[int] = mapped_column(ForeignKey("party_roles.id", ondelete="RESTRICT"), nullable=False)
@@ -202,7 +203,21 @@ class OperationParty(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    __table_args__ = (UniqueConstraint("operation_id","role_id","sequence_no",name="uq_operation_party_role_seq"),)
+    __table_args__ = (
+        UniqueConstraint("operation_id", "role_id", "sequence_no", name="uq_operation_party_role_seq"),
+        ForeignKeyConstraint(
+            ["project_id", "operation_id"],
+            ["operations.project_id", "operations.id"],
+            ondelete="RESTRICT",
+            name="fk_operation_parties_project_operation",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "person_id"],
+            ["project_persons.project_id", "project_persons.person_id"],
+            ondelete="RESTRICT",
+            name="fk_operation_parties_project_person",
+        ),
+    )
 
 class Contract(Base):
     __tablename__ = "contracts"
