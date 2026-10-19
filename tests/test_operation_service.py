@@ -19,6 +19,8 @@ from app.db.models import (
     OperationParty,
     OperationType,
     OperationVersion,
+    PersonSnapshot,
+    PropertySnapshot,
     ParentContract,
     Permission,
     Project,
@@ -677,6 +679,86 @@ def test_database_rejects_cross_project_operation_appointment_links():
 
             session.add(OperationAppointment(project_id=project.id, appointment_id=appointment_b.id,
                                              operation_id=operation.id, created_at=now))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+
+def test_database_rejects_cross_project_and_mismatched_operation_snapshots():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    event.listen(engine, "connect", lambda connection, _: connection.execute("PRAGMA foreign_keys=ON"))
+    Base.metadata.create_all(engine)
+    now = datetime.now(timezone.utc)
+    try:
+        with Session(engine) as session:
+            project = Project(code="SNAP-A", name="Snapshot Project A", status="ACTIVE",
+                              timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            other_project = Project(code="SNAP-B", name="Snapshot Project B", status="ACTIVE",
+                                    timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            user = User(username="snapshot-integrity-user", password_hash="unused",
+                        display_name="Snapshot User", active=True, created_at=now, updated_at=now, version=1)
+            operation_type = OperationType(code="SNAP-OP", name="Snapshot Operation", active=True,
+                                           system_defined=False, created_at=now, updated_at=now)
+            role = PartyRole(code="SNAP-ROLE", name="Snapshot Role", active=True, system_defined=False,
+                             created_at=now, updated_at=now)
+            person = Person(first_name="Project", last_name="A Person", created_at=now, updated_at=now,
+                            version=1, is_active=True)
+            other_person_same_project = Person(first_name="Another", last_name="A Person",
+                                               created_at=now, updated_at=now, version=1, is_active=True)
+            foreign_person = Person(first_name="Project", last_name="B Person", created_at=now, updated_at=now,
+                                    version=1, is_active=True)
+            property_record = Property(address="Project A", created_at=now, updated_at=now,
+                                       version=1, is_active=True)
+            foreign_property = Property(address="Project B", created_at=now, updated_at=now,
+                                        version=1, is_active=True)
+            session.add_all([project, other_project, user, operation_type, role, person,
+                             other_person_same_project, foreign_person, property_record, foreign_property])
+            session.flush()
+            session.add_all([
+                ProjectPerson(project_id=project.id, person_id=person.id, active=True,
+                              created_at=now, updated_at=now),
+                ProjectPerson(project_id=project.id, person_id=other_person_same_project.id, active=True,
+                              created_at=now, updated_at=now),
+                ProjectPerson(project_id=other_project.id, person_id=foreign_person.id, active=True,
+                              created_at=now, updated_at=now),
+                ProjectProperty(project_id=project.id, property_id=property_record.id, active=True,
+                                created_at=now, updated_at=now),
+                ProjectProperty(project_id=other_project.id, property_id=foreign_property.id, active=True,
+                                created_at=now, updated_at=now),
+            ])
+            session.flush()
+            operation = Operation(project_id=project.id, operation_type_id=operation_type.id,
+                                  property_id=property_record.id, status="DRAFT", current_workflow_state="DRAFT",
+                                  created_by=user.id, created_at=now, updated_at=now, version=1,
+                                  current_version_number=0)
+            session.add(operation)
+            session.flush()
+            party = OperationParty(project_id=project.id, operation_id=operation.id, person_id=person.id,
+                                   role_id=role.id, sequence_no=1, created_at=now, updated_at=now, version=1)
+            session.add(party)
+            session.commit()
+
+            session.add(PersonSnapshot(project_id=other_project.id, operation_id=operation.id,
+                                       person_id=foreign_person.id, party_id=None, snapshot_data_json="{}",
+                                       created_at=now, snapshot_hash="foreign-person"))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+
+            session.add(PersonSnapshot(project_id=project.id, operation_id=operation.id,
+                                       person_id=other_person_same_project.id, party_id=party.id,
+                                       snapshot_data_json="{}", created_at=now, snapshot_hash="mismatched-party"))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+
+            session.add(PropertySnapshot(project_id=other_project.id, operation_id=operation.id,
+                                         property_id=foreign_property.id, snapshot_data_json="{}",
+                                         created_at=now, snapshot_hash="foreign-property"))
             with pytest.raises(IntegrityError):
                 session.commit()
             session.rollback()
