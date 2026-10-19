@@ -392,13 +392,31 @@ class Appointment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __table_args__ = (
+        UniqueConstraint("project_id", "id", name="uq_appointments_project_id_id"),
+    )
 
 class OperationAppointment(Base):
     __tablename__ = "operation_appointments"
     appointment_id: Mapped[int] = mapped_column(ForeignKey("appointments.id", ondelete="RESTRICT"), primary_key=True)
     operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), primary_key=True)
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    __table_args__ = (UniqueConstraint("appointment_id", "operation_id", name="uq_appointment_operation_link"),)
+    __table_args__ = (
+        UniqueConstraint("appointment_id", "operation_id", name="uq_appointment_operation_link"),
+        ForeignKeyConstraint(
+            ["project_id", "appointment_id"],
+            ["appointments.project_id", "appointments.id"],
+            ondelete="RESTRICT",
+            name="fk_operation_appointments_project_appointment",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "operation_id"],
+            ["operations.project_id", "operations.id"],
+            ondelete="RESTRICT",
+            name="fk_operation_appointments_project_operation",
+        ),
+    )
 
 
 class WorkflowEvent(Base):
