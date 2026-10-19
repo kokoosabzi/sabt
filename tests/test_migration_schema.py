@@ -91,6 +91,13 @@ def test_migrated_schema_contains_all_orm_tables_and_columns(tmp_path):
                 tuple(constraint["column_names"])
                 for constraint in inspector.get_unique_constraints(table_name)
             }
+            # SQLite exposes some migration-created unique indexes separately
+            # from table UNIQUE constraints; they enforce the same invariant.
+            migrated_unique_constraints.update(
+                tuple(index["column_names"])
+                for index in inspector.get_indexes(table_name)
+                if index.get("unique") and index.get("column_names") is not None
+            )
             assert migrated_unique_constraints == orm_unique_constraints, (
                 f"{table_name}: ORM-only unique constraints "
                 f"{sorted(orm_unique_constraints - migrated_unique_constraints, key=repr)}; "
