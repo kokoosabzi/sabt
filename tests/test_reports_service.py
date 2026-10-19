@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.auth.authorization import AuthorizationContext, authorize
 from app.db.base import Base
 from app.db.models import (
-    Operation, OperationType, ParentContract, Permission, Project, ProjectAccess, Role, RolePermission,
+    Operation, OperationType, ParentContract, Permission, Project, ProjectAccess, ProjectOperationType, Role, RolePermission,
     User, UserRole, WorkflowEvent,
 )
 from app.reports.service import ReportValidationError, get_management_summary, get_workflow_events_report, get_workflow_report
@@ -213,6 +213,9 @@ def test_database_rejects_workflow_event_for_another_project():
             operation_type = OperationType(code="EVENT-TEST", name="Event Test", active=True,
                                            system_defined=False, created_at=now, updated_at=now)
             db.add_all([project_a, project_b, user, operation_type])
+            db.flush()
+            db.add(ProjectOperationType(project_id=project_a.id, operation_type_id=operation_type.id,
+                                        enabled=True, created_at=now, updated_at=now, version=1))
             db.flush()
             operation = Operation(project_id=project_a.id, operation_type_id=operation_type.id,
                                   status="DRAFT", current_workflow_state="DRAFT",

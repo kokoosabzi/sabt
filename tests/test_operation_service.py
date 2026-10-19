@@ -607,6 +607,9 @@ def test_database_rejects_operation_party_project_mismatches():
                              created_at=now, updated_at=now)
             session.add_all([project, other_project, user, operation_type, person, role])
             session.flush()
+            session.add(ProjectOperationType(project_id=project.id, operation_type_id=operation_type.id,
+                                             enabled=True, created_at=now, updated_at=now, version=1))
+            session.flush()
             session.add(ProjectPerson(project_id=other_project.id, person_id=person.id, active=True,
                                       created_at=now, updated_at=now))
             operation = Operation(project_id=project.id, operation_type_id=operation_type.id, status="DRAFT",
@@ -654,6 +657,9 @@ def test_database_rejects_cross_project_operation_appointment_links():
                                                default_duration_minutes=30, active=True,
                                                created_at=now, updated_at=now)
             session.add_all([project, other_project, user, operation_type, appointment_type])
+            session.flush()
+            session.add(ProjectOperationType(project_id=project.id, operation_type_id=operation_type.id,
+                                             enabled=True, created_at=now, updated_at=now, version=1))
             session.flush()
             operation = Operation(project_id=project.id, operation_type_id=operation_type.id,
                                   status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
@@ -718,6 +724,9 @@ def test_database_rejects_cross_project_and_mismatched_operation_snapshots():
             session.add_all([project, other_project, user, operation_type, role, person,
                              other_person_same_project, foreign_person, property_record, foreign_property])
             session.flush()
+            session.add(ProjectOperationType(project_id=project.id, operation_type_id=operation_type.id,
+                                             enabled=True, created_at=now, updated_at=now, version=1))
+            session.flush()
             session.add_all([
                 ProjectPerson(project_id=project.id, person_id=person.id, active=True,
                               created_at=now, updated_at=now),
@@ -759,6 +768,36 @@ def test_database_rejects_cross_project_and_mismatched_operation_snapshots():
             session.add(PropertySnapshot(project_id=other_project.id, operation_id=operation.id,
                                          property_id=foreign_property.id, snapshot_data_json="{}",
                                          created_at=now, snapshot_hash="foreign-property"))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
+
+def test_database_rejects_operation_type_not_configured_for_project():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    event.listen(engine, "connect", lambda connection, _: connection.execute("PRAGMA foreign_keys=ON"))
+    Base.metadata.create_all(engine)
+    now = datetime.now(timezone.utc)
+    try:
+        with Session(engine) as session:
+            project = Project(code="TYPE-A", name="Type Project A", status="ACTIVE",
+                              timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            user = User(username="operation-type-integrity-user", password_hash="unused",
+                        display_name="Operation Type User", active=True, created_at=now,
+                        updated_at=now, version=1)
+            operation_type = OperationType(code="TYPE-ONLY-OTHER", name="Unconfigured Type",
+                                           active=True, system_defined=False, created_at=now, updated_at=now)
+            session.add_all([project, user, operation_type])
+            session.commit()
+
+            operation = Operation(project_id=project.id, operation_type_id=operation_type.id,
+                                  status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
+                                  created_at=now, updated_at=now, version=1, current_version_number=0)
+            session.add(operation)
             with pytest.raises(IntegrityError):
                 session.commit()
             session.rollback()
