@@ -183,6 +183,9 @@ class Operation(Base):
         UniqueConstraint("project_id", "id", "property_id", name="uq_operations_project_id_property"),
         UniqueConstraint("child_contract_number", name="uq_operations_child_contract_number"),
         UniqueConstraint("parent_contract_id", "transfer_sequence", name="uq_operations_parent_transfer_sequence"),
+        ForeignKeyConstraint(["project_id", "operation_type_id"],
+                             ["project_operation_types.project_id", "project_operation_types.operation_type_id"],
+                             ondelete="RESTRICT", name="fk_operations_project_operation_type"),
         # A globally valid property/parent ID must also belong to this operation's project.
         ForeignKeyConstraint(["project_id", "property_id"],
                              ["project_properties.project_id", "project_properties.property_id"],
