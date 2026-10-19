@@ -116,7 +116,7 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
     db.add(op); db.flush()
     _record_workflow_event(db, user, op, "OPERATION_CREATED", now, to_status="DRAFT")
     if appointment is not None:
-        db.add(OperationAppointment(appointment_id=appointment.id, operation_id=op.id, created_at=now))
+        db.add(OperationAppointment(project_id=op.project_id, appointment_id=appointment.id, operation_id=op.id, created_at=now))
         db.flush()
     return op
 
