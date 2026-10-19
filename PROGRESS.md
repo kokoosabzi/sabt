@@ -2,11 +2,11 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
-## Current status — reconciled 2026-10-19 (after PR #23)
+## Current status — reconciled 2026-10-19 (after PR #25)
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main` code milestone:** `4e839ebf985a9247d4497366bf901faf58419b9e` (PR #23 binds appointment-operation links to the same project; PR #21 scopes operation parties to their operation project and membership; PR #19 scopes workflow events to their operation project).
-- **Latest verified CI:** [run 39298120817](https://github.com/kokoosabzi/sabt/actions/runs/39298120817) passed for PR #23, including the test suite, Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
+- **Current `main` code milestone:** `64cef2526d4135a1d7e8e26e56be23449822d7a3` (PR #25 binds person/property snapshots to their project-scoped source records; PR #23 binds appointment-operation links to the same project; PR #21 scopes operation parties to their operation project and membership).
+- **Latest verified CI:** [run 39298821916](https://github.com/kokoosabzi/sabt/actions/runs/39298821916) passed for PR #25, including the test suite, Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
 - **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle/finalization guarantees; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
@@ -32,6 +32,7 @@
 - [x] Bind workflow events to the same project as their operation with a composite foreign key and cross-project regression test (PR #19; CI passed in [run 39157027847](https://github.com/kokoosabzi/sabt/actions/runs/39157027847)).
 - [x] Bind each OperationParty to both its operation project and a ProjectPerson membership through composite foreign keys; migration preflights existing data rather than inventing missing memberships (PR #21; CI passed in [run 39297451554](https://github.com/kokoosabzi/sabt/actions/runs/39297451554)).
 - [x] Enforce same-project appointment-operation junctions with composite foreign keys and reject legacy cross-project links during migration preflight (PR #23; CI passed in [run 39298120817](https://github.com/kokoosabzi/sabt/actions/runs/39298120817)).
+- [x] Scope person/property snapshots to the owning operation project, enforce snapshot party/person and operation/property consistency, and preflight legacy snapshot rows (PR #25; CI passed in [run 39298821916](https://github.com/kokoosabzi/sabt/actions/runs/39298821916)).
 - [x] Reject existing bearer sessions when their user account is deactivated (PR #18; post-merge CI passed in [run 39156896547](https://github.com/kokoosabzi/sabt/actions/runs/39156896547)).
 - [x] Add CI for tests and fresh-database migration round-trip.
 - [x] Add regression tests for authorization, session expiry/revocation, numbering behavior, operation project isolation, and ORM/migration parity.
