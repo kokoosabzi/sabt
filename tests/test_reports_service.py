@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.auth.authorization import AuthorizationContext, authorize
 from app.db.base import Base
 from app.db.models import (
-    Operation, OperationType, ParentContract, Permission, Project, ProjectAccess, Role, RolePermission,
+    Operation, OperationType, ParentContract, Permission, Project, ProjectAccess, ProjectOperationType, Role, RolePermission,
     User, UserRole, WorkflowEvent,
 )
 from app.reports.service import ReportValidationError, get_management_summary, get_workflow_events_report, get_workflow_report
