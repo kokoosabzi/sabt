@@ -3,7 +3,8 @@ import hashlib
 import json
 
 import pytest
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, event, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -580,3 +581,51 @@ def test_rolling_back_transfer_finalization_releases_sequence(db: Session):
     assert db.scalar(select(func.count()).select_from(OperationVersion).where(
         OperationVersion.operation_id == operation.id
     )) == 0
+
+
+
+def test_database_rejects_operation_party_project_mismatches():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    event.listen(engine, "connect", lambda connection, _: connection.execute("PRAGMA foreign_keys=ON"))
+    Base.metadata.create_all(engine)
+    now = datetime.now(timezone.utc)
+    try:
+        with Session(engine) as session:
+            project = Project(code="PARTY-A", name="Party Project A", status="ACTIVE",
+                              timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            other_project = Project(code="PARTY-B", name="Party Project B", status="ACTIVE",
+                                    timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            user = User(username="party-integrity-user", password_hash="unused", display_name="Party User",
+                        active=True, created_at=now, updated_at=now, version=1)
+            operation_type = OperationType(code="PARTY-TEST", name="Party Test", active=True,
+                                           system_defined=False, created_at=now, updated_at=now)
+            person = Person(first_name="Other", last_name="Project", created_at=now, updated_at=now,
+                            version=1, is_active=True)
+            role = PartyRole(code="PARTY-TEST-ROLE", name="Test Role", active=True, system_defined=False,
+                             created_at=now, updated_at=now)
+            session.add_all([project, other_project, user, operation_type, person, role])
+            session.flush()
+            session.add(ProjectPerson(project_id=other_project.id, person_id=person.id, active=True,
+                                      created_at=now, updated_at=now))
+            operation = Operation(project_id=project.id, operation_type_id=operation_type.id, status="DRAFT",
+                                  current_workflow_state="DRAFT", created_by=user.id, created_at=now,
+                                  updated_at=now, version=1, current_version_number=0)
+            session.add(operation)
+            session.commit()
+
+            session.add(OperationParty(project_id=other_project.id, operation_id=operation.id,
+                                       person_id=person.id, role_id=role.id, sequence_no=1,
+                                       created_at=now, updated_at=now, version=1))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+
+            session.add(OperationParty(project_id=project.id, operation_id=operation.id,
+                                       person_id=person.id, role_id=role.id, sequence_no=1,
+                                       created_at=now, updated_at=now, version=1))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()

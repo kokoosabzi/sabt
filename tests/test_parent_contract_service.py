@@ -193,11 +193,11 @@ def test_parent_contract_history_lists_numbered_transfers_and_drafts(db):
     db.add_all([
         OperationVersion(operation_id=finalized.id, version_number=1, created_by=user.id,
                          created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash-1"),
-        OperationParty(operation_id=finalized.id, person_id=buyer.id, role_id=buyer_role.id,
+        OperationParty(project_id=project.id, operation_id=finalized.id, person_id=buyer.id, role_id=buyer_role.id,
                        sequence_no=1, created_at=now, updated_at=now, version=1),
         OperationVersion(operation_id=second_transfer.id, version_number=1, created_by=user.id,
                          created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash-2"),
-        OperationParty(operation_id=second_transfer.id, person_id=second_buyer.id, role_id=buyer_role.id,
+        OperationParty(project_id=project.id, operation_id=second_transfer.id, person_id=second_buyer.id, role_id=buyer_role.id,
                        sequence_no=1, created_at=now, updated_at=now, version=1),
     ])
     db.flush()
@@ -241,7 +241,7 @@ def test_parent_contract_history_ignores_operations_mislinked_from_another_proje
             created_at=now, finalized_at=now, snapshot_json="{}", hash="test-hash",
         ),
         OperationParty(
-            operation_id=foreign_operation.id, person_id=buyer.id, role_id=buyer_role.id,
+            project_id=other.id, operation_id=foreign_operation.id, person_id=buyer.id, role_id=buyer_role.id,
             sequence_no=1, created_at=now, updated_at=now, version=1,
         ),
     ])
@@ -282,7 +282,7 @@ def test_parent_contract_history_does_not_expose_foreign_project_transferee(db):
     db.add_all([
         OperationVersion(operation_id=operation.id, version_number=1, created_by=user.id,
                          created_at=now, finalized_at=now, snapshot_json="{}", hash="foreign-party-test"),
-        OperationParty(operation_id=operation.id, person_id=foreign_buyer.id, role_id=buyer_role.id,
+        OperationParty(project_id=project.id, operation_id=operation.id, person_id=foreign_buyer.id, role_id=buyer_role.id,
                        sequence_no=1, created_at=now, updated_at=now, version=1),
     ])
     db.flush()
