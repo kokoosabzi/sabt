@@ -246,6 +246,8 @@ class Contract(Base):
         ForeignKeyConstraint(["project_id", "operation_id", "property_id"],
                              ["operations.project_id", "operations.id", "operations.property_id"],
                              ondelete="RESTRICT", name="fk_contracts_operation_property_match"),
+        Index("ix_contracts_contract_number", "contract_number"),
+        Index("ix_contracts_registration_number", "registration_number"),
     )
 
 class ParentContract(Base):
