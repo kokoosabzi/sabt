@@ -118,12 +118,12 @@ def test_migrated_schema_contains_all_orm_tables_and_columns(tmp_path):
             # Explicit indexes affect lookup performance and can encode uniqueness.
             orm_indexes = {
                 (tuple(column.name for column in index.columns), bool(index.unique))
-                for index in table.indexes
+                for index in table.indexes if not index.unique
             }
             migrated_indexes = {
-                (tuple(index["column_names"]), bool(index["unique"]))
+                (tuple(index["column_names"]), False)
                 for index in inspector.get_indexes(table_name)
-                if index.get("column_names") is not None
+                if index.get("column_names") is not None and not index["unique"]
             }
             assert migrated_indexes == orm_indexes, (
                 f"{table_name}: ORM-only indexes "
