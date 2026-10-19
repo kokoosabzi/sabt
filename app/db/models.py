@@ -180,6 +180,7 @@ class Operation(Base):
     child_contract_number: Mapped[str | None] = mapped_column(String(32))
     __table_args__ = (
         UniqueConstraint("project_id", "id", name="uq_operations_project_id_id"),
+        UniqueConstraint("project_id", "id", "property_id", name="uq_operations_project_id_property"),
         UniqueConstraint("child_contract_number", name="uq_operations_child_contract_number"),
         UniqueConstraint("parent_contract_id", "transfer_sequence", name="uq_operations_parent_transfer_sequence"),
         # A globally valid property/parent ID must also belong to this operation's project.
@@ -205,6 +206,8 @@ class OperationParty(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     __table_args__ = (
         UniqueConstraint("operation_id", "role_id", "sequence_no", name="uq_operation_party_role_seq"),
+        UniqueConstraint("project_id", "operation_id", "id", name="uq_operation_parties_project_operation_id"),
+        UniqueConstraint("project_id", "operation_id", "id", "person_id", name="uq_operation_parties_project_operation_id_person"),
         ForeignKeyConstraint(
             ["project_id", "operation_id"],
             ["operations.project_id", "operations.id"],
@@ -277,21 +280,44 @@ class OperationVersion(Base):
 class PersonSnapshot(Base):
     __tablename__ = "person_snapshots"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False)
     operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
     person_id: Mapped[int | None] = mapped_column(ForeignKey("persons.id", ondelete="RESTRICT"))
     party_id: Mapped[int | None] = mapped_column(ForeignKey("operation_parties.id", ondelete="RESTRICT"))
     snapshot_data_json: Mapped[str] = mapped_column(Text(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(["project_id", "operation_id"], ["operations.project_id", "operations.id"],
+                             ondelete="RESTRICT", name="fk_person_snapshots_project_operation"),
+        ForeignKeyConstraint(["project_id", "person_id"], ["project_persons.project_id", "project_persons.person_id"],
+                             ondelete="RESTRICT", name="fk_person_snapshots_project_person"),
+        ForeignKeyConstraint(["project_id", "operation_id", "party_id"],
+                             ["operation_parties.project_id", "operation_parties.operation_id", "operation_parties.id"],
+                             ondelete="RESTRICT", name="fk_person_snapshots_project_party"),
+        ForeignKeyConstraint(["project_id", "operation_id", "party_id", "person_id"],
+                             ["operation_parties.project_id", "operation_parties.operation_id", "operation_parties.id", "operation_parties.person_id"],
+                             ondelete="RESTRICT", name="fk_person_snapshots_party_person_match"),
+    )
 
 class PropertySnapshot(Base):
     __tablename__ = "property_snapshots"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False)
     operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False)
     property_id: Mapped[int | None] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"))
     snapshot_data_json: Mapped[str] = mapped_column(Text(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(["project_id", "operation_id"], ["operations.project_id", "operations.id"],
+                             ondelete="RESTRICT", name="fk_property_snapshots_project_operation"),
+        ForeignKeyConstraint(["project_id", "property_id"], ["project_properties.project_id", "project_properties.property_id"],
+                             ondelete="RESTRICT", name="fk_property_snapshots_project_property"),
+        ForeignKeyConstraint(["project_id", "operation_id", "property_id"],
+                             ["operations.project_id", "operations.id", "operations.property_id"],
+                             ondelete="RESTRICT", name="fk_property_snapshots_operation_property_match"),
+    )
 
 
 class DocumentType(Base):
