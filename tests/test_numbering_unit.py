@@ -1,4 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from threading import Barrier
 
 import pytest
 from sqlalchemy import create_engine, select
@@ -116,3 +118,43 @@ def test_format_template_attribute_access_is_rejected_before_allocation(db: Sess
         allocate_registration_number(db, 7, 12)
 
     assert db.scalar(select(NumberingState)) is None
+
+
+
+def test_registration_number_allocations_are_unique_under_concurrency(tmp_path) -> None:
+    database_path = tmp_path / "numbering-concurrency.db"
+    engine = create_engine(
+        f"sqlite:///{database_path.as_posix()}",
+        connect_args={"timeout": 30},
+    )
+    Base.metadata.create_all(engine)
+    worker_count = 4
+    start = Barrier(worker_count)
+    try:
+        with Session(engine) as db:
+            add_policy(db)
+            db.commit()
+
+        def allocate_one(_: int) -> str:
+            with Session(engine) as session:
+                start.wait(timeout=10)
+                number = allocate_registration_number(session, 7, 12)
+                session.commit()
+                return number
+
+        with ThreadPoolExecutor(max_workers=worker_count) as pool:
+            numbers = list(pool.map(allocate_one, range(worker_count)))
+
+        assert sorted(numbers) == [
+            "REG-001",
+            "REG-002",
+            "REG-003",
+            "REG-004",
+        ]
+        with Session(engine) as db:
+            state = db.scalar(select(NumberingState))
+            assert state is not None
+            assert state.current_value == worker_count
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
