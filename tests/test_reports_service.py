@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -194,3 +195,38 @@ def test_workflow_event_report_uses_event_time(report_context):
     assert result["period"]["basis"] == "workflow_events.occurred_at"
     assert result["items"][0]["event_type"] == "OPERATION_CREATED"
     assert result["items"][0]["metadata"] == {"source": "test"}
+
+
+def test_database_rejects_workflow_event_for_another_project():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    event.listen(engine, "connect", lambda connection, _: connection.execute("PRAGMA foreign_keys=ON"))
+    Base.metadata.create_all(engine)
+    now = datetime.now(timezone.utc)
+    try:
+        with Session(engine) as db:
+            project_a = Project(code="EVENT-A", name="Event Project A", status="ACTIVE",
+                                timezone="Asia/Tehran", created_at=now, updated_at=now)
+            project_b = Project(code="EVENT-B", name="Event Project B", status="ACTIVE",
+                                timezone="Asia/Tehran", created_at=now, updated_at=now)
+            user = User(username="event-integrity-user", password_hash="unused",
+                        display_name="Event User", active=True, created_at=now, updated_at=now, version=1)
+            operation_type = OperationType(code="EVENT-TEST", name="Event Test", active=True,
+                                           system_defined=False, created_at=now, updated_at=now)
+            db.add_all([project_a, project_b, user, operation_type])
+            db.flush()
+            operation = Operation(project_id=project_a.id, operation_type_id=operation_type.id,
+                                  status="DRAFT", current_workflow_state="DRAFT",
+                                  created_by=user.id, created_at=now, updated_at=now,
+                                  version=1, current_version_number=0)
+            db.add(operation)
+            db.commit()
+
+            db.add(WorkflowEvent(project_id=project_b.id, operation_id=operation.id,
+                                 actor_user_id=user.id, event_type="TEST",
+                                 occurred_at=now))
+            with pytest.raises(IntegrityError):
+                db.commit()
+            db.rollback()
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
