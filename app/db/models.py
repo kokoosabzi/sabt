@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -9,7 +9,10 @@ class Project(Base):
     code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     contract_code: Mapped[str | None] = mapped_column(String(2), unique=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    __table_args__ = (CheckConstraint("contract_code IS NULL OR contract_code GLOB '[1-9][0-9]'", name="ck_projects_contract_code_format"),)
+    __table_args__ = (
+        CheckConstraint("contract_code IS NULL OR contract_code GLOB '[1-9][0-9]'", name="ck_projects_contract_code_format"),
+        Index("ix_projects_name", "name"),
+    )
     description: Mapped[str | None] = mapped_column(Text())
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="Asia/Tehran")
@@ -31,6 +34,7 @@ class Person(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    __table_args__ = (Index("ix_persons_national_id", "national_id"), Index("ix_persons_mobile", "mobile"))
 
 class Property(Base):
     __tablename__ = "properties"
@@ -47,6 +51,11 @@ class Property(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    __table_args__ = (
+        Index("ix_properties_unit_number", "unit_number"),
+        Index("ix_properties_unit_code", "unit_code"),
+        Index("ix_properties_plaque_number", "plaque_number"),
+    )
 
 class ProjectPerson(Base):
     __tablename__ = "project_persons"
@@ -123,6 +132,7 @@ class Session(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (Index("ix_sessions_user_id", "user_id"), Index("ix_sessions_expires_at", "expires_at"))
 
 class OperationType(Base):
     __tablename__ = "operation_types"
@@ -193,6 +203,7 @@ class Operation(Base):
         ForeignKeyConstraint(["project_id", "parent_contract_id"],
                              ["parent_contracts.project_id", "parent_contracts.id"],
                              ondelete="RESTRICT", name="fk_operations_project_parent_contract"),
+        Index("ix_operations_project_status_created", "project_id", "status", "created_at"),
     )
 
 class OperationParty(Base):
@@ -246,6 +257,8 @@ class Contract(Base):
         ForeignKeyConstraint(["project_id", "operation_id", "property_id"],
                              ["operations.project_id", "operations.id", "operations.property_id"],
                              ondelete="RESTRICT", name="fk_contracts_operation_property_match"),
+        Index("ix_contracts_contract_number", "contract_number"),
+        Index("ix_contracts_registration_number", "registration_number"),
     )
 
 class ParentContract(Base):
@@ -433,6 +446,8 @@ class Appointment(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     __table_args__ = (
         UniqueConstraint("project_id", "id", name="uq_appointments_project_id_id"),
+        Index("ix_appointments_project_start", "project_id", "start_at"),
+        Index("ix_appointments_status", "status"),
     )
 
 class OperationAppointment(Base):
@@ -477,4 +492,7 @@ class WorkflowEvent(Base):
             ondelete="RESTRICT",
             name="fk_workflow_events_project_operation",
         ),
+        Index("ix_workflow_events_project_time", "project_id", "occurred_at"),
+        Index("ix_workflow_events_operation_time", "operation_id", "occurred_at"),
+        Index("ix_workflow_events_actor_time", "actor_user_id", "occurred_at"),
     )
