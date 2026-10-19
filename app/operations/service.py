@@ -215,14 +215,14 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
                            "sequence_no": party.sequence_no, "person": {"first_name": person.first_name,
                            "last_name": person.last_name, "father_name": person.father_name,
                            "national_id": person.national_id, "mobile": person.mobile, "address": person.address}})
-        db.add(PersonSnapshot(operation_id=op.id, person_id=party.person_id, party_id=party.id,
+        db.add(PersonSnapshot(project_id=op.project_id, operation_id=op.id, person_id=party.person_id, party_id=party.id,
                               snapshot_data_json=data, created_at=now, snapshot_hash=_sha(data)))
     if op.property_id:
         prop = db.get(Property, op.property_id)
         data = _canonical({"property_id": prop.id, "block_tower": prop.block_tower, "floor": prop.floor,
                            "orientation": prop.orientation, "unit_number": prop.unit_number, "unit_code": prop.unit_code,
                            "plaque_number": prop.plaque_number, "address": prop.address})
-        db.add(PropertySnapshot(operation_id=op.id, property_id=prop.id, snapshot_data_json=data,
+        db.add(PropertySnapshot(project_id=op.project_id, operation_id=op.id, property_id=prop.id, snapshot_data_json=data,
                                 created_at=now, snapshot_hash=_sha(data)))
     op.status, op.current_workflow_state = "FINALIZED", "FINALIZED"
     op.finalized_by, op.finalized_at = user.id, now
