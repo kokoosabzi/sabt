@@ -584,6 +584,16 @@ def test_rolling_back_transfer_finalization_releases_sequence(db: Session):
     assert db.scalar(select(func.count()).select_from(OperationVersion).where(
         OperationVersion.operation_id == operation.id
     )) == 0
+    assert db.scalar(select(func.count()).select_from(PersonSnapshot).where(
+        PersonSnapshot.operation_id == operation.id
+    )) == 0
+    assert db.scalar(select(func.count()).select_from(PropertySnapshot).where(
+        PropertySnapshot.operation_id == operation.id
+    )) == 0
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "OPERATION_FINALIZED",
+    )) == 0
 
 
 
@@ -854,3 +864,33 @@ def test_database_rejects_contract_with_cross_project_operation_or_property():
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+
+def test_rolling_back_operation_creation_removes_operation_event_and_appointment_link(db: Session):
+    user, project, operation_type, property_record, appointment, _ = seed_operation_context(db)
+    nested = db.begin_nested()
+
+    operation = create_operation(
+        db,
+        user,
+        project.id,
+        operation_type.id,
+        property_id=property_record.id,
+        appointment_id=appointment.id,
+    )
+    db.flush()
+    nested.rollback()
+    db.expire_all()
+
+    assert db.scalar(select(func.count()).select_from(Operation).where(
+        Operation.id == operation.id
+    )) == 0
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "OPERATION_CREATED",
+    )) == 0
+    assert db.scalar(select(func.count()).select_from(OperationAppointment).where(
+        OperationAppointment.operation_id == operation.id,
+        OperationAppointment.appointment_id == appointment.id,
+    )) == 0
