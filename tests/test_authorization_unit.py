@@ -198,3 +198,21 @@ def test_revoked_project_access_denies_permission(db: Session):
     with pytest.raises(PermissionError, match="forbidden"):
         authorize(db, user, permission.code, AuthorizationContext(project_id=project.id))
 
+
+
+
+def test_password_verifier_rejects_unrecognized_scrypt_cost_before_derivation(monkeypatch):
+    def unexpected_derivation(*args, **kwargs):
+        pytest.fail("untrusted scrypt parameters must be rejected before derivation")
+
+    monkeypatch.setattr("app.auth.passwords.hashlib.scrypt", unexpected_derivation)
+    encoded = "scrypt$1048576$8$1$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    assert not verify_password("password", encoded)
+
+
+def test_password_verifier_rejects_invalid_salt_or_digest_lengths_before_derivation(monkeypatch):
+    def unexpected_derivation(*args, **kwargs):
+        pytest.fail("malformed hash material must be rejected before derivation")
+
+    monkeypatch.setattr("app.auth.passwords.hashlib.scrypt", unexpected_derivation)
+    assert not verify_password("password", "scrypt$16384$8$1$YQ==$Yg==")
