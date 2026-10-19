@@ -203,6 +203,12 @@ class Operation(Base):
         ForeignKeyConstraint(["project_id", "parent_contract_id"],
                              ["parent_contracts.project_id", "parent_contracts.id"],
                              ondelete="RESTRICT", name="fk_operations_project_parent_contract"),
+        ForeignKeyConstraint(["created_by", "project_id"],
+                             ["project_access.user_id", "project_access.project_id"],
+                             ondelete="RESTRICT", name="fk_operations_project_creator_access"),
+        ForeignKeyConstraint(["finalized_by", "project_id"],
+                             ["project_access.user_id", "project_access.project_id"],
+                             ondelete="RESTRICT", name="fk_operations_project_finalizer_access"),
         Index("ix_operations_project_status_created", "project_id", "status", "created_at"),
     )
 
@@ -491,6 +497,12 @@ class WorkflowEvent(Base):
             ["operations.project_id", "operations.id"],
             ondelete="RESTRICT",
             name="fk_workflow_events_project_operation",
+        ),
+        ForeignKeyConstraint(
+            ["actor_user_id", "project_id"],
+            ["project_access.user_id", "project_access.project_id"],
+            ondelete="RESTRICT",
+            name="fk_workflow_events_project_actor_access",
         ),
         Index("ix_workflow_events_project_time", "project_id", "occurred_at"),
         Index("ix_workflow_events_operation_time", "operation_id", "occurred_at"),
