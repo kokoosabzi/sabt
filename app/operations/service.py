@@ -79,6 +79,11 @@ def _allocate_transfer_number(db: Session, op: Operation, now: datetime) -> None
 def create_operation(db: Session, user: User, project_id: int, operation_type_id: int,
                      property_id: int | None = None, appointment_id: int | None = None,
                      parent_contract_id: int | None = None) -> Operation:
+    """Create a draft in the caller-owned transaction; never commit internally.
+
+    If an exception occurs after writes begin, the caller must roll back the
+    transaction rather than committing a partially completed unit of work.
+    """
     _require_project_access(db, user, project_id, "operation.create")
     ot = db.get(OperationType, operation_type_id)
     if ot is None or not ot.active or ot.retired_at is not None: raise ValidationError("operation_type_inactive")
@@ -122,6 +127,7 @@ def create_operation(db: Session, user: User, project_id: int, operation_type_id
 
 def add_party(db: Session, user: User, operation_id: int, person_id: int, role_id: int,
               sequence_no: int = 1, *, expected_version: int) -> OperationParty:
+    """Add a party in the caller-owned transaction; never commit internally."""
     op = db.get(Operation, operation_id)
     if op is None: raise NotFoundError("operation_not_found")
     _require_project_access(db, user, op.project_id, "operation.edit")
@@ -165,6 +171,12 @@ def _snapshot(db: Session, op: Operation) -> dict:
 
 def finalize_operation(db: Session, user: User, operation_id: int, expected_version: int,
                        reason: str | None = None) -> OperationVersion:
+    """Finalize atomically within the caller-owned transaction; never commit.
+
+    Callers must roll back if finalization raises or if any later work in the
+    same unit of work fails, so numbering, snapshots, versions, and events stay
+    consistent.
+    """
     op = db.get(Operation, operation_id)
     if op is None: raise NotFoundError("operation_not_found")
     _require_project_access(db, user, op.project_id, "operation.finalize")
