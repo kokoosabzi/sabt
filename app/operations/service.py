@@ -135,7 +135,7 @@ def add_party(db: Session, user: User, operation_id: int, person_id: int, role_i
         raise ValidationError("person_not_associated_with_project")
     if role is None or not role.active or role.retired_at is not None: raise ValidationError("party_role_invalid")
     now = _now()
-    party = OperationParty(operation_id=op.id, person_id=person_id, role_id=role_id, sequence_no=sequence_no,
+    party = OperationParty(project_id=op.project_id, operation_id=op.id, person_id=person_id, role_id=role_id, sequence_no=sequence_no,
                            created_at=now, updated_at=now, version=1)
     db.add(party); op.version += 1; op.updated_at = now; db.flush()
     _record_workflow_event(db, user, op, "PARTY_ADDED", now, from_status=op.status,
