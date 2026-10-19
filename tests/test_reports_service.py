@@ -214,6 +214,9 @@ def test_database_rejects_workflow_event_for_another_project():
                                            system_defined=False, created_at=now, updated_at=now)
             db.add_all([project_a, project_b, user, operation_type])
             db.flush()
+            db.add(ProjectOperationType(project_id=project_a.id, operation_type_id=operation_type.id,
+                                        enabled=True, created_at=now, updated_at=now, version=1))
+            db.flush()
             operation = Operation(project_id=project_a.id, operation_type_id=operation_type.id,
                                   status="DRAFT", current_workflow_state="DRAFT",
                                   created_by=user.id, created_at=now, updated_at=now,
