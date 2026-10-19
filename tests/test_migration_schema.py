@@ -1,9 +1,14 @@
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import CheckConstraint, UniqueConstraint, create_engine, inspect
 
 from app.db.base import Base
 from app.db import models  # noqa: F401
+
+
+def _normalize_sql(expression: str) -> str:
+    """Normalize superficial SQL formatting before comparing CHECK expressions."""
+    return "".join(expression.lower().replace("`", "").replace('"', "").split())
 
 
 def test_migrated_schema_contains_all_orm_tables_and_columns(tmp_path):
@@ -25,12 +30,11 @@ def test_migrated_schema_contains_all_orm_tables_and_columns(tmp_path):
         )
 
         for table_name in sorted(orm_tables):
+            table = Base.metadata.tables[table_name]
             migrated_column_info = {
                 column["name"]: column for column in inspector.get_columns(table_name)
             }
-            orm_column_info = {
-                column.name: column for column in Base.metadata.tables[table_name].columns
-            }
+            orm_column_info = {column.name: column for column in table.columns}
             migrated_columns = set(migrated_column_info)
             orm_columns = set(orm_column_info)
             assert migrated_columns == orm_columns, (
@@ -49,7 +53,7 @@ def test_migrated_schema_contains_all_orm_tables_and_columns(tmp_path):
                 )
 
             orm_foreign_keys = set()
-            for constraint in Base.metadata.tables[table_name].foreign_key_constraints:
+            for constraint in table.foreign_key_constraints:
                 elements = list(constraint.elements)
                 orm_foreign_keys.add((
                     tuple(element.parent.name for element in elements),
@@ -73,6 +77,59 @@ def test_migrated_schema_contains_all_orm_tables_and_columns(tmp_path):
                 f"{sorted(orm_foreign_keys - migrated_foreign_keys, key=repr)}; "
                 f"migration-only foreign keys "
                 f"{sorted(migrated_foreign_keys - orm_foreign_keys, key=repr)}"
+            )
+
+            # Unique constraints protect business invariants (including composite
+            # project-scoped keys); compare their ordered column sets independent
+            # of dialect-specific constraint names.
+            orm_unique_constraints = {
+                tuple(column.name for column in constraint.columns)
+                for constraint in table.constraints
+                if isinstance(constraint, UniqueConstraint)
+            }
+            migrated_unique_constraints = {
+                tuple(constraint["column_names"])
+                for constraint in inspector.get_unique_constraints(table_name)
+            }
+            assert migrated_unique_constraints == orm_unique_constraints, (
+                f"{table_name}: ORM-only unique constraints "
+                f"{sorted(orm_unique_constraints - migrated_unique_constraints, key=repr)}; "
+                f"migration-only unique constraints "
+                f"{sorted(migrated_unique_constraints - orm_unique_constraints, key=repr)}"
+            )
+
+            # CHECK expressions should remain present after migrations; normalize
+            # whitespace/quoting because SQLite may render equivalent SQL differently.
+            orm_checks = {
+                _normalize_sql(str(constraint.sqltext))
+                for constraint in table.constraints
+                if isinstance(constraint, CheckConstraint)
+            }
+            migrated_checks = {
+                _normalize_sql(constraint["sqltext"])
+                for constraint in inspector.get_check_constraints(table_name)
+            }
+            assert migrated_checks == orm_checks, (
+                f"{table_name}: ORM-only CHECK constraints "
+                f"{sorted(orm_checks - migrated_checks)}; "
+                f"migration-only CHECK constraints {sorted(migrated_checks - orm_checks)}"
+            )
+
+            # Explicit indexes affect lookup performance and can encode uniqueness.
+            orm_indexes = {
+                (tuple(column.name for column in index.columns), bool(index.unique))
+                for index in table.indexes
+            }
+            migrated_indexes = {
+                (tuple(index["column_names"]), bool(index["unique"]))
+                for index in inspector.get_indexes(table_name)
+                if index.get("column_names") is not None
+            }
+            assert migrated_indexes == orm_indexes, (
+                f"{table_name}: ORM-only indexes "
+                f"{sorted(orm_indexes - migrated_indexes, key=repr)}; "
+                f"migration-only indexes "
+                f"{sorted(migrated_indexes - orm_indexes, key=repr)}"
             )
     finally:
         engine.dispose()
