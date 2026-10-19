@@ -228,6 +228,7 @@ class OperationParty(Base):
 class Contract(Base):
     __tablename__ = "contracts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(Integer, nullable=False)
     operation_id: Mapped[int] = mapped_column(ForeignKey("operations.id", ondelete="RESTRICT"), nullable=False, unique=True)
     contract_number: Mapped[str] = mapped_column(String(100), nullable=False)
     registration_number: Mapped[str | None] = mapped_column(String(100))
@@ -237,6 +238,15 @@ class Contract(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __table_args__ = (
+        ForeignKeyConstraint(["project_id", "operation_id"], ["operations.project_id", "operations.id"],
+                             ondelete="RESTRICT", name="fk_contracts_project_operation"),
+        ForeignKeyConstraint(["project_id", "property_id"], ["project_properties.project_id", "project_properties.property_id"],
+                             ondelete="RESTRICT", name="fk_contracts_project_property"),
+        ForeignKeyConstraint(["project_id", "operation_id", "property_id"],
+                             ["operations.project_id", "operations.id", "operations.property_id"],
+                             ondelete="RESTRICT", name="fk_contracts_operation_property_match"),
+    )
 
 class ParentContract(Base):
     """Stable six-digit business root for a member's transfer history."""
