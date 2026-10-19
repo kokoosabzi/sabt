@@ -629,3 +629,57 @@ def test_database_rejects_operation_party_project_mismatches():
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+
+def test_database_rejects_cross_project_operation_appointment_links():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    event.listen(engine, "connect", lambda connection, _: connection.execute("PRAGMA foreign_keys=ON"))
+    Base.metadata.create_all(engine)
+    now = datetime.now(timezone.utc)
+    try:
+        with Session(engine) as session:
+            project = Project(code="APPT-A", name="Appointment Project A", status="ACTIVE",
+                              timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            other_project = Project(code="APPT-B", name="Appointment Project B", status="ACTIVE",
+                                    timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            user = User(username="appointment-integrity-user", password_hash="unused",
+                        display_name="Appointment User", active=True, created_at=now, updated_at=now, version=1)
+            operation_type = OperationType(code="APPT-OP", name="Appointment Operation", active=True,
+                                           system_defined=False, created_at=now, updated_at=now)
+            appointment_type = AppointmentType(code="APPT-TYPE", name="Appointment Type",
+                                               attendance_behavior="ATTENDANCE_ONLY",
+                                               default_duration_minutes=30, active=True,
+                                               created_at=now, updated_at=now)
+            session.add_all([project, other_project, user, operation_type, appointment_type])
+            session.flush()
+            operation = Operation(project_id=project.id, operation_type_id=operation_type.id,
+                                  status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
+                                  created_at=now, updated_at=now, version=1, current_version_number=0)
+            appointment_a = Appointment(project_id=project.id, appointment_type_id=appointment_type.id,
+                                        start_at=now, end_at=now + timedelta(minutes=30), status="RESERVED",
+                                        created_by=user.id, created_at=now, updated_at=now, version=1)
+            appointment_b = Appointment(project_id=other_project.id, appointment_type_id=appointment_type.id,
+                                        start_at=now, end_at=now + timedelta(minutes=30), status="RESERVED",
+                                        created_by=user.id, created_at=now, updated_at=now, version=1)
+            session.add_all([operation, appointment_a, appointment_b])
+            session.commit()
+
+            session.add(OperationAppointment(project_id=project.id, appointment_id=appointment_a.id,
+                                             operation_id=operation.id, created_at=now))
+            session.commit()
+
+            session.add(OperationAppointment(project_id=other_project.id, appointment_id=appointment_b.id,
+                                             operation_id=operation.id, created_at=now))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+
+            session.add(OperationAppointment(project_id=project.id, appointment_id=appointment_b.id,
+                                             operation_id=operation.id, created_at=now))
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
