@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
@@ -433,6 +433,8 @@ class Appointment(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     __table_args__ = (
         UniqueConstraint("project_id", "id", name="uq_appointments_project_id_id"),
+        Index("ix_appointments_project_start", "project_id", "start_at"),
+        Index("ix_appointments_status", "status"),
     )
 
 class OperationAppointment(Base):
