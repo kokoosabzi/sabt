@@ -774,3 +774,33 @@ def test_database_rejects_cross_project_and_mismatched_operation_snapshots():
     finally:
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+
+def test_database_rejects_operation_type_not_configured_for_project():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    event.listen(engine, "connect", lambda connection, _: connection.execute("PRAGMA foreign_keys=ON"))
+    Base.metadata.create_all(engine)
+    now = datetime.now(timezone.utc)
+    try:
+        with Session(engine) as session:
+            project = Project(code="TYPE-A", name="Type Project A", status="ACTIVE",
+                              timezone="Asia/Tehran", created_at=now, updated_at=now, version=1)
+            user = User(username="operation-type-integrity-user", password_hash="unused",
+                        display_name="Operation Type User", active=True, created_at=now,
+                        updated_at=now, version=1)
+            operation_type = OperationType(code="TYPE-ONLY-OTHER", name="Unconfigured Type",
+                                           active=True, system_defined=False, created_at=now, updated_at=now)
+            session.add_all([project, user, operation_type])
+            session.commit()
+
+            operation = Operation(project_id=project.id, operation_type_id=operation_type.id,
+                                  status="DRAFT", current_workflow_state="DRAFT", created_by=user.id,
+                                  created_at=now, updated_at=now, version=1, current_version_number=0)
+            session.add(operation)
+            with pytest.raises(IntegrityError):
+                session.commit()
+            session.rollback()
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
