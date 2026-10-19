@@ -2,11 +2,11 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
-## Current status — reconciled 2026-10-20 (after PR #36)
+## Current status — reconciled 2026-10-20 (after PR #38)
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main` code milestone:** `cdb42c07d8d15755e53865b86d3bf95fe3d433ec` (PR #36 bounds password-hash verification parameters; PR #34 tests operation transaction rollback; PR #32 verifies concurrent registration-number allocation; PR #30 completes ORM/migration parity checks).
-- **Latest verified CI:** [run 39328523927](https://github.com/kokoosabzi/sabt/actions/runs/39328523927) passed on `main` after PR #36: 162 tests passed, and Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
+- **Current `main` code milestone:** `1559bd690ca42ed0316cc99247ae13362ab1f905` (PR #38 adds end-to-end auth API lifecycle tests; PR #36 bounds password-hash verification parameters; PR #34 tests operation transaction rollback; PR #32 verifies concurrent registration-number allocation).
+- **Latest verified CI:** [run 39329277841](https://github.com/kokoosabzi/sabt/actions/runs/39329277841) passed on `main` after PR #38: 165 tests passed, and Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
 - **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle/finalization guarantees; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
@@ -18,7 +18,7 @@
 ## Phase plan
 
 ### Phase 0 — Foundation audit and stabilization
-- [ ] Review auth/session expiry, revocation, password hashing, and deny-by-default authorization beyond the current unit coverage.
+- [x] Review authentication/session expiry, revocation, password hashing, and deny-by-default authorization for the currently exposed API surface: service/unit tests cover project access and roles, API tests cover login/me/logout, expired/revoked sessions, inactive accounts, and invalid credentials, and password verification rejects unbounded stored scrypt parameters (PRs #36 and #38; CI passed in [run 39329277841](https://github.com/kokoosabzi/sabt/actions/runs/39329277841)).
 - [x] Bound password-hash verification to the supported scrypt cost parameters and salt/digest lengths so malformed stored values cannot request unbounded derivation work (PR #36; CI passed in [run 39328523927](https://github.com/kokoosabzi/sabt/actions/runs/39328523927)).
 - [ ] Verify project isolation for every service and resource lookup.
 - [x] Scope parent-contract history, current-owner derivation, and report joins to the owning project, with cross-project regression tests (PR #15; CI passed in [run 39148879162](https://github.com/kokoosabzi/sabt/actions/runs/39148879162)).
