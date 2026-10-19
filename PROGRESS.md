@@ -2,11 +2,11 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
-## Current status — reconciled 2026-10-20 (after PR #30)
+## Current status — reconciled 2026-10-20 (after PR #32)
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main` code milestone:** `6844290b18484c299d65375ef1a8a192d4ac7e39` (PR #30 completes ORM/migration parity checks; PR #29 binds Contract records to their operation's project/property; PR #27 enforces project operation-type association at database level; PR #25 binds snapshots to project-scoped source records; PR #23 binds appointment-operation links to the same project).
-- **Latest verified CI:** [run 39325948273](https://github.com/kokoosabzi/sabt/actions/runs/39325948273) passed on `main` after PR #30: 158 tests passed, and Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
+- **Current `main` code milestone:** `6494636f9a69f6d07bed5470b7d99f9db7b060fe` (PR #32 adds concurrent registration-number allocation coverage; PR #30 completes ORM/migration parity checks; PR #29 binds Contract records to their operation's project/property; PR #27 enforces project operation-type association at database level).
+- **Latest verified CI:** [run 39326782286](https://github.com/kokoosabzi/sabt/actions/runs/39326782286) passed on `main` after PR #32: 159 tests passed, and Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
 - **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle/finalization guarantees; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
@@ -22,7 +22,7 @@
 - [ ] Verify project isolation for every service and resource lookup.
 - [x] Scope parent-contract history, current-owner derivation, and report joins to the owning project, with cross-project regression tests (PR #15; CI passed in [run 39148879162](https://github.com/kokoosabzi/sabt/actions/runs/39148879162)).
 - [x] Harden current-owner person lookups against inconsistent legacy links lacking ProjectPerson membership; foreign-project transferees and missing initial-owner membership are covered by regression tests (PR #16; CI passed in [run 39152941082](https://github.com/kokoosabzi/sabt/actions/runs/39152941082)).
-- [ ] Test registration-number allocation concurrency assumptions.
+- [x] Verify registration-number allocation under four concurrent independent SQLite sessions; allocations were unique and the persisted sequence counter matched the successful allocation count (PR #32; CI passed in [run 39326782286](https://github.com/kokoosabzi/sabt/actions/runs/39326782286)).
 - [ ] Review operation creation/finalization transaction boundaries and validation order.
 - [x] Reject inactive Property records during operation creation, with a regression test that verifies no Operation row is written (PR #11; CI passed in [run 39147040578](https://github.com/kokoosabzi/sabt/actions/runs/39147040578)).
 - [x] Revalidate Property, ProjectProperty association, Person, ProjectPerson membership, and PartyRole active/retired state before finalization side effects (PR #12; CI passed in [run 39147926546](https://github.com/kokoosabzi/sabt/actions/runs/39147926546)).
