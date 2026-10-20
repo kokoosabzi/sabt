@@ -318,3 +318,16 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Add a Chromium E2E check for the RTL, PDF-ready management print view.
 - [x] GitHub Actions run [39058723867](https://github.com/kokoosabzi/sabt/actions/runs/39058723867) passed on commit `1344fe479d6d973225b4c8d50b27773899a96301`: **143 tests passed, 2 warnings**; Chromium E2E and fresh SQLite upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
 - [x] Final merged `main` verification: [GitHub Actions run 39058901990](https://github.com/kokoosabzi/sabt/actions/runs/39058901990) passed **143 tests, 2 warnings** after PR #9 was merged.
+
+
+## Project-isolation audit — 2026-10-20
+
+- [x] Merged PR #40 after CI passed: inaccessible and nonexistent Parent Contract numbers now return the same HTTP status and response body; inactive-user authorization errors remain distinct. Merge commit: `cbf1fd5dace789c791e6e06ea6190c4027e5ad36`.
+- [x] Reviewed project-scoped report queries: management summary, workflow operations, workflow events, and report project context authorize project access before returning data; report queries filter by project ID, and workflow-event queries also verify the linked operation belongs to that project.
+- [x] Reviewed core project-scoped relations already protected by composite foreign keys: operations ↔ project operation type/property/parent contract; operation parties ↔ operation/project-person membership; operation appointments ↔ appointment/operation; snapshots ↔ operation/person/property/party; contracts ↔ operation/property; workflow events ↔ operation.
+- [x] Found a remaining database-integrity gap in project-specific configuration: workflow, numbering, and contract-number policies could pair a project ID with an operation type configured only for another project.
+- [x] Added migration 0017 and matching ORM composite foreign keys for `operation_type_workflows`, `numbering_policies`, and `contract_number_policies`; `NULL project_id` remains the global-configuration mode.
+- [x] Migration 0017 checks for existing invalid scoped configuration rows and aborts with counts instead of silently changing them.
+- [x] Added a database regression test proving all three policy tables reject cross-project operation-type references while global configuration rows remain valid.
+- [ ] Verify CI for migration 0017, full tests, and SQLite upgrade/downgrade/re-upgrade before opening/merging the audit PR.
+- [ ] Continue service-path audit for future/less-used configuration services and verify authorization tests for each new route; database constraints do not replace service authorization.
