@@ -166,6 +166,28 @@ def seed_operation_context(db: Session):
     return user, project, operation_type, property_record, target_appointment, other_appointment
 
 
+
+def advance_operation_to_ready(db: Session, user: User, operation: Operation) -> None:
+    """Test helper: configure the documented base path and advance without bypassing it."""
+    existing = db.scalars(select(OperationTypeWorkflow).where(
+        OperationTypeWorkflow.operation_type_id == operation.operation_type_id,
+        OperationTypeWorkflow.project_id == operation.project_id,
+        OperationTypeWorkflow.active.is_(True),
+    ).order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)).all()
+    if not existing:
+        db.add_all([
+            OperationTypeWorkflow(operation_type_id=operation.operation_type_id, project_id=operation.project_id,
+                                  state_code="DRAFT", sequence_no=1, active=True),
+            OperationTypeWorkflow(operation_type_id=operation.operation_type_id, project_id=operation.project_id,
+                                  state_code="IN_PROGRESS", sequence_no=2, active=True),
+            OperationTypeWorkflow(operation_type_id=operation.operation_type_id, project_id=operation.project_id,
+                                  state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
+        ])
+        db.flush()
+    transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+    transition_operation(db, user, operation.id, "READY_FOR_FINALIZATION", operation.version)
+
+
 def test_create_operation_links_appointment_from_same_project(db: Session) -> None:
     user, project, operation_type, property_record, appointment, _ = seed_operation_context(db)
 
@@ -274,6 +296,7 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
         operation_type.id,
     )
 
+    advance_operation_to_ready(db, user, operation)
     with pytest.raises(ValidationError, match="property_required"):
         finalize_operation(db, user, operation.id, expected_version=operation.version)
 
@@ -286,6 +309,7 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
 def test_finalize_rejects_property_deactivated_after_draft_creation(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    advance_operation_to_ready(db, user, operation)
     property_record.is_active = False
     db.flush()
 
@@ -301,6 +325,7 @@ def test_finalize_rejects_property_deactivated_after_draft_creation(db: Session)
 def test_finalize_rejects_deactivated_project_property_association(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    advance_operation_to_ready(db, user, operation)
     association = db.get(ProjectProperty, (project.id, property_record.id))
     association.active = False
     db.flush()
@@ -322,6 +347,7 @@ def test_finalize_rejects_stale_version_without_side_effects(db: Session) -> Non
         operation_type.id,
         property_id=property_record.id,
     )
+    advance_operation_to_ready(db, user, operation)
     original_version = operation.version
 
     with pytest.raises(ConflictError, match="stale_operation"):
@@ -350,6 +376,7 @@ def test_finalize_with_property_persists_hashed_snapshot_and_rejects_repeat(db: 
         operation_type.id,
         property_id=property_record.id,
     )
+    advance_operation_to_ready(db, user, operation)
     original_version = operation.version
 
     version_record = finalize_operation(
@@ -518,6 +545,7 @@ def _make_transfer_operation(db: Session):
 
 def test_finalized_transfer_gets_next_child_number_and_snapshot(db: Session):
     user, project, parent, operation = _make_transfer_operation(db)
+    advance_operation_to_ready(db, user, operation)
     version = finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.refresh(operation)
     db.refresh(parent)
@@ -532,11 +560,13 @@ def test_finalized_transfer_gets_next_child_number_and_snapshot(db: Session):
 
 def test_each_finalized_transfer_gets_a_distinct_sequence(db: Session):
     user, project, parent, first = _make_transfer_operation(db)
+    advance_operation_to_ready(db, user, first)
     finalize_operation(db, user, first.id, expected_version=first.version)
     second = create_operation(db, user, project.id, first.operation_type_id,
                               property_id=first.property_id, parent_contract_id=parent.id)
     party = db.scalar(select(OperationParty).where(OperationParty.operation_id == first.id))
     add_party(db, user, second.id, party.person_id, party.role_id, expected_version=second.version)
+    advance_operation_to_ready(db, user, second)
     finalize_operation(db, user, second.id, expected_version=second.version)
     db.refresh(second)
     assert first.child_contract_number == "760123/1"
@@ -560,6 +590,7 @@ def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: S
     db.flush()
     operation = create_operation(db, user, project.id, operation_type.id,
                                  property_id=property_record.id, parent_contract_id=parent.id)
+    advance_operation_to_ready(db, user, operation)
     with pytest.raises(ValidationError, match="buyer_transferee_required"):
         finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.refresh(parent)
@@ -571,6 +602,7 @@ def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: S
 
 def test_rolling_back_transfer_finalization_releases_sequence(db: Session):
     user, project, parent, operation = _make_transfer_operation(db)
+    advance_operation_to_ready(db, user, operation)
     nested = db.begin_nested()
     finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.flush()
