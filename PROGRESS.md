@@ -370,4 +370,4 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Found an Excel usability edge case: numeric suffix cells formatted as `0000` display leading zeroes in Excel, but parsing only saw the underlying numeric value and rejected it.
 - [x] Added support for preserving leading zeroes only when the XLSX suffix cell explicitly uses the four-zero number format. Plain numeric/general cells are not guessed or silently rewritten.
 - [x] Added parsing tests for formatted numeric cells and unformatted numeric cells.
-- [ ] Run focused import tests and full CI, including browser tests and SQLite migration checks, before merge.
+- [x] CI run [39488513533](https://github.com/kokoosabzi/sabt/actions/runs/39488513533) passed on this PR head: full pytest suite, Chromium browser E2E coverage, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade checks.
