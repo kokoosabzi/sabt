@@ -215,3 +215,40 @@ def test_contract_import_rows_can_be_corrected_and_revalidated_without_writes():
     finally:
         close_import_api_context(context)
 
+
+def test_contract_import_validate_requires_project_create_permission():
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    try:
+        db.query(RolePermission).delete()
+        db.commit()
+        response = client.post(
+            "/contracts/parent/import/validate",
+            json={
+                "project_id": project.id,
+                "rows": [{"suffix": "0123", "initial_person_id": person.id, "property_id": None}],
+            },
+        )
+        assert response.status_code == 403
+        assert db.scalar(select(ParentContract.id)) is None
+    finally:
+        close_import_api_context(context)
+
+
+def test_contract_import_confirm_requires_project_create_permission():
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    try:
+        db.query(RolePermission).delete()
+        db.commit()
+        response = client.post(
+            "/contracts/parent/import/confirm",
+            json={
+                "project_id": project.id,
+                "rows": [{"suffix": "0123", "initial_person_id": person.id, "property_id": None}],
+            },
+        )
+        assert response.status_code == 403
+        assert db.scalar(select(ParentContract.id)) is None
+    finally:
+        close_import_api_context(context)
