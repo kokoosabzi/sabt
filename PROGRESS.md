@@ -390,4 +390,4 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Existing Chromium E2E already verifies picker-only report date selection, next-month navigation, 24-hour hour/minute selectors, and successful project-local report loading.
 - [x] Added browser regression coverage for previous/next month navigation across calendar year boundaries, Escape dismissal, explicit close, Today selection in the project timezone, and aria-expanded state restoration.
-- [ ] Await CI on the exact branch head before marking this increment stable or merging.
+- [x] CI run [39490535124](https://github.com/kokoosabzi/sabt/actions/runs/39490535124) passed on code head `fca86516c9b5ab3f6a750d864f0f4a2355430811`: full test suite (including Chromium browser E2E), fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade. The progress-ledger update itself must also pass CI on the new exact head before merge.
