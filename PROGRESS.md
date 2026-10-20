@@ -376,4 +376,4 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Security review confirmed that import preview, edited-row validation, and confirmation all flow through project-scoped `parent_contract.create` authorization before returning preview data or writing contracts.
 - [x] Added explicit negative API regression tests for `/validate` and `/confirm` when project create permission is absent; both assert HTTP 403 and no contract writes.
-- [ ] Await focused branch CI, including full tests, Chromium browser E2E, and SQLite migration checks, before considering this audit increment stable.
+- [x] CI run [39489204971](https://github.com/kokoosabzi/sabt/actions/runs/39489204971) passed on this test head: full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade checks.
