@@ -317,5 +317,5 @@ def test_parent_contract_history_rejects_user_without_project_access(db):
     create_parent_contract(db, user, project.id, "0123", person.id)
     db.delete(db.get(ProjectAccess, (user.id, project.id)))
     db.flush()
-    with pytest.raises(PermissionError, match="forbidden"):
+    with pytest.raises(ParentContractNotFoundError, match="parent_contract_not_found"):
         get_parent_contract_history(db, user, "760123")
