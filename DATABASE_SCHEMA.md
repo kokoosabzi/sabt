@@ -890,3 +890,10 @@ The schema prevents duplicate child numbers and duplicate `parent_contract_id + 
 - Authorized search/history APIs and UI.
 - Excel/CSV staging, mapping, duplicate review, preview, explicit confirmation, transactional persistence and audit report.
 - Tests for business constraints and rollback behavior.
+
+
+## Project-scoped configuration integrity
+
+Project-specific workflow and numbering configuration now has composite foreign keys to `project_operation_types(project_id, operation_type_id)`. This applies to `operation_type_workflows`, `numbering_policies`, and `contract_number_policies`. A null `project_id` continues to represent a global configuration. Migration 0017 checks existing scoped rows first and aborts with table-specific counts if a row references an operation type that is not configured for that project. It does not silently rewrite configuration.
+
+These constraints complement service authorization and project-scoped query predicates; they do not replace either control.
