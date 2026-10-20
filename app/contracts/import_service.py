@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import zipfile
 from collections import Counter
 from typing import Any
@@ -93,9 +94,12 @@ def parse_parent_contract_import(filename: str, content: bytes) -> list[dict[str
             workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
             try:
                 sheet = workbook.active
-                iterator = sheet.iter_rows(values_only=True)
+                iterator = sheet.iter_rows()
                 first = next(iterator, None)
-                headers = [str(v).strip().lower() if v is not None else "" for v in (first or ())]
+                headers = [
+                    str(cell.value).strip().lower() if cell.value is not None else ""
+                    for cell in (first or ())
+                ]
                 if any(not header for header in headers):
                     raise ContractImportError("import_blank_column_header")
                 if len(headers) != len(set(headers)):
@@ -106,12 +110,27 @@ def parse_parent_contract_import(filename: str, content: bytes) -> list[dict[str
                 if header_set - ALLOWED_COLUMNS:
                     raise ContractImportError("import_unknown_columns")
                 rows = []
-                for row_number, values in enumerate(iterator, start=2):
-                    if all(value is None for value in values):
+                for row_number, cells in enumerate(iterator, start=2):
+                    if all(cell.value is None for cell in cells):
                         continue
-                    if len(values) != len(headers):
+                    if len(cells) != len(headers):
                         raise ContractImportError(f"import_row_column_count_mismatch:{row_number}")
-                    rows.append(dict(zip(headers, values)))
+                    values: dict[str, Any] = {}
+                    for header, cell in zip(headers, cells):
+                        value = cell.value
+                        # Excel stores a numeric 100 as 100 even when displayed as 0100.
+                        # Honor an explicit four-zero display mask for the four-digit
+                        # business suffix, without guessing leading zeroes for General cells.
+                        if (
+                            header == "suffix"
+                            and isinstance(value, (int, float))
+                            and not isinstance(value, bool)
+                            and float(value).is_integer()
+                            and re.fullmatch(r"0{4}", cell.number_format or "") is not None
+                        ):
+                            value = f"{int(value):04d}"
+                        values[header] = value
+                    rows.append(values)
                     if len(rows) > MAX_IMPORT_ROWS:
                         raise ContractImportError("import_row_limit_exceeded")
             finally:
