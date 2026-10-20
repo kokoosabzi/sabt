@@ -343,7 +343,7 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Compared `app/operations/service.py::finalize_operation` with `WORKFLOWS.md` and `DOMAIN_MODEL.md`.
 - [x] Found a concrete lifecycle gap: finalization currently rejects already-finalized operations and stale versions, but does not enforce the documented transition path `Draft → In Progress → Ready for Finalization → Finalized`. Existing tests intentionally finalize drafts directly, so adding a simple status guard alone would break established test fixtures and transfer-finalization tests.
 - [ ] Next implementation slice: add an explicit, permission-checked workflow-transition service with optimistic-version checks and persisted workflow events; then require the configured ready-for-finalization state before finalization. Update existing tests and add negative tests for skipped transitions, invalid transitions, stale versions, and transfer sequence/snapshot rollback. Preserve support for operation-type-specific states without inventing unconfigured transition rules.
-- [ ] Keep the change on a focused branch and require full test suite plus fresh SQLite migration round-trip before merge. No code change for this lifecycle gap has been made yet.
+- [x] Started the focused implementation on branch `feature/operation-workflow-transitions`; PR #42 adds the first transition-service slice. Full lifecycle enforcement and CI verification remain pending.
 
 
 ## Operation workflow transition implementation — 2026-10-20
