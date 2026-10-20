@@ -11,7 +11,7 @@ from app.db.models import (
     ProjectProperty, Property, Role, RolePermission, User, UserRole,
 )
 from app.contracts.service import (
-    ParentContractConflictError, ParentContractValidationError, create_parent_contract, get_parent_contract_history, set_project_contract_code,
+    ParentContractConflictError, ParentContractNotFoundError, ParentContractValidationError, create_parent_contract, get_parent_contract_history, set_project_contract_code,
 )
 
 
