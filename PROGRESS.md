@@ -384,3 +384,10 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added negative API regression coverage for management-summary XLSX, workflow-events XLSX, and workflow-events CSV exports when project access is revoked; each must return HTTP 403.
 - [x] PR [#45](https://github.com/kokoosabzi/sabt/pull/45) merged as `fe64f420b6fd587badddac432e17cea36f06ce41` after CI run [39489639488](https://github.com/kokoosabzi/sabt/actions/runs/39489639488) passed on the exact PR head: full pytest suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade checks.
 - [x] Post-merge CI run [39489788033](https://github.com/kokoosabzi/sabt/actions/runs/39489788033) passed on `main` (`fe64f420b6fd587badddac432e17cea36f06ce41`): full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade checks.
+
+
+## Jalali picker browser edge coverage — 2026-10-20
+
+- [x] Existing Chromium E2E already verifies picker-only report date selection, next-month navigation, 24-hour hour/minute selectors, and successful project-local report loading.
+- [x] Added browser regression coverage for previous/next month navigation across calendar year boundaries, Escape dismissal, explicit close, Today selection in the project timezone, and aria-expanded state restoration.
+- [ ] Await CI on the exact branch head before marking this increment stable or merging.
