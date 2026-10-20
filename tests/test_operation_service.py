@@ -961,6 +961,22 @@ def test_transition_operation_uses_configured_sequence_and_records_event(db: Ses
     assert event.to_status == "IN_PROGRESS"
 
 
+
+def test_transition_operation_rejects_duplicate_sequence_numbers(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    db.add_all([
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="DRAFT", sequence_no=1, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="IN_PROGRESS", sequence_no=1, active=True),
+    ])
+    db.flush()
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="workflow_state_configuration_invalid"):
+        transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+
+
 def test_transition_operation_rejects_stale_version_and_unconfigured_workflow(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
