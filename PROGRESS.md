@@ -329,5 +329,5 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added migration 0017 and matching ORM composite foreign keys for `operation_type_workflows`, `numbering_policies`, and `contract_number_policies`; `NULL project_id` remains the global-configuration mode.
 - [x] Migration 0017 checks for existing invalid scoped configuration rows and aborts with counts instead of silently changing them.
 - [x] Added a database regression test proving all three policy tables reject cross-project operation-type references while global configuration rows remain valid.
-- [ ] Verify CI for migration 0017, full tests, and SQLite upgrade/downgrade/re-upgrade before opening/merging the audit PR.
-- [ ] Continue service-path audit for future/less-used configuration services and verify authorization tests for each new route; database constraints do not replace service authorization.
+- [x] Verify CI for migration 0017, full tests, and SQLite upgrade/downgrade/re-upgrade on commit `ce45e31d2bed627de42e26103256026977402df6`; GitHub Actions run [39485712728](https://github.com/kokoosabzi/sabt/actions/runs/39485712728) passed, including the full test suite and migration round-trip.
+- [ ] Continue service-path audit for future/less-used configuration services and verify authorization tests for each new route; database constraints do not replace service authorization. PR #41 remains open pending completion of this review.
