@@ -382,7 +382,15 @@ class OperationTypeWorkflow(Base):
     sequence_no: Mapped[int] = mapped_column(Integer, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     config_json: Mapped[str | None] = mapped_column(Text())
-    __table_args__ = (UniqueConstraint("operation_type_id", "project_id", "state_code", name="uq_operation_type_workflow_state"),)
+    __table_args__ = (
+        UniqueConstraint("operation_type_id", "project_id", "state_code", name="uq_operation_type_workflow_state"),
+        ForeignKeyConstraint(
+            ["project_id", "operation_type_id"],
+            ["project_operation_types.project_id", "project_operation_types.operation_type_id"],
+            ondelete="RESTRICT",
+            name="fk_operation_type_workflows_project_operation_type",
+        ),
+    )
 
 class NumberingPolicy(Base):
     __tablename__ = "numbering_policies"
@@ -418,6 +426,14 @@ class ContractNumberPolicy(Base):
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "operation_type_id"],
+            ["project_operation_types.project_id", "project_operation_types.operation_type_id"],
+            ondelete="RESTRICT",
+            name="fk_contract_number_policies_project_operation_type",
+        ),
+    )
 
 class AppointmentType(Base):
     __tablename__ = "appointment_types"
