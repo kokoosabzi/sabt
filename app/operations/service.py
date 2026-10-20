@@ -224,14 +224,24 @@ def transition_operation(db: Session, user: User, operation_id: int, target_stat
 
     now = _now()
     previous_state = op.current_workflow_state
+    previous_status = op.status
     op.current_workflow_state = target_state
-    op.status = target_state
+    # Keep the short lifecycle status column compatible with its 32-character
+    # limit; operation-specific workflow states live in current_workflow_state.
+    if target_state in {"DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION"}:
+        op.status = target_state
     op.version += 1
     op.updated_at = now
+    event_metadata = {
+        "from_workflow_state": previous_state,
+        "to_workflow_state": target_state,
+    }
+    if reason:
+        event_metadata["reason"] = reason
     _record_workflow_event(
         db, user, op, "OPERATION_WORKFLOW_TRANSITIONED", now,
-        from_status=previous_state, to_status=target_state,
-        metadata={"reason": reason} if reason else None,
+        from_status=previous_status, to_status=op.status,
+        metadata=event_metadata,
     )
     db.flush()
     return op
