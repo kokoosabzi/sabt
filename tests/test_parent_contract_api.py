@@ -85,13 +85,25 @@ def test_parent_contract_history_api_returns_not_found(api_context):
     assert response.json()["detail"] == "parent_contract_not_found"
 
 
-def test_parent_contract_history_api_enforces_project_permission(api_context):
+def test_parent_contract_history_api_hides_contract_when_project_permission_is_missing(api_context):
     client, db, _, _ = api_context
     db.query(RolePermission).delete()
     db.commit()
     response = client.get("/contracts/parent/760123/history")
-    assert response.status_code == 403
-    assert response.json()["detail"] == "forbidden"
+    assert response.status_code == 404
+    assert response.json()["detail"] == "parent_contract_not_found"
+
+
+def test_parent_contract_history_api_does_not_disclose_inaccessible_contract_existence(api_context):
+    client, db, _, _ = api_context
+    db.query(RolePermission).delete()
+    db.commit()
+
+    existing = client.get("/contracts/parent/760123/history")
+    missing = client.get("/contracts/parent/760999/history")
+
+    assert existing.status_code == missing.status_code == 404
+    assert existing.json() == missing.json()
 
 
 def test_parent_contract_history_api_requires_authentication(api_context):

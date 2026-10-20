@@ -123,12 +123,20 @@ def get_parent_contract_history(
     )
     if parent is None:
         raise ParentContractNotFoundError("parent_contract_not_found")
-    authorize(
-        db,
-        user,
-        "parent_contract.view",
-        AuthorizationContext(project_id=parent.project_id),
-    )
+    try:
+        authorize(
+            db,
+            user,
+            "parent_contract.view",
+            AuthorizationContext(project_id=parent.project_id),
+        )
+    except PermissionError as exc:
+        # Do not reveal whether a contract number exists in a project the user
+        # cannot access. Keep the response indistinguishable from a missing
+        # Parent Contract for resource-enumeration resistance.
+        if str(exc) == "forbidden":
+            raise ParentContractNotFoundError("parent_contract_not_found") from exc
+        raise
     operations = db.scalars(
         select(Operation)
         .where(Operation.parent_contract_id == parent.id, Operation.project_id == parent.project_id)

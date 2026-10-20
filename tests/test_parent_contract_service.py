@@ -11,7 +11,7 @@ from app.db.models import (
     ProjectProperty, Property, Role, RolePermission, User, UserRole,
 )
 from app.contracts.service import (
-    ParentContractConflictError, ParentContractValidationError, create_parent_contract, get_parent_contract_history, set_project_contract_code,
+    ParentContractConflictError, ParentContractNotFoundError, ParentContractValidationError, create_parent_contract, get_parent_contract_history, set_project_contract_code,
 )
 
 
@@ -317,5 +317,5 @@ def test_parent_contract_history_rejects_user_without_project_access(db):
     create_parent_contract(db, user, project.id, "0123", person.id)
     db.delete(db.get(ProjectAccess, (user.id, project.id)))
     db.flush()
-    with pytest.raises(PermissionError, match="forbidden"):
+    with pytest.raises(ParentContractNotFoundError, match="parent_contract_not_found"):
         get_parent_contract_history(db, user, "760123")
