@@ -382,4 +382,5 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Reviewed management summary, workflow report, workflow event report, and export routes; report services authorize project scope before querying report data.
 - [x] Added negative API regression coverage for management-summary XLSX, workflow-events XLSX, and workflow-events CSV exports when project access is revoked; each must return HTTP 403.
-- [ ] Await CI on the exact branch head before marking this audit increment stable.
+- [x] PR [#45](https://github.com/kokoosabzi/sabt/pull/45) merged as `fe64f420b6fd587badddac432e17cea36f06ce41` after CI run [39489639488](https://github.com/kokoosabzi/sabt/actions/runs/39489639488) passed on the exact PR head: full pytest suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade checks.
+- [ ] Post-merge CI run [39489788033](https://github.com/kokoosabzi/sabt/actions/runs/39489788033) is pending; verify before the next code merge.
