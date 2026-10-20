@@ -7,7 +7,7 @@ from app.auth.authorization import AuthorizationContext, authorize
 from app.contracts.numbering import BUYER_TRANSFEREE_ROLE_CODE, build_child_contract_number
 from app.db.models import (
     Appointment, Contract, Operation, OperationAppointment, OperationParty, OperationType, OperationVersion,
-    ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User, WorkflowEvent,
+    OperationTypeWorkflow, ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User, WorkflowEvent,
 )
 
 class OperationError(Exception): pass
@@ -168,6 +168,73 @@ def _snapshot(db: Session, op: Operation) -> dict:
                 "floor": prop.floor, "orientation": prop.orientation, "unit_number": prop.unit_number,
                 "unit_code": prop.unit_code, "plaque_number": prop.plaque_number, "address": prop.address},
             "parties": parties}
+
+
+def transition_operation(db: Session, user: User, operation_id: int, target_state: str,
+                        expected_version: int, reason: str | None = None) -> Operation:
+    """Move an operation to the next configured workflow state in the caller's transaction.
+
+    Active project-specific workflow configuration overrides global configuration.
+    State order is the configured sequence_no; FINALIZED is reserved for
+    finalize_operation and cannot be reached through this function.
+    """
+    op = db.get(Operation, operation_id)
+    if op is None:
+        raise NotFoundError("operation_not_found")
+    _require_project_access(db, user, op.project_id, "operation.edit")
+    if op.status == "FINALIZED" or op.current_workflow_state == "FINALIZED":
+        raise ConflictError("operation_finalized")
+    if op.version != expected_version:
+        raise ConflictError("stale_operation")
+    if not target_state or target_state == "FINALIZED":
+        raise ValidationError("workflow_target_state_invalid")
+
+    project_states = db.scalars(
+        select(OperationTypeWorkflow)
+        .where(
+            OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+            OperationTypeWorkflow.project_id == op.project_id,
+            OperationTypeWorkflow.active.is_(True),
+        )
+        .order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)
+    ).all()
+    states = project_states
+    if not states:
+        states = db.scalars(
+            select(OperationTypeWorkflow)
+            .where(
+                OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+                OperationTypeWorkflow.project_id.is_(None),
+                OperationTypeWorkflow.active.is_(True),
+            )
+            .order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)
+        ).all()
+    if not states:
+        raise ValidationError("workflow_not_configured")
+
+    codes = [state.state_code for state in states]
+    if len(codes) != len(set(codes)):
+        raise ValidationError("workflow_state_configuration_invalid")
+    try:
+        current_index = codes.index(op.current_workflow_state)
+    except ValueError:
+        raise ValidationError("workflow_current_state_not_configured")
+    if current_index + 1 >= len(codes) or codes[current_index + 1] != target_state:
+        raise ValidationError("workflow_transition_not_allowed")
+
+    now = _now()
+    previous_state = op.current_workflow_state
+    op.current_workflow_state = target_state
+    op.status = target_state
+    op.version += 1
+    op.updated_at = now
+    _record_workflow_event(
+        db, user, op, "OPERATION_WORKFLOW_TRANSITIONED", now,
+        from_status=previous_state, to_status=target_state,
+        metadata={"reason": reason} if reason else None,
+    )
+    db.flush()
+    return op
 
 def finalize_operation(db: Session, user: User, operation_id: int, expected_version: int,
                        reason: str | None = None) -> OperationVersion:
