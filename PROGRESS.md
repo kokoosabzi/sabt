@@ -337,3 +337,10 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Confirmed the current app entrypoint mounts contracts, contract import, and reports routes; no policy-configuration mutation router is mounted in `app/main.py`. Operation services are currently reviewed at service level, but are not mounted as an API router in that entrypoint.
 - [ ] Continue the broader Phase 0 service/resource authorization audit and add route-level authorization tests whenever policy/configuration mutation endpoints are introduced. The focused review above is not proof that every service is covered; database constraints do not replace service authorization.
 - [ ] Verify post-merge CI on `main` for merge commit `88f062f3cab2f1bc293707e2298f36dc3db79d1a`; the available workflow lookup has not returned a post-merge run yet.
+
+## Operation lifecycle audit — 2026-10-20
+
+- [x] Compared `app/operations/service.py::finalize_operation` with `WORKFLOWS.md` and `DOMAIN_MODEL.md`.
+- [x] Found a concrete lifecycle gap: finalization currently rejects already-finalized operations and stale versions, but does not enforce the documented transition path `Draft → In Progress → Ready for Finalization → Finalized`. Existing tests intentionally finalize drafts directly, so adding a simple status guard alone would break established test fixtures and transfer-finalization tests.
+- [ ] Next implementation slice: add an explicit, permission-checked workflow-transition service with optimistic-version checks and persisted workflow events; then require the configured ready-for-finalization state before finalization. Update existing tests and add negative tests for skipped transitions, invalid transitions, stale versions, and transfer sequence/snapshot rollback. Preserve support for operation-type-specific states without inventing unconfigured transition rules.
+- [ ] Keep the change on a focused branch and require full test suite plus fresh SQLite migration round-trip before merge. No code change for this lifecycle gap has been made yet.
