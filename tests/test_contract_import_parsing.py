@@ -33,6 +33,33 @@ def test_parse_xlsx():
     assert rows[0]["property_id"] is None
 
 
+def test_parse_xlsx_preserves_leading_zeroes_from_four_digit_number_format():
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(["suffix", "initial_person_id", "property_id"])
+    sheet.append([100, 12, None])
+    sheet["A2"].number_format = "0000"
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+
+    rows = parse_parent_contract_import("contracts.xlsx", buffer.getvalue())
+
+    assert rows[0]["suffix"] == "0100"
+    assert rows[0]["initial_person_id"] == 12
+
+
+def test_parse_xlsx_does_not_guess_missing_leading_zeroes_for_general_numeric_suffix():
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(["suffix", "initial_person_id"])
+    sheet.append([100, 12])
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+
+    with pytest.raises(ContractImportError, match="import_row_invalid:2"):
+        parse_parent_contract_import("contracts.xlsx", buffer.getvalue())
+
+
 @pytest.mark.parametrize(
     ("filename", "content", "error"),
     [
