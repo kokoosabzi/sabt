@@ -342,7 +342,7 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Compared `app/operations/service.py::finalize_operation` with `WORKFLOWS.md` and `DOMAIN_MODEL.md`.
 - [x] Found a concrete lifecycle gap: finalization currently rejects already-finalized operations and stale versions, but does not enforce the documented transition path `Draft → In Progress → Ready for Finalization → Finalized`. Existing tests intentionally finalize drafts directly, so adding a simple status guard alone would break established test fixtures and transfer-finalization tests.
-- [ ] Next implementation slice: add an explicit, permission-checked workflow-transition service with optimistic-version checks and persisted workflow events; then require the configured ready-for-finalization state before finalization. Update existing tests and add negative tests for skipped transitions, invalid transitions, stale versions, and transfer sequence/snapshot rollback. Preserve support for operation-type-specific states without inventing unconfigured transition rules.
+- [x] Implemented on PR #42: permission-checked workflow transitions, optimistic-version checks, persisted workflow events, configured ready-for-finalization guard, and regression coverage for skipped/stale transitions and transfer/finalization side effects. Final CI verification remains pending.
 - [x] Started the focused implementation on branch `feature/operation-workflow-transitions`; PR #42 adds the first transition-service slice. Full lifecycle enforcement and CI verification remain pending.
 
 
@@ -360,4 +360,4 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Project-specific workflow configuration takes precedence; global workflow configuration is used only when no active project-specific workflow is configured.
 - [x] Existing successful/negative finalization and transfer tests were adjusted to use the transition service instead of bypassing the lifecycle.
 - [x] Added a regression test proving a DRAFT operation cannot be finalized directly.
-- [ ] Await CI and inspect the final PR diff. Do not merge unless the full suite and SQLite migration checks pass.
+- [ ] Initial CI run [39487122804](https://github.com/kokoosabzi/sabt/actions/runs/39487122804) found 2 test assertion failures: tests still expected DRAFT after deliberately advancing operations to READY_FOR_FINALIZATION. Updated those assertions in commit `dd0a569591d70d46a6bea8b53250f581dd7695dc`; rerun CI and inspect the final PR diff. Do not merge unless the full suite and SQLite migration checks pass.
