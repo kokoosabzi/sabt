@@ -317,7 +317,7 @@ def test_finalize_rejects_property_deactivated_after_draft_creation(db: Session)
         finalize_operation(db, user, operation.id, expected_version=operation.version)
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert operation.finalized_at is None
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
@@ -334,7 +334,7 @@ def test_finalize_rejects_deactivated_project_property_association(db: Session) 
         finalize_operation(db, user, operation.id, expected_version=operation.version)
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
 
@@ -360,7 +360,7 @@ def test_finalize_rejects_stale_version_without_side_effects(db: Session) -> Non
         )
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert operation.finalized_at is None
     assert operation.version == original_version
     assert operation.current_version_number == 0
@@ -611,7 +611,7 @@ def test_rolling_back_transfer_finalization_releases_sequence(db: Session):
     parent = db.get(ParentContract, parent.id)
     operation = db.get(Operation, operation.id)
     assert parent.next_transfer_sequence == 1
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert operation.transfer_sequence is None
     assert operation.child_contract_number is None
     assert db.scalar(select(func.count()).select_from(OperationVersion).where(
