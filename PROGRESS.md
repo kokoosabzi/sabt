@@ -352,3 +352,12 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added focused service tests for rejecting skipped transitions, successful state/event/version updates, missing configuration, and stale versions.
 - [ ] Run CI and review the branch diff before considering this slice stable.
 - [ ] Follow-up remains required: enforce that finalization is only possible from the configured ready-for-finalization state, while updating legacy finalization tests and transfer rollback cases to follow configured transitions. Until that follow-up is complete, the documented full lifecycle is not yet enforced end-to-end.
+
+
+## Finalization readiness enforcement — 2026-10-20
+
+- [x] `finalize_operation` now rejects operations unless `current_workflow_state == READY_FOR_FINALIZATION` and the active workflow configuration contains that state.
+- [x] Project-specific workflow configuration takes precedence; global workflow configuration is used only when no active project-specific workflow is configured.
+- [x] Existing successful/negative finalization and transfer tests were adjusted to use the transition service instead of bypassing the lifecycle.
+- [x] Added a regression test proving a DRAFT operation cannot be finalized directly.
+- [ ] Await CI and inspect the final PR diff. Do not merge unless the full suite and SQLite migration checks pass.
