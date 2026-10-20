@@ -2,14 +2,14 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
-## Current status — reconciled 2026-10-20 (after PR #38)
+## Current status — reconciled 2026-10-20 (after PR #42)
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main` code milestone:** `1559bd690ca42ed0316cc99247ae13362ab1f905` (PR #38 adds end-to-end auth API lifecycle tests; PR #36 bounds password-hash verification parameters; PR #34 tests operation transaction rollback; PR #32 verifies concurrent registration-number allocation).
-- **Latest verified CI:** [run 39329277841](https://github.com/kokoosabzi/sabt/actions/runs/39329277841) passed on `main` after PR #38: 165 tests passed, and Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
+- **Current `main` code milestone:** `5d7732e6777067af75f5ddec41a2c33ade9ccbb7` (PR #42 adds configured sequential operation workflow transitions and finalization readiness enforcement; PR #38 adds end-to-end auth API lifecycle tests; PR #36 bounds password-hash verification parameters; PR #34 tests operation transaction rollback; PR #32 verifies concurrent registration-number allocation).
+- **Latest verified CI:** [run 39488009480](https://github.com/kokoosabzi/sabt/actions/runs/39488009480) passed on the final PR #42 code head: full tests, Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
-- **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle/finalization guarantees; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
+- **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle guarantees beyond the newly enforced transition/finalization-readiness path; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
 - **Working rule:** Treat current code, tests, and migration evidence as implementation facts; treat architecture documents as requirements. Do not infer unrecorded events or time-in-state. Do not guess unresolved business rules.
 - **Merge rule:** After a focused change passes required CI/tests and review, merge it promptly; do not leave stable PRs open by default. Never merge failing or unverified work.
 
@@ -362,3 +362,12 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Existing successful/negative finalization and transfer tests were adjusted to use the transition service instead of bypassing the lifecycle.
 - [x] Added a regression test proving a DRAFT operation cannot be finalized directly.
 - [x] Initial CI run [39487122804](https://github.com/kokoosabzi/sabt/actions/runs/39487122804) found two stale assertions expecting DRAFT after advancing operations to READY_FOR_FINALIZATION. The assertions were corrected; subsequent CI run [39487383294](https://github.com/kokoosabzi/sabt/actions/runs/39487383294) passed on the prior revision; final-head CI run [39488009480](https://github.com/kokoosabzi/sabt/actions/runs/39488009480) also passed after adding duplicate-sequence validation and its regression test.
+
+
+## Excel Parent Contract import leading-zero handling — 2026-10-20
+
+- [x] Audited the existing CSV/XLSX import path before extending it; parsing and preview are side-effect free, duplicate detection is present, confirmation revalidates submitted rows, and API tests cover rollback on later-row failure and a duplicate appearing after preview.
+- [x] Found an Excel usability edge case: numeric suffix cells formatted as `0000` display leading zeroes in Excel, but parsing only saw the underlying numeric value and rejected it.
+- [x] Added support for preserving leading zeroes only when the XLSX suffix cell explicitly uses the four-zero number format. Plain numeric/general cells are not guessed or silently rewritten.
+- [x] Added parsing tests for formatted numeric cells and unformatted numeric cells.
+- [x] CI run [39488513533](https://github.com/kokoosabzi/sabt/actions/runs/39488513533) passed on this PR head: full pytest suite, Chromium browser E2E coverage, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade checks.
