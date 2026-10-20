@@ -479,3 +479,28 @@ def test_xlsx_export_neutralizes_formula_cells():
     assert _safe_xlsx_cell("=1+1") == "'=1+1"
     assert _safe_xlsx_cell("ordinary text") == "ordinary text"
     assert _safe_xlsx_cell({"detail": "جزئیات"}) == '{"detail": "جزئیات"}'
+
+def test_all_report_export_families_reject_users_without_project_access():
+    engine, db, client, project = _context()
+    try:
+        db.query(ProjectAccess).delete()
+        db.commit()
+        common_params = {
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        }
+        endpoints = [
+            "/reports/management/summary/export.xlsx",
+            "/reports/workflow/events/export.xlsx",
+            "/reports/workflow/events/export.csv",
+        ]
+        for endpoint in endpoints:
+            response = client.get(endpoint, params=common_params)
+            assert response.status_code == 403, endpoint
+            assert response.json()["detail"] == "forbidden", endpoint
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
