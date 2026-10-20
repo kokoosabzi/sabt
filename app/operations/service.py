@@ -249,6 +249,18 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
     _require_project_access(db, user, op.project_id, "operation.finalize")
     if op.status == "FINALIZED": raise ConflictError("operation_already_finalized")
     if op.version != expected_version: raise ConflictError("stale_operation")
+    if op.current_workflow_state != "READY_FOR_FINALIZATION":
+        raise ValidationError("operation_not_ready_for_finalization")
+    ready_state = db.scalar(
+        select(OperationTypeWorkflow.id).where(
+            OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+            OperationTypeWorkflow.state_code == "READY_FOR_FINALIZATION",
+            OperationTypeWorkflow.active.is_(True),
+            (OperationTypeWorkflow.project_id == op.project_id) | (OperationTypeWorkflow.project_id.is_(None)),
+        ).limit(1)
+    )
+    if ready_state is None:
+        raise ValidationError("workflow_ready_state_not_configured")
     if op.property_id is None: raise ValidationError("property_required")
 
     # Revalidate mutable master data at finalization time, not only when the
