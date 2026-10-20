@@ -20,6 +20,7 @@ from app.db.models import (
     OperationParty,
     OperationType,
     OperationVersion,
+    OperationTypeWorkflow,
     PersonSnapshot,
     PropertySnapshot,
     ParentContract,
@@ -36,7 +37,7 @@ from app.db.models import (
     UserRole,
     WorkflowEvent,
 )
-from app.operations.service import ConflictError, ValidationError, add_party, create_operation, finalize_operation
+from app.operations.service import ConflictError, ValidationError, add_party, create_operation, finalize_operation, transition_operation
 
 
 @pytest.fixture()
@@ -894,3 +895,51 @@ def test_rolling_back_operation_creation_removes_operation_event_and_appointment
         OperationAppointment.operation_id == operation.id,
         OperationAppointment.appointment_id == appointment.id,
     )) == 0
+
+
+
+def test_transition_operation_uses_configured_sequence_and_records_event(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    db.add_all([
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="DRAFT", sequence_no=1, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="IN_PROGRESS", sequence_no=2, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
+    ])
+    db.flush()
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="workflow_transition_not_allowed"):
+        transition_operation(db, user, operation.id, "READY_FOR_FINALIZATION", operation.version)
+
+    moved = transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+    assert moved.current_workflow_state == "IN_PROGRESS"
+    assert moved.status == "IN_PROGRESS"
+    assert moved.version == 2
+    event = db.scalar(select(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "OPERATION_WORKFLOW_TRANSITIONED",
+    ))
+    assert event is not None
+    assert event.from_status == "DRAFT"
+    assert event.to_status == "IN_PROGRESS"
+
+
+def test_transition_operation_rejects_stale_version_and_unconfigured_workflow(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="workflow_not_configured"):
+        transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+
+    db.add_all([
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="DRAFT", sequence_no=1, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="IN_PROGRESS", sequence_no=2, active=True),
+    ])
+    db.flush()
+    with pytest.raises(ConflictError, match="stale_operation"):
+        transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version - 1)
