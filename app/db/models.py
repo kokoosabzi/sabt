@@ -406,6 +406,14 @@ class NumberingPolicy(Base):
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "operation_type_id"],
+            ["project_operation_types.project_id", "project_operation_types.operation_type_id"],
+            ondelete="RESTRICT",
+            name="fk_numbering_policies_project_operation_type",
+        ),
+    )
 
 class NumberingState(Base):
     __tablename__ = "numbering_states"
