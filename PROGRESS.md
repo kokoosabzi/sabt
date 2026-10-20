@@ -371,3 +371,9 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added support for preserving leading zeroes only when the XLSX suffix cell explicitly uses the four-zero number format. Plain numeric/general cells are not guessed or silently rewritten.
 - [x] Added parsing tests for formatted numeric cells and unformatted numeric cells.
 - [x] CI run [39488513533](https://github.com/kokoosabzi/sabt/actions/runs/39488513533) passed on this PR head: full pytest suite, Chromium browser E2E coverage, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade checks.
+
+## Import endpoint authorization regression coverage — 2026-10-20
+
+- [x] Security review confirmed that import preview, edited-row validation, and confirmation all flow through project-scoped `parent_contract.create` authorization before returning preview data or writing contracts.
+- [x] Added explicit negative API regression tests for `/validate` and `/confirm` when project create permission is absent; both assert HTTP 403 and no contract writes.
+- [ ] Await focused branch CI, including full tests, Chromium browser E2E, and SQLite migration checks, before considering this audit increment stable.
