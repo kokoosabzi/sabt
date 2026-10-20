@@ -344,3 +344,11 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Found a concrete lifecycle gap: finalization currently rejects already-finalized operations and stale versions, but does not enforce the documented transition path `Draft → In Progress → Ready for Finalization → Finalized`. Existing tests intentionally finalize drafts directly, so adding a simple status guard alone would break established test fixtures and transfer-finalization tests.
 - [ ] Next implementation slice: add an explicit, permission-checked workflow-transition service with optimistic-version checks and persisted workflow events; then require the configured ready-for-finalization state before finalization. Update existing tests and add negative tests for skipped transitions, invalid transitions, stale versions, and transfer sequence/snapshot rollback. Preserve support for operation-type-specific states without inventing unconfigured transition rules.
 - [ ] Keep the change on a focused branch and require full test suite plus fresh SQLite migration round-trip before merge. No code change for this lifecycle gap has been made yet.
+
+
+## Operation workflow transition implementation — 2026-10-20
+
+- [x] Added a service-level `transition_operation` function on focused branch `feature/operation-workflow-transitions`. It requires project-scoped `operation.edit`, checks optimistic version, rejects transitions from finalized operations, uses active project-specific workflow states (falling back to global states only when no project-specific states exist), allows only the next configured `sequence_no`, and records a workflow event.
+- [x] Added focused service tests for rejecting skipped transitions, successful state/event/version updates, missing configuration, and stale versions.
+- [ ] Run CI and review the branch diff before considering this slice stable.
+- [ ] Follow-up remains required: enforce that finalization is only possible from the configured ready-for-finalization state, while updating legacy finalization tests and transfer rollback cases to follow configured transitions. Until that follow-up is complete, the documented full lifecycle is not yet enforced end-to-end.
