@@ -251,12 +251,24 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
     if op.version != expected_version: raise ConflictError("stale_operation")
     if op.current_workflow_state != "READY_FOR_FINALIZATION":
         raise ValidationError("operation_not_ready_for_finalization")
+    project_workflow_exists = db.scalar(
+        select(OperationTypeWorkflow.id).where(
+            OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+            OperationTypeWorkflow.project_id == op.project_id,
+            OperationTypeWorkflow.active.is_(True),
+        ).limit(1)
+    )
+    workflow_scope = (
+        OperationTypeWorkflow.project_id == op.project_id
+        if project_workflow_exists is not None
+        else OperationTypeWorkflow.project_id.is_(None)
+    )
     ready_state = db.scalar(
         select(OperationTypeWorkflow.id).where(
             OperationTypeWorkflow.operation_type_id == op.operation_type_id,
             OperationTypeWorkflow.state_code == "READY_FOR_FINALIZATION",
             OperationTypeWorkflow.active.is_(True),
-            (OperationTypeWorkflow.project_id == op.project_id) | (OperationTypeWorkflow.project_id.is_(None)),
+            workflow_scope,
         ).limit(1)
     )
     if ready_state is None:
