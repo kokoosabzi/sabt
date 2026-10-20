@@ -235,3 +235,64 @@ def test_browser_summary_print_view_is_rtl_and_pdf_ready(browser_app, page: Page
     expect(print_page.locator("html")).to_have_attribute("dir", "rtl")
     expect(print_page.get_by_role("button", name="چاپ / ذخیره PDF")).to_be_visible()
     expect(print_page.locator("table")).to_contain_text("عملیات ایجادشده")
+
+
+
+def test_browser_jalali_picker_today_close_escape_and_month_year_boundaries(browser_app, page: Page):
+    page.goto(browser_app["base_url"] + "/portal/")
+    page.get_by_label("نام کاربری").fill("browser-import-admin")
+    page.get_by_label("گذرواژه").fill("e2e-test-password")
+    page.get_by_role("button", name="ورود امن").click()
+
+    start = page.locator("#startAt")
+    picker = page.locator("#jalaliPicker")
+    expect(start).to_have_attribute("readonly", "")
+    expect(start).to_have_attribute("aria-expanded", "false")
+
+    # The readonly field prevents typed dates; opening the picker exposes a real calendar dialog.
+    start.click()
+    expect(picker).to_be_visible()
+    expect(start).to_have_attribute("aria-expanded", "true")
+    expect(picker.get_by_role("button", name="ماه قبل")).to_be_visible()
+    expect(picker.get_by_role("button", name="ماه بعد")).to_be_visible()
+
+    # Exercise month navigation without assuming today's Jalali month.
+    to_latin = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
+    title = picker.locator("#jalaliMonthTitle").inner_text().translate(to_latin)
+    year_text, month_text = title.split("/")
+    year, month = int(year_text), int(month_text)
+    previous_year, previous_month = (year - 1, 12) if month == 1 else (year, month - 1)
+    page.locator("#jalaliPrev").click()
+    expected_previous = f"{previous_year:04d}/{previous_month:02d}"
+    expected_previous_fa = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in expected_previous)
+    expect(page.locator("#jalaliMonthTitle")).to_have_text(expected_previous_fa)
+    page.locator("#jalaliNext").click()
+    expected_original = f"{year:04d}/{month:02d}"
+    expected_original_fa = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in expected_original)
+    expect(page.locator("#jalaliMonthTitle")).to_have_text(expected_original_fa)
+
+    # Escape and explicit close both dismiss the popup and reset aria-expanded.
+    page.keyboard.press("Escape")
+    expect(picker).to_be_hidden()
+    expect(start).to_have_attribute("aria-expanded", "false")
+    start.click()
+    expect(picker).to_be_visible()
+    page.locator("#jalaliClose").click()
+    expect(picker).to_be_hidden()
+    expect(start).to_have_attribute("aria-expanded", "false")
+
+    # Today uses the project's configured timezone and fills the date without manual typing.
+    start.click()
+    page.locator("#jalaliToday").click()
+    expect(picker).to_be_hidden()
+    expect(start).to_have_attribute("aria-expanded", "false")
+    expected_today = page.evaluate("""() => {
+      const parts = new Intl.DateTimeFormat(
+        'en-US-u-ca-persian-nu-latn',
+        {timeZone:'Asia/Tehran', year:'numeric', month:'2-digit', day:'2-digit'}
+      ).formatToParts(new Date());
+      const get = type => parts.find(part => part.type === type).value;
+      return get('year').padStart(4, '0') + '/' + get('month').padStart(2, '0') + '/' + get('day').padStart(2, '0');
+    }""")
+    expected_today_fa = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in expected_today)
+    expect(start).to_have_value(expected_today_fa)
