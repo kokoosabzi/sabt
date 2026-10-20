@@ -213,7 +213,9 @@ def transition_operation(db: Session, user: User, operation_id: int, target_stat
         raise ValidationError("workflow_not_configured")
 
     codes = [state.state_code for state in states]
-    if len(codes) != len(set(codes)):
+    sequence_numbers = [state.sequence_no for state in states]
+    if len(codes) != len(set(codes)) or len(sequence_numbers) != len(set(sequence_numbers)):
+        # Duplicate sequence numbers make the configured next state ambiguous.
         raise ValidationError("workflow_state_configuration_invalid")
     try:
         current_index = codes.index(op.current_workflow_state)
