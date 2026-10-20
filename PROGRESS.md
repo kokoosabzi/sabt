@@ -350,8 +350,8 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Added a service-level `transition_operation` function on focused branch `feature/operation-workflow-transitions`. It requires project-scoped `operation.edit`, checks optimistic version, rejects transitions from finalized operations, uses active project-specific workflow states (falling back to global states only when no project-specific states exist), allows only the next configured `sequence_no`, and records a workflow event.
 - [x] Added focused service tests for rejecting skipped transitions, successful state/event/version updates, missing configuration, and stale versions.
-- [ ] Run CI and review the branch diff before considering this slice stable.
-- [ ] Follow-up remains required: enforce that finalization is only possible from the configured ready-for-finalization state, while updating legacy finalization tests and transfer rollback cases to follow configured transitions. Until that follow-up is complete, the documented full lifecycle is not yet enforced end-to-end.
+- [ ] Run CI and review the final branch diff before considering this slice stable.
+- [x] Follow-up completed in the same PR: finalization now requires the configured `READY_FOR_FINALIZATION` state, and finalization/transfer tests advance through configured states before finalizing.
 
 
 ## Finalization readiness enforcement — 2026-10-20
