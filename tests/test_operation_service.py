@@ -975,3 +975,18 @@ def test_transition_operation_rejects_stale_version_and_unconfigured_workflow(db
     db.flush()
     with pytest.raises(ConflictError, match="stale_operation"):
         transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version - 1)
+
+
+
+def test_finalize_rejects_draft_until_ready_state(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="operation_not_ready_for_finalization"):
+        finalize_operation(db, user, operation.id, expected_version=operation.version)
+
+    db.refresh(operation)
+    assert operation.status == "DRAFT"
+    assert operation.current_workflow_state == "DRAFT"
+    assert operation.finalized_at is None
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
