@@ -287,7 +287,7 @@ def test_property_must_be_associated_with_target_project(db: Session) -> None:
     assert db.scalar(select(func.count()).select_from(Operation)) == 0
 
 
-def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> None:
+def test_finalize_requires_property_and_leaves_operation_unfinalized(db: Session) -> None:
     user, project, operation_type, _, _, _ = seed_operation_context(db)
     operation = create_operation(
         db,
@@ -301,7 +301,8 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
         finalize_operation(db, user, operation.id, expected_version=operation.version)
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
+    assert operation.current_workflow_state == "READY_FOR_FINALIZATION"
     assert operation.finalized_at is None
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
@@ -596,7 +597,8 @@ def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: S
     db.refresh(parent)
     db.refresh(operation)
     assert parent.next_transfer_sequence == 1
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
+    assert operation.current_workflow_state == "READY_FOR_FINALIZATION"
     assert operation.child_contract_number is None
 
 
