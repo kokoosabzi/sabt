@@ -20,6 +20,7 @@ from app.db.models import (
     OperationParty,
     OperationType,
     OperationVersion,
+    OperationTypeWorkflow,
     PersonSnapshot,
     PropertySnapshot,
     ParentContract,
@@ -36,7 +37,7 @@ from app.db.models import (
     UserRole,
     WorkflowEvent,
 )
-from app.operations.service import ConflictError, ValidationError, add_party, create_operation, finalize_operation
+from app.operations.service import ConflictError, ValidationError, add_party, create_operation, finalize_operation, transition_operation
 
 
 @pytest.fixture()
@@ -165,6 +166,28 @@ def seed_operation_context(db: Session):
     return user, project, operation_type, property_record, target_appointment, other_appointment
 
 
+
+def advance_operation_to_ready(db: Session, user: User, operation: Operation) -> None:
+    """Test helper: configure the documented base path and advance without bypassing it."""
+    existing = db.scalars(select(OperationTypeWorkflow).where(
+        OperationTypeWorkflow.operation_type_id == operation.operation_type_id,
+        OperationTypeWorkflow.project_id == operation.project_id,
+        OperationTypeWorkflow.active.is_(True),
+    ).order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)).all()
+    if not existing:
+        db.add_all([
+            OperationTypeWorkflow(operation_type_id=operation.operation_type_id, project_id=operation.project_id,
+                                  state_code="DRAFT", sequence_no=1, active=True),
+            OperationTypeWorkflow(operation_type_id=operation.operation_type_id, project_id=operation.project_id,
+                                  state_code="IN_PROGRESS", sequence_no=2, active=True),
+            OperationTypeWorkflow(operation_type_id=operation.operation_type_id, project_id=operation.project_id,
+                                  state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
+        ])
+        db.flush()
+    transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+    transition_operation(db, user, operation.id, "READY_FOR_FINALIZATION", operation.version)
+
+
 def test_create_operation_links_appointment_from_same_project(db: Session) -> None:
     user, project, operation_type, property_record, appointment, _ = seed_operation_context(db)
 
@@ -264,7 +287,7 @@ def test_property_must_be_associated_with_target_project(db: Session) -> None:
     assert db.scalar(select(func.count()).select_from(Operation)) == 0
 
 
-def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> None:
+def test_finalize_requires_property_and_leaves_operation_unfinalized(db: Session) -> None:
     user, project, operation_type, _, _, _ = seed_operation_context(db)
     operation = create_operation(
         db,
@@ -273,11 +296,13 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
         operation_type.id,
     )
 
+    advance_operation_to_ready(db, user, operation)
     with pytest.raises(ValidationError, match="property_required"):
         finalize_operation(db, user, operation.id, expected_version=operation.version)
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
+    assert operation.current_workflow_state == "READY_FOR_FINALIZATION"
     assert operation.finalized_at is None
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
@@ -285,6 +310,7 @@ def test_finalize_requires_property_and_leaves_draft_unchanged(db: Session) -> N
 def test_finalize_rejects_property_deactivated_after_draft_creation(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    advance_operation_to_ready(db, user, operation)
     property_record.is_active = False
     db.flush()
 
@@ -292,7 +318,7 @@ def test_finalize_rejects_property_deactivated_after_draft_creation(db: Session)
         finalize_operation(db, user, operation.id, expected_version=operation.version)
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert operation.finalized_at is None
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
@@ -300,6 +326,7 @@ def test_finalize_rejects_property_deactivated_after_draft_creation(db: Session)
 def test_finalize_rejects_deactivated_project_property_association(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    advance_operation_to_ready(db, user, operation)
     association = db.get(ProjectProperty, (project.id, property_record.id))
     association.active = False
     db.flush()
@@ -308,7 +335,7 @@ def test_finalize_rejects_deactivated_project_property_association(db: Session) 
         finalize_operation(db, user, operation.id, expected_version=operation.version)
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
 
 
@@ -321,6 +348,7 @@ def test_finalize_rejects_stale_version_without_side_effects(db: Session) -> Non
         operation_type.id,
         property_id=property_record.id,
     )
+    advance_operation_to_ready(db, user, operation)
     original_version = operation.version
 
     with pytest.raises(ConflictError, match="stale_operation"):
@@ -333,7 +361,7 @@ def test_finalize_rejects_stale_version_without_side_effects(db: Session) -> Non
         )
 
     db.refresh(operation)
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert operation.finalized_at is None
     assert operation.version == original_version
     assert operation.current_version_number == 0
@@ -349,6 +377,7 @@ def test_finalize_with_property_persists_hashed_snapshot_and_rejects_repeat(db: 
         operation_type.id,
         property_id=property_record.id,
     )
+    advance_operation_to_ready(db, user, operation)
     original_version = operation.version
 
     version_record = finalize_operation(
@@ -517,6 +546,7 @@ def _make_transfer_operation(db: Session):
 
 def test_finalized_transfer_gets_next_child_number_and_snapshot(db: Session):
     user, project, parent, operation = _make_transfer_operation(db)
+    advance_operation_to_ready(db, user, operation)
     version = finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.refresh(operation)
     db.refresh(parent)
@@ -531,11 +561,13 @@ def test_finalized_transfer_gets_next_child_number_and_snapshot(db: Session):
 
 def test_each_finalized_transfer_gets_a_distinct_sequence(db: Session):
     user, project, parent, first = _make_transfer_operation(db)
+    advance_operation_to_ready(db, user, first)
     finalize_operation(db, user, first.id, expected_version=first.version)
     second = create_operation(db, user, project.id, first.operation_type_id,
                               property_id=first.property_id, parent_contract_id=parent.id)
     party = db.scalar(select(OperationParty).where(OperationParty.operation_id == first.id))
     add_party(db, user, second.id, party.person_id, party.role_id, expected_version=second.version)
+    advance_operation_to_ready(db, user, second)
     finalize_operation(db, user, second.id, expected_version=second.version)
     db.refresh(second)
     assert first.child_contract_number == "760123/1"
@@ -559,17 +591,20 @@ def test_transfer_finalization_requires_a_party_without_consuming_sequence(db: S
     db.flush()
     operation = create_operation(db, user, project.id, operation_type.id,
                                  property_id=property_record.id, parent_contract_id=parent.id)
+    advance_operation_to_ready(db, user, operation)
     with pytest.raises(ValidationError, match="buyer_transferee_required"):
         finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.refresh(parent)
     db.refresh(operation)
     assert parent.next_transfer_sequence == 1
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
+    assert operation.current_workflow_state == "READY_FOR_FINALIZATION"
     assert operation.child_contract_number is None
 
 
 def test_rolling_back_transfer_finalization_releases_sequence(db: Session):
     user, project, parent, operation = _make_transfer_operation(db)
+    advance_operation_to_ready(db, user, operation)
     nested = db.begin_nested()
     finalize_operation(db, user, operation.id, expected_version=operation.version)
     db.flush()
@@ -578,7 +613,7 @@ def test_rolling_back_transfer_finalization_releases_sequence(db: Session):
     parent = db.get(ParentContract, parent.id)
     operation = db.get(Operation, operation.id)
     assert parent.next_transfer_sequence == 1
-    assert operation.status == "DRAFT"
+    assert operation.status == "READY_FOR_FINALIZATION"
     assert operation.transfer_sequence is None
     assert operation.child_contract_number is None
     assert db.scalar(select(func.count()).select_from(OperationVersion).where(
@@ -894,3 +929,82 @@ def test_rolling_back_operation_creation_removes_operation_event_and_appointment
         OperationAppointment.operation_id == operation.id,
         OperationAppointment.appointment_id == appointment.id,
     )) == 0
+
+
+
+def test_transition_operation_uses_configured_sequence_and_records_event(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    db.add_all([
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="DRAFT", sequence_no=1, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="IN_PROGRESS", sequence_no=2, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
+    ])
+    db.flush()
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="workflow_transition_not_allowed"):
+        transition_operation(db, user, operation.id, "READY_FOR_FINALIZATION", operation.version)
+
+    moved = transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+    assert moved.current_workflow_state == "IN_PROGRESS"
+    assert moved.status == "IN_PROGRESS"
+    assert moved.version == 2
+    event = db.scalar(select(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "OPERATION_WORKFLOW_TRANSITIONED",
+    ))
+    assert event is not None
+    assert event.from_status == "DRAFT"
+    assert event.to_status == "IN_PROGRESS"
+
+
+
+def test_transition_operation_rejects_duplicate_sequence_numbers(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    db.add_all([
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="DRAFT", sequence_no=1, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="IN_PROGRESS", sequence_no=1, active=True),
+    ])
+    db.flush()
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="workflow_state_configuration_invalid"):
+        transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+
+
+def test_transition_operation_rejects_stale_version_and_unconfigured_workflow(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="workflow_not_configured"):
+        transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+
+    db.add_all([
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="DRAFT", sequence_no=1, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="IN_PROGRESS", sequence_no=2, active=True),
+    ])
+    db.flush()
+    with pytest.raises(ConflictError, match="stale_operation"):
+        transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version - 1)
+
+
+
+def test_finalize_rejects_draft_until_ready_state(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+
+    with pytest.raises(ValidationError, match="operation_not_ready_for_finalization"):
+        finalize_operation(db, user, operation.id, expected_version=operation.version)
+
+    db.refresh(operation)
+    assert operation.status == "DRAFT"
+    assert operation.current_workflow_state == "DRAFT"
+    assert operation.finalized_at is None
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0

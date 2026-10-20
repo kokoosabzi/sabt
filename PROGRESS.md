@@ -342,5 +342,23 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Compared `app/operations/service.py::finalize_operation` with `WORKFLOWS.md` and `DOMAIN_MODEL.md`.
 - [x] Found a concrete lifecycle gap: finalization currently rejects already-finalized operations and stale versions, but does not enforce the documented transition path `Draft → In Progress → Ready for Finalization → Finalized`. Existing tests intentionally finalize drafts directly, so adding a simple status guard alone would break established test fixtures and transfer-finalization tests.
-- [ ] Next implementation slice: add an explicit, permission-checked workflow-transition service with optimistic-version checks and persisted workflow events; then require the configured ready-for-finalization state before finalization. Update existing tests and add negative tests for skipped transitions, invalid transitions, stale versions, and transfer sequence/snapshot rollback. Preserve support for operation-type-specific states without inventing unconfigured transition rules.
-- [ ] Keep the change on a focused branch and require full test suite plus fresh SQLite migration round-trip before merge. No code change for this lifecycle gap has been made yet.
+- [x] Implemented on PR #42: permission-checked workflow transitions, optimistic-version checks, persisted workflow events, configured ready-for-finalization guard, and regression coverage for skipped/stale transitions and transfer/finalization side effects. CI run [39487383294](https://github.com/kokoosabzi/sabt/actions/runs/39487383294) passed on the prior code revision; a later review added rejection of duplicate workflow sequence numbers, so the latest head still requires CI.
+- [x] Implemented the focused lifecycle change on branch `feature/operation-workflow-transitions`; PR #42 adds the transition service and enforces the ready-for-finalization guard. Full CI passed on the final branch head in run [39488009480](https://github.com/kokoosabzi/sabt/actions/runs/39488009480), including browser tests and SQLite migration round-trip.
+
+
+## Operation workflow transition implementation — 2026-10-20
+
+- [x] Added a service-level `transition_operation` function on focused branch `feature/operation-workflow-transitions`. It requires project-scoped `operation.edit`, checks optimistic version, rejects transitions from finalized operations, uses active project-specific workflow states (falling back to global states only when no project-specific states exist), allows only the next configured `sequence_no`, and records a workflow event.
+- [x] Added focused service tests for rejecting skipped transitions, successful state/event/version updates, missing configuration, and stale versions.
+- [x] Reviewed the branch diff against the workflow model and service tests; found and fixed an ambiguity where duplicate `sequence_no` values could make the next configured state depend on row ID.
+- [x] CI run [39488009480](https://github.com/kokoosabzi/sabt/actions/runs/39488009480) passed on the updated head: browser tests, full test suite, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
+- [x] Follow-up completed in the same PR: finalization now requires the configured `READY_FOR_FINALIZATION` state, and finalization/transfer tests advance through configured states before finalizing.
+
+
+## Finalization readiness enforcement — 2026-10-20
+
+- [x] `finalize_operation` now rejects operations unless `current_workflow_state == READY_FOR_FINALIZATION` and the active workflow configuration contains that state.
+- [x] Project-specific workflow configuration takes precedence; global workflow configuration is used only when no active project-specific workflow is configured.
+- [x] Existing successful/negative finalization and transfer tests were adjusted to use the transition service instead of bypassing the lifecycle.
+- [x] Added a regression test proving a DRAFT operation cannot be finalized directly.
+- [x] Initial CI run [39487122804](https://github.com/kokoosabzi/sabt/actions/runs/39487122804) found two stale assertions expecting DRAFT after advancing operations to READY_FOR_FINALIZATION. The assertions were corrected; subsequent CI run [39487383294](https://github.com/kokoosabzi/sabt/actions/runs/39487383294) passed on the prior revision; final-head CI run [39488009480](https://github.com/kokoosabzi/sabt/actions/runs/39488009480) also passed after adding duplicate-sequence validation and its regression test.

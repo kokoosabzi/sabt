@@ -7,7 +7,7 @@ from app.auth.authorization import AuthorizationContext, authorize
 from app.contracts.numbering import BUYER_TRANSFEREE_ROLE_CODE, build_child_contract_number
 from app.db.models import (
     Appointment, Contract, Operation, OperationAppointment, OperationParty, OperationType, OperationVersion,
-    ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User, WorkflowEvent,
+    OperationTypeWorkflow, ParentContract, PartyRole, Person, PersonSnapshot, ProjectOperationType, ProjectPerson, ProjectProperty, Property, PropertySnapshot, User, WorkflowEvent,
 )
 
 class OperationError(Exception): pass
@@ -169,6 +169,85 @@ def _snapshot(db: Session, op: Operation) -> dict:
                 "unit_code": prop.unit_code, "plaque_number": prop.plaque_number, "address": prop.address},
             "parties": parties}
 
+
+def transition_operation(db: Session, user: User, operation_id: int, target_state: str,
+                        expected_version: int, reason: str | None = None) -> Operation:
+    """Move an operation to the next configured workflow state in the caller's transaction.
+
+    Active project-specific workflow configuration overrides global configuration.
+    State order is the configured sequence_no; FINALIZED is reserved for
+    finalize_operation and cannot be reached through this function.
+    """
+    op = db.get(Operation, operation_id)
+    if op is None:
+        raise NotFoundError("operation_not_found")
+    _require_project_access(db, user, op.project_id, "operation.edit")
+    if op.status == "FINALIZED" or op.current_workflow_state == "FINALIZED":
+        raise ConflictError("operation_finalized")
+    if op.version != expected_version:
+        raise ConflictError("stale_operation")
+    if not target_state or target_state == "FINALIZED":
+        raise ValidationError("workflow_target_state_invalid")
+
+    project_states = db.scalars(
+        select(OperationTypeWorkflow)
+        .where(
+            OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+            OperationTypeWorkflow.project_id == op.project_id,
+            OperationTypeWorkflow.active.is_(True),
+        )
+        .order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)
+    ).all()
+    states = project_states
+    if not states:
+        states = db.scalars(
+            select(OperationTypeWorkflow)
+            .where(
+                OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+                OperationTypeWorkflow.project_id.is_(None),
+                OperationTypeWorkflow.active.is_(True),
+            )
+            .order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)
+        ).all()
+    if not states:
+        raise ValidationError("workflow_not_configured")
+
+    codes = [state.state_code for state in states]
+    sequence_numbers = [state.sequence_no for state in states]
+    if len(codes) != len(set(codes)) or len(sequence_numbers) != len(set(sequence_numbers)):
+        # Duplicate sequence numbers make the configured next state ambiguous.
+        raise ValidationError("workflow_state_configuration_invalid")
+    try:
+        current_index = codes.index(op.current_workflow_state)
+    except ValueError:
+        raise ValidationError("workflow_current_state_not_configured")
+    if current_index + 1 >= len(codes) or codes[current_index + 1] != target_state:
+        raise ValidationError("workflow_transition_not_allowed")
+
+    now = _now()
+    previous_state = op.current_workflow_state
+    previous_status = op.status
+    op.current_workflow_state = target_state
+    # Keep the short lifecycle status column compatible with its 32-character
+    # limit; operation-specific workflow states live in current_workflow_state.
+    if target_state in {"DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION"}:
+        op.status = target_state
+    op.version += 1
+    op.updated_at = now
+    event_metadata = {
+        "from_workflow_state": previous_state,
+        "to_workflow_state": target_state,
+    }
+    if reason:
+        event_metadata["reason"] = reason
+    _record_workflow_event(
+        db, user, op, "OPERATION_WORKFLOW_TRANSITIONED", now,
+        from_status=previous_status, to_status=op.status,
+        metadata=event_metadata,
+    )
+    db.flush()
+    return op
+
 def finalize_operation(db: Session, user: User, operation_id: int, expected_version: int,
                        reason: str | None = None) -> OperationVersion:
     """Finalize atomically within the caller-owned transaction; never commit.
@@ -182,6 +261,30 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
     _require_project_access(db, user, op.project_id, "operation.finalize")
     if op.status == "FINALIZED": raise ConflictError("operation_already_finalized")
     if op.version != expected_version: raise ConflictError("stale_operation")
+    if op.current_workflow_state != "READY_FOR_FINALIZATION":
+        raise ValidationError("operation_not_ready_for_finalization")
+    project_workflow_exists = db.scalar(
+        select(OperationTypeWorkflow.id).where(
+            OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+            OperationTypeWorkflow.project_id == op.project_id,
+            OperationTypeWorkflow.active.is_(True),
+        ).limit(1)
+    )
+    workflow_scope = (
+        OperationTypeWorkflow.project_id == op.project_id
+        if project_workflow_exists is not None
+        else OperationTypeWorkflow.project_id.is_(None)
+    )
+    ready_state = db.scalar(
+        select(OperationTypeWorkflow.id).where(
+            OperationTypeWorkflow.operation_type_id == op.operation_type_id,
+            OperationTypeWorkflow.state_code == "READY_FOR_FINALIZATION",
+            OperationTypeWorkflow.active.is_(True),
+            workflow_scope,
+        ).limit(1)
+    )
+    if ready_state is None:
+        raise ValidationError("workflow_ready_state_not_configured")
     if op.property_id is None: raise ValidationError("property_required")
 
     # Revalidate mutable master data at finalization time, not only when the
