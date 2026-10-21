@@ -538,3 +538,22 @@ def test_all_report_export_families_reject_users_without_project_access():
         db.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
+
+
+def test_legacy_management_summary_alias_enforces_project_permissions():
+    engine, db, client, project = _context()
+    try:
+        db.query(ProjectAccess).delete()
+        db.commit()
+        response = client.get("/reports/management-summary", params={
+            "project_id": project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        })
+        assert response.status_code == 403
+        assert response.json()["detail"] == "forbidden"
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
