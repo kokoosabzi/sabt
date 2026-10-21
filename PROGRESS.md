@@ -2,11 +2,11 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
-## Current status — reconciled 2026-10-20 (after PR #42)
+## Current status — reconciled 2026-10-21 (after PR #55)
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
-- **Current `main` code milestone:** `5d7732e6777067af75f5ddec41a2c33ade9ccbb7` (PR #42 adds configured sequential operation workflow transitions and finalization readiness enforcement; PR #38 adds end-to-end auth API lifecycle tests; PR #36 bounds password-hash verification parameters; PR #34 tests operation transaction rollback; PR #32 verifies concurrent registration-number allocation).
-- **Latest verified CI:** [run 39488009480](https://github.com/kokoosabzi/sabt/actions/runs/39488009480) passed on the final PR #42 code head: full tests, Chromium browser E2E, fresh SQLite migration upgrade, Alembic head, downgrade, and re-upgrade checks all passed.
+- **Current `main` code milestone:** `0d9cc6df1ecfd3405aeb5aba7b50638f37790fac` (includes the operation transition/finalization guard and regression coverage for report exports, Jalali picker behavior, cross-project report isolation, and project-access checks for operation create/edit/finalize/party edits plus the legacy report alias).
+- **Latest verified CI:** [run 39538937466](https://github.com/kokoosabzi/sabt/actions/runs/39538937466) passed on the post-merge `main` commit: full test suite, Chromium browser E2E, fresh SQLite migration upgrade, Alembic head verification, and downgrade/re-upgrade checks all passed.
 - **Merged milestones:** PR #1 foundation/import stabilization; PR #7 Jalali calendar and controlled time selectors; PR #8 permission-scoped Excel exports; PR #9 print-ready report views. See the historical entries below for feature-specific CI evidence.
 - **Implemented on `main`:** Parent Contract create/history/current-owner derivation and staged CSV/XLSX import; initial Persian RTL portal; management/workflow/event reports; CSV/XLSX exports; Jalali report date picker and project-timezone conversion; browser print-to-PDF views.
 - **Still incomplete:** comprehensive workflow-event coverage; full operation lifecycle guarantees beyond the newly enforced transition/finalization-readiness path; full Contract/restriction services; managed document storage; appointments/reminders; template designer and server-side reproducible PDF generation; full search/admin UI; backup/restore and packaging.
@@ -401,32 +401,35 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 ## Operation creation project-access regression — 2026-10-21
 
 - [x] Added a service-level regression test proving a global `operation.create` role does not bypass project access. Revoking the user's project access must reject operation creation and leave both operations and workflow events unchanged.
-- [ ] Verify the test on the exact PR head and the post-merge main revision before treating this audit step as complete.
+- [x] Exact-head CI run [39538033155](https://github.com/kokoosabzi/sabt/actions/runs/39538033155) passed; post-merge `main` CI run [39538132382](https://github.com/kokoosabzi/sabt/actions/runs/39538132382) also passed.
 
 
 ## Operation transition project-access regression — 2026-10-21
 
 - [x] Added a service-level regression test proving that revoking project access blocks workflow transitions even when the user retains the global `operation.edit` role.
 - [x] Asserted the operation status, workflow state, optimistic version, and workflow-event count remain unchanged after denial.
-- [ ] Verify the exact PR head and post-merge main revision through CI before closing this audit item.
+- [x] Exact-head CI run [39538171164](https://github.com/kokoosabzi/sabt/actions/runs/39538171164) passed; subsequent post-merge `main` CI [39538546535](https://github.com/kokoosabzi/sabt/actions/runs/39538546535) passed the merged operation-access regression set.
 
 
 ## Operation finalization project-access regression — 2026-10-21
 
 - [x] Added a service-level regression test proving finalization is denied when project access is revoked, even while the user retains the global `operation.finalize` role.
 - [x] Asserted denied finalization leaves the operation unfinalized, preserves its optimistic version, creates no operation-version snapshot, and adds no workflow event.
-- [x] Exact-head CI run [39538275657](https://github.com/kokoosabzi/sabt/actions/runs/39538275657) passed the full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade. The equivalent change is being re-based onto the latest `main` after a progress-file conflict; post-merge verification remains pending.
+- [x] Exact-head CI run [39538418993](https://github.com/kokoosabzi/sabt/actions/runs/39538418993) passed the full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
+- [x] PR #53 merged as `c956a65aae085da5166925331a65dfa0d29c6f02`; post-merge `main` CI run [39538546535](https://github.com/kokoosabzi/sabt/actions/runs/39538546535) passed all test and migration checks.
 
 
 ## Operation party-edit project-access regression — 2026-10-21
 
 - [x] Added a service-level regression test proving that adding a party is denied after project access is revoked, despite the global `operation.edit` role.
 - [x] Asserted denied party editing preserves the operation version and creates neither an `OperationParty` row nor a workflow event.
-- [ ] Verify exact-head CI and post-merge main CI before closing this audit item.
+- [x] Exact-head CI run [39538603636](https://github.com/kokoosabzi/sabt/actions/runs/39538603636) passed all test and migration checks.
+- [x] Post-merge `main` CI run [39538709426](https://github.com/kokoosabzi/sabt/actions/runs/39538709426) passed all test and migration checks.
 
 
 ## Legacy management-report alias authorization regression — 2026-10-21
 
 - [x] Added API regression coverage for the deprecated `/reports/management-summary` compatibility endpoint.
 - [x] Asserted that a user without project access receives `403 forbidden`, matching the authorization behavior of the current report routes.
-- [ ] Verify exact-head CI and post-merge main CI before closing this audit item.
+- [x] Exact-head CI run [39538815596](https://github.com/kokoosabzi/sabt/actions/runs/39538815596) passed the full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
+- [x] PR #55 merged as `0d9cc6df1ecfd3405aeb5aba7b50638f37790fac`; post-merge `main` CI run [39538937466](https://github.com/kokoosabzi/sabt/actions/runs/39538937466) passed the same full suite and migration checks.
