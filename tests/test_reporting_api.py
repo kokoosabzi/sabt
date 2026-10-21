@@ -123,6 +123,40 @@ def test_reporting_api_enforces_project_access():
         engine.dispose()
 
 
+def test_report_endpoints_deny_cross_project_access_even_with_global_report_role():
+    engine, db, client, project = _context()
+    try:
+        now = datetime.now(timezone.utc)
+        other_project = Project(
+            code="REPORT-Q", contract_code="78", name="Other Report Project", status="ACTIVE",
+            timezone="Asia/Tehran", created_at=now, updated_at=now, version=1,
+        )
+        db.add(other_project)
+        db.commit()
+
+        params = {
+            "project_id": other_project.id,
+            "start_at": "2026-10-01T00:00:00+00:00",
+            "end_at": "2026-11-01T00:00:00+00:00",
+        }
+        for endpoint in (
+            "/reports/management/summary",
+            "/reports/workflow",
+            "/reports/workflow/events",
+            "/reports/management/summary/export.xlsx",
+            "/reports/workflow/export.csv",
+            "/reports/workflow/events/export.xlsx",
+        ):
+            response = client.get(endpoint, params=params)
+            assert response.status_code == 403, endpoint
+            assert response.json()["detail"] == "forbidden", endpoint
+    finally:
+        app.dependency_overrides.clear()
+        db.close()
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+
+
 
 def test_workflow_events_api_returns_persisted_events_only():
     engine, db, client, project = _context()

@@ -392,3 +392,9 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added browser regression coverage for previous/next month navigation across calendar year boundaries, Escape dismissal, explicit close, Today selection in the project timezone, and aria-expanded state restoration.
 - [x] CI run [39490535124](https://github.com/kokoosabzi/sabt/actions/runs/39490535124) passed on code head `fca86516c9b5ab3f6a750d864f0f4a2355430811`: full test suite (including Chromium browser E2E), fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade. The progress-ledger update itself must also pass CI on the new exact head before merge.
 - [x] PR [#47](https://github.com/kokoosabzi/sabt/pull/47) merged as `5070fa33fdb480b3b93ea50b4465bc5432bc7ca1`; post-merge CI run [39490899824](https://github.com/kokoosabzi/sabt/actions/runs/39490899824) passed on `main`, including the full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
+
+## Cross-project report isolation regression — 2026-10-21
+
+- [x] Extended the authorization audit beyond missing-access cases: a user with a global report role and access to one project must not query or export report data for a different project.
+- [x] Added API regression coverage across management summary, workflow report, workflow-event report, and representative XLSX/CSV export routes. This branch is not merged until CI verifies the exact PR head.
+
