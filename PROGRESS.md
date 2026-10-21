@@ -402,3 +402,10 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Added a service-level regression test proving a global `operation.create` role does not bypass project access. Revoking the user's project access must reject operation creation and leave both operations and workflow events unchanged.
 - [ ] Verify the test on the exact PR head and the post-merge main revision before treating this audit step as complete.
+
+
+## Operation transition project-access regression — 2026-10-21
+
+- [x] Added a service-level regression test proving that revoking project access blocks workflow transitions even when the user retains the global `operation.edit` role.
+- [x] Asserted the operation status, workflow state, optimistic version, and workflow-event count remain unchanged after denial.
+- [ ] Verify the exact PR head and post-merge main revision through CI before closing this audit item.
