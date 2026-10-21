@@ -513,6 +513,28 @@ def _make_party_records(db: Session, project_id: int, *, associated: bool = True
     return person, party_role
 
 
+def test_add_party_requires_project_access_and_has_no_side_effects_when_denied(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    person, party_role = _make_party_records(db, project.id)
+    original_version = operation.version
+    original_event_count = db.scalar(select(func.count()).select_from(WorkflowEvent))
+
+    db.query(ProjectAccess).filter(
+        ProjectAccess.user_id == user.id,
+        ProjectAccess.project_id == project.id,
+    ).delete()
+    db.flush()
+
+    with pytest.raises(PermissionError, match="forbidden"):
+        add_party(db, user, operation.id, person.id, party_role.id, expected_version=original_version)
+
+    db.refresh(operation)
+    assert operation.version == original_version
+    assert db.scalar(select(func.count()).select_from(OperationParty)) == 0
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent)) == original_event_count
+
+
 def test_add_party_rejects_person_not_associated_with_operation_project(db: Session) -> None:
     user, project, operation_type, property_record, _, _ = seed_operation_context(db)
     operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
