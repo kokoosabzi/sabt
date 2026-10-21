@@ -423,3 +423,10 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added a service-level regression test proving that adding a party is denied after project access is revoked, despite the global `operation.edit` role.
 - [x] Asserted denied party editing preserves the operation version and creates neither an `OperationParty` row nor a workflow event.
 - [ ] Verify exact-head CI and post-merge main CI before closing this audit item.
+
+
+## Legacy management-report alias authorization regression — 2026-10-21
+
+- [x] Added API regression coverage for the deprecated `/reports/management-summary` compatibility endpoint.
+- [x] Asserted that a user without project access receives `403 forbidden`, matching the authorization behavior of the current report routes.
+- [ ] Verify exact-head CI and post-merge main CI before closing this audit item.
