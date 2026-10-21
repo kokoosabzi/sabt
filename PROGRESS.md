@@ -396,7 +396,8 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 ## Cross-project report isolation regression — 2026-10-21
 
 - [x] Extended the authorization audit beyond missing-access cases: a user with a global report role and access to one project must not query or export report data for a different project.
-- [x] Added API regression coverage across management summary, workflow report, workflow-event report, and representative XLSX/CSV export routes. This branch is not merged until CI verifies the exact PR head.
+- [x] Added API regression coverage across management summary, workflow report, workflow-event report, and representative XLSX/CSV export routes.
+- [x] PR [#49](https://github.com/kokoosabzi/sabt/pull/49) merged as `ffd1c5e7dd7ccc162b5ffaf7c2318c3d52bd9de8`; exact-head CI run [39537854800](https://github.com/kokoosabzi/sabt/actions/runs/39537854800) passed, and the later post-merge `main` CI run [39538937466](https://github.com/kokoosabzi/sabt/actions/runs/39538937466) passed the full test and migration suite.
 
 ## Operation creation project-access regression — 2026-10-21
 
