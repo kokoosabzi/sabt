@@ -209,6 +209,28 @@ def test_create_operation_requires_project_access_even_with_global_create_role(d
     assert db.scalar(select(func.count()).select_from(WorkflowEvent)) == 0
 
 
+def test_transition_requires_project_access_and_leaves_operation_unchanged(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    original_version = operation.version
+    original_event_count = db.scalar(select(func.count()).select_from(WorkflowEvent))
+
+    db.query(ProjectAccess).filter(
+        ProjectAccess.user_id == user.id,
+        ProjectAccess.project_id == project.id,
+    ).delete()
+    db.flush()
+
+    with pytest.raises(PermissionError, match="forbidden"):
+        transition_operation(db, user, operation.id, "IN_PROGRESS", expected_version=original_version)
+
+    db.refresh(operation)
+    assert operation.current_workflow_state == "DRAFT"
+    assert operation.status == "DRAFT"
+    assert operation.version == original_version
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent)) == original_event_count
+
+
 def test_create_operation_links_appointment_from_same_project(db: Session) -> None:
     user, project, operation_type, property_record, appointment, _ = seed_operation_context(db)
 
