@@ -409,3 +409,10 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added a service-level regression test proving that revoking project access blocks workflow transitions even when the user retains the global `operation.edit` role.
 - [x] Asserted the operation status, workflow state, optimistic version, and workflow-event count remain unchanged after denial.
 - [ ] Verify the exact PR head and post-merge main revision through CI before closing this audit item.
+
+
+## Operation finalization project-access regression — 2026-10-21
+
+- [x] Added a service-level regression test proving finalization is denied when project access is revoked, even while the user retains the global `operation.finalize` role.
+- [x] Asserted denied finalization leaves the operation unfinalized, preserves its optimistic version, creates no operation-version snapshot, and adds no workflow event.
+- [x] Exact-head CI run [39538275657](https://github.com/kokoosabzi/sabt/actions/runs/39538275657) passed the full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade. The equivalent change is being re-based onto the latest `main` after a progress-file conflict; post-merge verification remains pending.
