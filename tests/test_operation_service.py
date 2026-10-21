@@ -188,6 +188,27 @@ def advance_operation_to_ready(db: Session, user: User, operation: Operation) ->
     transition_operation(db, user, operation.id, "READY_FOR_FINALIZATION", operation.version)
 
 
+def test_create_operation_requires_project_access_even_with_global_create_role(db: Session) -> None:
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    db.query(ProjectAccess).filter(
+        ProjectAccess.user_id == user.id,
+        ProjectAccess.project_id == project.id,
+    ).delete()
+    db.flush()
+
+    with pytest.raises(PermissionError, match="forbidden"):
+        create_operation(
+            db,
+            user,
+            project.id,
+            operation_type.id,
+            property_id=property_record.id,
+        )
+
+    assert db.scalar(select(func.count()).select_from(Operation)) == 0
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent)) == 0
+
+
 def test_create_operation_links_appointment_from_same_project(db: Session) -> None:
     user, project, operation_type, property_record, appointment, _ = seed_operation_context(db)
 

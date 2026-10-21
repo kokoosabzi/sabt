@@ -398,3 +398,7 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Extended the authorization audit beyond missing-access cases: a user with a global report role and access to one project must not query or export report data for a different project.
 - [x] Added API regression coverage across management summary, workflow report, workflow-event report, and representative XLSX/CSV export routes. This branch is not merged until CI verifies the exact PR head.
 
+## Operation creation project-access regression — 2026-10-21
+
+- [x] Added a service-level regression test proving a global `operation.create` role does not bypass project access. Revoking the user's project access must reject operation creation and leave both operations and workflow events unchanged.
+- [ ] Verify the test on the exact PR head and the post-merge main revision before treating this audit step as complete.
