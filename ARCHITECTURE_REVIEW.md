@@ -11,6 +11,14 @@ The goal is not to redesign SABT. The goal is to identify contradictions, unders
 
 No application code should be generated for a domain area that still has an unresolved business-semantic conflict.
 
+## Current interpretation — reconciled 2026-10-21
+
+**This is a historical pre-implementation review, not the current phase gate.** Its original recommendations and “MUST RESOLVE” labels describe the state when the document was written. Do not interpret its closing instruction to “start Foundation Phase implementation” as a current instruction: SABT already has an implemented foundation, migrations, service/API slices, a reporting portal, and a CI-backed regression suite.
+
+For the current decision status, use `OPEN_DECISIONS.md` together with `DOMAIN_MODEL.md`, `DATABASE_SCHEMA.md`, `WORKFLOWS.md`, and the verified implementation ledger in `PROGRESS.md`. Items listed as resolved in `OPEN_DECISIONS.md` supersede the corresponding historical open finding below. Remaining open decisions still constrain the feature work that depends on them. An implemented schema or passing test does not mean the full user-facing workflow is complete.
+
+The historical findings remain useful as rationale and must not be deleted; this note clarifies their present-day authority.
+
 ## 1. Overall Assessment
 
 The architecture is coherent enough to begin foundation work, but the domain/schema boundary is not yet safe enough to freeze the complete database schema.
@@ -187,7 +195,7 @@ Recommended direction: a user may have global permissions and project-scoped rol
 
 Status: MUST RESOLVE BEFORE SECURITY SCHEMA FREEZE.
 
-## 20. Architecture Gate
+## 20. Original Architecture Gate (Historical)
 
 The project is ready to begin Foundation infrastructure:
 - repository/application skeleton
@@ -202,7 +210,7 @@ The project is ready to begin Foundation infrastructure:
 
 Do not freeze the complete business schema or implement irreversible business workflows until the critical decisions above are resolved.
 
-## 21. Recommended Next Decision Batch
+## 21. Original Recommended Decision Batch (Historical)
 
 Resolve these seven items first:
 1. Shared Person/Property ownership and project association
