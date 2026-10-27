@@ -461,3 +461,9 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Exact-head CI run [#622](https://github.com/kokoosabzi/sabt/actions/runs/40577183228) passed the full test suite, Chromium browser E2E, fresh SQLite migration, Alembic head verification, and downgrade/re-upgrade.
 - [x] Updated PR #58 verification notes; PR remains open and unmerged.
 - Next task: continue the Phase 0 audit with transaction/concurrency checks for other operation mutations, especially adding parties.
+
+## Atomic party mutation concurrency — 2026-10-27
+
+- [x] Changed `add_party` to increment the operation version with a conditional database update, rejecting stale concurrent writes before inserting a party or event.
+- [x] Added a regression test that simulates a competing version change after the initial read and asserts the request returns `409 stale_operation` without persisting a party or event.
+- Verification pending: exact-head CI for the new service and test changes.
