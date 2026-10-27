@@ -33,11 +33,13 @@ def api_context():
     role = Role(code="transition-editor", name="Transition Editor", active=True)
     permission = Permission(code="operation.edit", name="Edit operation")
     view_permission = Permission(code="operation.view", name="View operation")
-    db.add_all([user, project, operation_type, role, permission, view_permission])
+    create_permission = Permission(code="operation.create", name="Create operation")
+    db.add_all([user, project, operation_type, role, permission, view_permission, create_permission])
     db.flush()
     db.add_all([
         RolePermission(role_id=role.id, permission_id=permission.id),
         RolePermission(role_id=role.id, permission_id=view_permission.id),
+        RolePermission(role_id=role.id, permission_id=create_permission.id),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True,
                       granted_at=now, version=1),
@@ -332,3 +334,59 @@ def test_get_operation_returns_not_found_for_missing_operation(api_context) -> N
 
     assert response.status_code == 404
     assert response.json()["detail"] == "operation_not_found"
+
+
+
+def test_create_operation_creates_draft_and_event(api_context) -> None:
+    client, db, _, project, operation = api_context
+    response = client.post(
+        "/operations",
+        json={"project_id": project.id, "operation_type_id": operation.operation_type_id},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["project_id"] == project.id
+    assert payload["operation_type_id"] == operation.operation_type_id
+    assert payload["status"] == "DRAFT"
+    assert payload["workflow_state"] == "DRAFT"
+    assert payload["version"] == 1
+    created_id = payload["operation_id"]
+    created = db.get(Operation, created_id)
+    assert created is not None
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == created_id,
+        WorkflowEvent.event_type == "OPERATION_CREATED",
+    )) == 1
+
+
+def test_create_operation_requires_project_access(api_context) -> None:
+    client, db, user, project, operation = api_context
+    db.query(ProjectAccess).filter_by(user_id=user.id, project_id=project.id).delete()
+    db.commit()
+
+    response = client.post(
+        "/operations",
+        json={"project_id": project.id, "operation_type_id": operation.operation_type_id},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "forbidden"
+    assert db.scalar(select(func.count()).select_from(Operation)) == 1
+
+
+def test_create_operation_rejects_inactive_or_unenabled_type(api_context) -> None:
+    client, db, _, project, operation = api_context
+    db.query(ProjectOperationType).filter_by(
+        project_id=project.id, operation_type_id=operation.operation_type_id
+    ).update({"enabled": False})
+    db.commit()
+
+    response = client.post(
+        "/operations",
+        json={"project_id": project.id, "operation_type_id": operation.operation_type_id},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "operation_type_not_enabled_for_project"
+    assert db.scalar(select(func.count()).select_from(Operation)) == 1
