@@ -472,3 +472,52 @@ def test_list_operation_parties_requires_view_permission(api_context) -> None:
 
     assert response.status_code == 403
     assert response.json()["detail"] == "forbidden"
+
+
+
+def test_operation_read_endpoints_reject_another_project(api_context) -> None:
+    client, db, user, project, operation = api_context
+    now = datetime.now(timezone.utc)
+    other_project = Project(
+        code="TRANSITION-READ-OTHER",
+        name="Other Read Project",
+        status="ACTIVE",
+        timezone="Asia/Tehran",
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+    db.add(other_project)
+    db.flush()
+    db.add(ProjectOperationType(
+        project_id=other_project.id,
+        operation_type_id=operation.operation_type_id,
+        enabled=True,
+        created_at=now,
+        updated_at=now,
+        version=1,
+    ))
+    db.flush()
+    foreign_operation = Operation(
+        project_id=other_project.id,
+        operation_type_id=operation.operation_type_id,
+        status="DRAFT",
+        current_workflow_state="DRAFT",
+        created_by=user.id,
+        created_at=now,
+        updated_at=now,
+        version=1,
+        current_version_number=0,
+    )
+    db.add(foreign_operation)
+    db.commit()
+
+    # Global view permission and access to the fixture project must not grant
+    # access to operation details or party details from a different project.
+    for path in (
+        f"/operations/{foreign_operation.id}",
+        f"/operations/{foreign_operation.id}/parties",
+    ):
+        response = client.get(path)
+        assert response.status_code == 403
+        assert response.json()["detail"] == "forbidden"
