@@ -32,10 +32,12 @@ def api_context():
                                    created_at=now, updated_at=now)
     role = Role(code="transition-editor", name="Transition Editor", active=True)
     permission = Permission(code="operation.edit", name="Edit operation")
-    db.add_all([user, project, operation_type, role, permission])
+    view_permission = Permission(code="operation.view", name="View operation")
+    db.add_all([user, project, operation_type, role, permission, view_permission])
     db.flush()
     db.add_all([
         RolePermission(role_id=role.id, permission_id=permission.id),
+        RolePermission(role_id=role.id, permission_id=view_permission.id),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True,
                       granted_at=now, version=1),
@@ -297,3 +299,36 @@ def test_operation_transition_cannot_access_operation_in_another_project(api_con
         WorkflowEvent.operation_id == foreign_operation.id,
         WorkflowEvent.event_type == "OPERATION_WORKFLOW_TRANSITIONED",
     )) == 0
+
+
+
+def test_get_operation_returns_details_with_project_view_permission(api_context) -> None:
+    client, _, _, project, operation = api_context
+    response = client.get(f"/operations/{operation.id}")
+
+    assert response.status_code == 200
+    assert response.json()["operation_id"] == operation.id
+    assert response.json()["project_id"] == project.id
+    assert response.json()["workflow_state"] == "DRAFT"
+    assert response.json()["version"] == 1
+
+
+def test_get_operation_rejects_user_without_view_permission(api_context) -> None:
+    client, db, _, _, operation = api_context
+    db.query(RolePermission).filter(
+        RolePermission.permission_id == db.query(Permission.id).filter_by(code="operation.view").scalar_subquery()
+    ).delete(synchronize_session=False)
+    db.commit()
+
+    response = client.get(f"/operations/{operation.id}")
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "forbidden"
+
+
+def test_get_operation_returns_not_found_for_missing_operation(api_context) -> None:
+    client, _, _, _, _ = api_context
+    response = client.get("/operations/99999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "operation_not_found"
