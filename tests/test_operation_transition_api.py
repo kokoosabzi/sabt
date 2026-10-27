@@ -74,7 +74,7 @@ def api_context():
 def test_operation_transition_route_is_registered() -> None:
     # FastAPI's newer router implementation may defer included routes; OpenAPI
     # is the stable public contract for asserting the registered endpoint.
-    assert "POST" in app.openapi()["paths"]["/operations/{operation_id}/transition"]
+    assert "post" in app.openapi()["paths"]["/operations/{operation_id}/transition"]
 
 
 def test_operation_transition_requires_authentication(api_context) -> None:
