@@ -343,6 +343,21 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
 
     now = _now()
     previous_status = op.status
+    # Claim the expected version before allocating a transfer number or writing
+    # snapshots. This is the serialization point for concurrent finalization.
+    claim = db.execute(
+        update(Operation)
+        .where(
+            Operation.id == op.id,
+            Operation.version == expected_version,
+            Operation.status != "FINALIZED",
+        )
+        .values(version=Operation.version + 1, updated_at=now)
+        .execution_options(synchronize_session=False)
+    )
+    if claim.rowcount != 1:
+        raise ConflictError("stale_operation")
+    db.refresh(op)
     if op.parent_contract_id is not None:
         if op.transfer_sequence is not None or op.child_contract_number is not None:
             raise ConflictError("transfer_number_already_allocated")
@@ -370,7 +385,7 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
                                 created_at=now, snapshot_hash=_sha(data)))
     op.status, op.current_workflow_state = "FINALIZED", "FINALIZED"
     op.finalized_by, op.finalized_at = user.id, now
-    op.current_version_number, op.version, op.updated_at = next_version, op.version + 1, now
+    op.current_version_number, op.updated_at = next_version, now
     db.add(version); db.flush()
     _record_workflow_event(db, user, op, "OPERATION_FINALIZED", now,
                            from_status=previous_status, to_status="FINALIZED",
