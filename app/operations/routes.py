@@ -9,16 +9,75 @@ from app.operations.service import (
     ConflictError,
     NotFoundError,
     ValidationError,
+    create_operation,
     transition_operation,
 )
 
 router = APIRouter(prefix="/operations", tags=["operations"])
 
 
+class OperationCreateRequest(BaseModel):
+    project_id: int = Field(ge=1)
+    operation_type_id: int = Field(ge=1)
+    property_id: int | None = Field(default=None, ge=1)
+    appointment_id: int | None = Field(default=None, ge=1)
+    parent_contract_id: int | None = Field(default=None, ge=1)
+
+
 class OperationTransitionRequest(BaseModel):
     target_state: str = Field(min_length=1, max_length=64)
     expected_version: int = Field(ge=1)
     reason: str | None = Field(default=None, max_length=2000)
+
+
+
+
+@router.post("", status_code=201)
+def create_operation_endpoint(
+    payload: OperationCreateRequest,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Create a draft operation within the requested project."""
+    try:
+        operation = create_operation(
+            db,
+            user,
+            payload.project_id,
+            payload.operation_type_id,
+            property_id=payload.property_id,
+            appointment_id=payload.appointment_id,
+            parent_contract_id=payload.parent_contract_id,
+        )
+        db.commit()
+        db.refresh(operation)
+    except NotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValidationError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
+
+    return {
+        "operation_id": operation.id,
+        "project_id": operation.project_id,
+        "operation_type_id": operation.operation_type_id,
+        "property_id": operation.property_id,
+        "parent_contract_id": operation.parent_contract_id,
+        "status": operation.status,
+        "workflow_state": operation.current_workflow_state,
+        "version": operation.version,
+        "created_at": operation.created_at.isoformat(),
+    }
 
 
 @router.post("/{operation_id}/transition")
