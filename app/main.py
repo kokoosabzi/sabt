@@ -11,6 +11,7 @@ from app.auth.service import authenticate, create_session, get_user_by_token, re
 from app.contracts.routes import router as contracts_router
 from app.contracts.import_routes import router as contract_import_router
 from app.reports.routes import router as reports_router
+from app.operations.routes import router as operations_router
 from app.reports.service import get_management_summary
 
 app = FastAPI(title="SABT", version="0.1.0")
@@ -18,6 +19,7 @@ app.mount("/portal", StaticFiles(directory=Path(__file__).parent / "static", htm
 app.include_router(contracts_router)
 app.include_router(contract_import_router)
 app.include_router(reports_router)
+app.include_router(operations_router)
 basic = HTTPBasic()
 bearer = HTTPBearer(auto_error=False)
 
