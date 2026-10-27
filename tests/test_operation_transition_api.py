@@ -235,9 +235,19 @@ def test_operation_transition_cannot_access_operation_in_another_project(api_con
     )
     db.add(other_project)
     db.flush()
+    operation_type = db.query(OperationType).filter_by(code="TRANSITION-TEST").one()
+    db.add(ProjectOperationType(
+        project_id=other_project.id,
+        operation_type_id=operation_type.id,
+        enabled=True,
+        created_at=now,
+        updated_at=now,
+        version=1,
+    ))
+    db.flush()
     foreign_operation = Operation(
         project_id=other_project.id,
-        operation_type_id=db.query(OperationType).filter_by(code="TRANSITION-TEST").one().id,
+        operation_type_id=operation_type.id,
         status="DRAFT",
         current_workflow_state="DRAFT",
         created_by=user.id,
