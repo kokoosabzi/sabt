@@ -440,7 +440,7 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Added authenticated `POST /operations/{operation_id}/transition` backed by the existing project-authorized transition service.
 - [x] Added request validation for target state, expected version, and optional reason; successful requests commit and rejected requests roll back.
-- [x] Mounted the operations router.
-- [x] Expanded route-level API tests to cover successful transitions and event recording, authentication, stale versions, forbidden permission, invalid/skipped states, and missing operations.
-- [ ] Full pytest, browser E2E, and SQLite migration round-trip checks: **Awaiting CI verification** on draft PR #58.
-- Next task: inspect exact-head CI results, fix any failures, and only then consider marking the PR ready for review.
+- [x] Mounted the operations router and added API tests for successful transitions/event recording, authentication, stale versions, forbidden permission, invalid/skipped states, and missing operations.
+- [x] Fixed two failures found by CI: the route test now checks the public OpenAPI schema (compatible with deferred FastAPI routers), and the Jalali browser test no longer advances the end-date picker an extra month.
+- [ ] Re-run the full test suite, browser E2E, and SQLite migration round-trip checks on the latest head before review or merge.
+- Next task: verify exact-head CI; address any remaining failures before marking PR #58 ready for review.
