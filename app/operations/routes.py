@@ -66,3 +66,41 @@ def transition_operation_endpoint(
         "version": operation.version,
         "updated_at": operation.updated_at.isoformat(),
     }
+
+
+@router.get("/{operation_id}")
+def get_operation_endpoint(
+    operation_id: int,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return a single operation only when the caller has project-scoped view access."""
+    from app.auth.authorization import AuthorizationContext, authorize
+    from app.db.models import Operation
+
+    operation = db.get(Operation, operation_id)
+    if operation is None:
+        raise HTTPException(status_code=404, detail="operation_not_found")
+    try:
+        authorize(
+            db,
+            user,
+            "operation.view",
+            AuthorizationContext(project_id=operation.project_id),
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    return {
+        "operation_id": operation.id,
+        "project_id": operation.project_id,
+        "operation_type_id": operation.operation_type_id,
+        "property_id": operation.property_id,
+        "parent_contract_id": operation.parent_contract_id,
+        "status": operation.status,
+        "workflow_state": operation.current_workflow_state,
+        "version": operation.version,
+        "created_at": operation.created_at.isoformat(),
+        "updated_at": operation.updated_at.isoformat(),
+        "finalized_at": operation.finalized_at.isoformat() if operation.finalized_at else None,
+    }
