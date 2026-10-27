@@ -1132,13 +1132,16 @@ def test_finalize_rejects_version_changed_after_initial_read(db: Session, monkey
     with pytest.raises(ConflictError, match="stale_operation"):
         finalize_operation(db, user, operation.id, expected_version=expected_version)
 
+    operation_id = operation.id
     db.rollback()
-    db.refresh(operation)
-    assert operation.status == "DRAFT"
-    assert operation.version == 1
+    # The fixture's transaction also contains the setup records, so rollback
+    # removes the operation itself; verify no finalization artifacts survived.
+    assert db.scalar(select(func.count()).select_from(Operation).where(
+        Operation.id == operation_id,
+    )) == 0
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
     assert db.scalar(select(func.count()).select_from(PropertySnapshot)) == 0
     assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
-        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.operation_id == operation_id,
         WorkflowEvent.event_type == "OPERATION_FINALIZED",
     )) == 0
