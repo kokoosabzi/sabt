@@ -218,3 +218,72 @@ def test_operation_transition_rejects_permission_scoped_to_another_project(api_c
     db.refresh(operation)
     assert operation.current_workflow_state == "DRAFT"
     assert operation.version == 1
+
+
+
+def test_operation_transition_cannot_access_operation_in_another_project(api_context) -> None:
+    client, db, user, project, _ = api_context
+    now = datetime.now(timezone.utc)
+    other_project = Project(
+        code="TRANSITION-FOREIGN",
+        name="Foreign Project",
+        status="ACTIVE",
+        timezone="Asia/Tehran",
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+    db.add(other_project)
+    db.flush()
+    foreign_operation = Operation(
+        project_id=other_project.id,
+        operation_type_id=db.query(OperationType).filter_by(code="TRANSITION-TEST").one().id,
+        status="DRAFT",
+        current_workflow_state="DRAFT",
+        created_by=user.id,
+        created_at=now,
+        updated_at=now,
+        version=1,
+        current_version_number=0,
+    )
+    db.add(foreign_operation)
+    db.add_all([
+        OperationTypeWorkflow(
+            project_id=other_project.id,
+            operation_type_id=foreign_operation.operation_type_id,
+            state_code="DRAFT",
+            sequence_no=1,
+            active=True,
+        ),
+        OperationTypeWorkflow(
+            project_id=other_project.id,
+            operation_type_id=foreign_operation.operation_type_id,
+            state_code="IN_PROGRESS",
+            sequence_no=2,
+            active=True,
+        ),
+    ])
+    db.commit()
+
+    # Access to the fixture project must not grant access to an operation
+    # whose owning project is different.
+    assert db.query(ProjectAccess).filter_by(
+        user_id=user.id, project_id=project.id, active=True
+    ).count() == 1
+    assert db.query(ProjectAccess).filter_by(
+        user_id=user.id, project_id=other_project.id, active=True
+    ).count() == 0
+    response = client.post(
+        f"/operations/{foreign_operation.id}/transition",
+        json={"target_state": "IN_PROGRESS", "expected_version": 1},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "forbidden"
+    db.refresh(foreign_operation)
+    assert foreign_operation.current_workflow_state == "DRAFT"
+    assert foreign_operation.version == 1
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == foreign_operation.id,
+        WorkflowEvent.event_type == "OPERATION_WORKFLOW_TRANSITIONED",
+    )) == 0
