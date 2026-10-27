@@ -521,3 +521,41 @@ def test_operation_read_endpoints_reject_another_project(api_context) -> None:
         response = client.get(path)
         assert response.status_code == 403
         assert response.json()["detail"] == "forbidden"
+
+def test_operation_transition_rejects_version_changed_after_initial_read(api_context, monkeypatch) -> None:
+    # Simulate another request winning after this request's initial version
+    # check but before its conditional UPDATE.
+    from sqlalchemy import update
+    from app.operations import service as operation_service
+
+    client, db, _, _, operation = api_context
+
+    def concurrent_change():
+        db.execute(
+            update(Operation)
+            .where(Operation.id == operation.id)
+            .values(
+                current_workflow_state="IN_PROGRESS",
+                status="IN_PROGRESS",
+                version=Operation.version + 1,
+            )
+        )
+        return datetime.now(timezone.utc)
+
+    monkeypatch.setattr(operation_service, "_now", concurrent_change)
+    response = client.post(
+        f"/operations/{operation.id}/transition",
+        json={"target_state": "IN_PROGRESS", "expected_version": 1},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "stale_operation"
+    db.rollback()
+    db.refresh(operation)
+    assert operation.current_workflow_state == "DRAFT"
+    assert operation.version == 1
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "OPERATION_WORKFLOW_TRANSITIONED",
+    )) == 0
+
