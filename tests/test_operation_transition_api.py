@@ -439,3 +439,36 @@ def test_add_operation_party_rejects_stale_version(api_context) -> None:
     assert db.scalar(select(func.count()).select_from(OperationParty).where(
         OperationParty.operation_id == operation.id,
     )) == 0
+
+
+
+def test_list_operation_parties_returns_project_scoped_party_details(api_context) -> None:
+    client, db, _, _, operation = api_context
+    person = db.query(Person).filter_by(first_name="Test", last_name="Party").one()
+    role = db.query(PartyRole).filter_by(code="TEST_PARTY").one()
+    response = client.post(
+        f"/operations/{operation.id}/parties",
+        json={"person_id": person.id, "role_id": role.id, "sequence_no": 1, "expected_version": 1},
+    )
+    assert response.status_code == 201
+
+    response = client.get(f"/operations/{operation.id}/parties")
+
+    assert response.status_code == 200
+    assert response.json()["operation_id"] == operation.id
+    assert len(response.json()["parties"]) == 1
+    assert response.json()["parties"][0]["person_id"] == person.id
+    assert response.json()["parties"][0]["role_code"] == role.code
+
+
+def test_list_operation_parties_requires_view_permission(api_context) -> None:
+    client, db, _, _, operation = api_context
+    db.query(RolePermission).filter(
+        RolePermission.permission_id == db.query(Permission.id).filter_by(code="operation.view").scalar_subquery()
+    ).delete(synchronize_session=False)
+    db.commit()
+
+    response = client.get(f"/operations/{operation.id}/parties")
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "forbidden"
