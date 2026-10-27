@@ -163,3 +163,23 @@ def test_operation_transition_returns_not_found(api_context) -> None:
     )
     assert response.status_code == 404
     assert response.json()["detail"] == "operation_not_found"
+
+def test_operation_transition_rejects_user_without_project_access(api_context) -> None:
+    client, db, user, project, operation = api_context
+    db.query(ProjectAccess).filter_by(user_id=user.id, project_id=project.id).delete()
+    db.commit()
+
+    response = client.post(
+        f"/operations/{operation.id}/transition",
+        json={"target_state": "IN_PROGRESS", "expected_version": 1},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "forbidden"
+    db.refresh(operation)
+    assert operation.current_workflow_state == "DRAFT"
+    assert operation.version == 1
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "OPERATION_WORKFLOW_TRANSITIONED",
+    )) == 0
