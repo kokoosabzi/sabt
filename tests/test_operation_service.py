@@ -3,7 +3,7 @@ import hashlib
 import json
 
 import pytest
-from sqlalchemy import create_engine, event, func, select
+from sqlalchemy import create_engine, event, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
@@ -1099,3 +1099,49 @@ def test_finalize_rejects_draft_until_ready_state(db: Session) -> None:
     assert operation.current_workflow_state == "DRAFT"
     assert operation.finalized_at is None
     assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
+
+
+
+def test_finalize_rejects_version_changed_after_initial_read(db: Session, monkeypatch) -> None:
+    from app.operations import service as operation_service
+
+    user, project, operation_type, property_record, _, _ = seed_operation_context(db)
+    db.add_all([
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="DRAFT", sequence_no=1, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="IN_PROGRESS", sequence_no=2, active=True),
+        OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=project.id,
+                              state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
+    ])
+    db.flush()
+    operation = create_operation(db, user, project.id, operation_type.id, property_id=property_record.id)
+    operation = transition_operation(db, user, operation.id, "IN_PROGRESS", operation.version)
+    operation = transition_operation(db, user, operation.id, "READY_FOR_FINALIZATION", operation.version)
+    expected_version = operation.version
+
+    def concurrent_change():
+        db.execute(
+            update(Operation)
+            .where(Operation.id == operation.id)
+            .values(version=Operation.version + 1)
+        )
+        return datetime.now(timezone.utc)
+
+    monkeypatch.setattr(operation_service, "_now", concurrent_change)
+    with pytest.raises(ConflictError, match="stale_operation"):
+        finalize_operation(db, user, operation.id, expected_version=expected_version)
+
+    operation_id = operation.id
+    db.rollback()
+    # The fixture's transaction also contains the setup records, so rollback
+    # removes the operation itself; verify no finalization artifacts survived.
+    assert db.scalar(select(func.count()).select_from(Operation).where(
+        Operation.id == operation_id,
+    )) == 0
+    assert db.scalar(select(func.count()).select_from(OperationVersion)) == 0
+    assert db.scalar(select(func.count()).select_from(PropertySnapshot)) == 0
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation_id,
+        WorkflowEvent.event_type == "OPERATION_FINALIZED",
+    )) == 0

@@ -434,3 +434,44 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Asserted that a user without project access receives `403 forbidden`, matching the authorization behavior of the current report routes.
 - [x] Exact-head CI run [39538815596](https://github.com/kokoosabzi/sabt/actions/runs/39538815596) passed the full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
 - [x] PR #55 merged as `0d9cc6df1ecfd3405aeb5aba7b50638f37790fac`; post-merge `main` CI run [39538937466](https://github.com/kokoosabzi/sabt/actions/runs/39538937466) passed the same full suite and migration checks.
+
+
+## Operation transition API — 2026-10-27
+
+- [x] Added authenticated `POST /operations/{operation_id}/transition` backed by the existing project-authorized transition service.
+- [x] Added request validation for target state, expected version, and optional reason; successful requests commit and rejected requests roll back.
+- [x] Mounted the operations router and added API tests for successful transitions/event recording, authentication, stale versions, forbidden permission, invalid/skipped states, and missing operations.
+- [x] Fixed two failures found by CI: the route test now checks the public OpenAPI schema (compatible with deferred FastAPI routers), and the Jalali browser test no longer advances the end-date picker an extra month.
+- [x] Exact-head CI run [40573573599](https://github.com/kokoosabzi/sabt/actions/runs/40573573599) passed the full test suite, Chromium browser setup/E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
+- [x] PR #58 marked ready for review after exact-head CI passed; it remains open and unmerged.
+- Next task: continue Phase 0 audit with focused API/service authorization and project-isolation coverage.
+
+
+## Operation API project-isolation follow-up — 2026-10-27
+
+- [x] Added API regression coverage proving project access and a global `operation.view` permission do not expose another project's operation details or party list.
+- [x] Exact-head CI run [#619](https://github.com/kokoosabzi/sabt/actions/runs/40576122396) passed on commit `32a6ec29b3b9ffd60522913e92c07e65187b661d`: full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
+- [x] Updated PR #58 verification notes with the exact-head CI result; PR remains open and unmerged.
+- Next task: continue Phase 0 audit of service/resource project isolation and transaction boundaries before expanding the operation API surface.
+
+## Atomic workflow transition concurrency — 2026-10-27
+
+- [x] Replaced the transition's read-then-write version increment with a conditional database update on the expected version.
+- [x] Added a regression test simulating a competing version change between the initial read and conditional update; stale transition returns `409 stale_operation` and records no transition event.
+- [x] Exact-head CI run [#622](https://github.com/kokoosabzi/sabt/actions/runs/40577183228) passed the full test suite, Chromium browser E2E, fresh SQLite migration, Alembic head verification, and downgrade/re-upgrade.
+- [x] Updated PR #58 verification notes; PR remains open and unmerged.
+- Next task: continue the Phase 0 audit with transaction/concurrency checks for other operation mutations, especially adding parties.
+
+## Atomic party mutation concurrency — 2026-10-27
+
+- [x] Changed `add_party` to increment the operation version with a conditional database update, rejecting stale concurrent writes before inserting a party or event.
+- [x] Added a regression test that simulates a competing version change after the initial read and asserts the request returns `409 stale_operation` without persisting a party or event.
+- Verification pending: exact-head CI for the new service and test changes.
+
+
+## Atomic operation finalization concurrency — 2026-10-27
+
+- [x] Added a conditional version claim before transfer-number allocation and snapshot writes, so concurrent finalization requests cannot both proceed with the same expected version.
+- [x] Added a service regression test simulating a competing version change after validation; stale finalization must raise `stale_operation` and persist no finalization version, property snapshot, or finalization event.
+- Verification pending: exact-head CI for finalization concurrency changes.
+- PR #58 remains open and unmerged.

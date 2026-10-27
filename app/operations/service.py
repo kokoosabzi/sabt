@@ -141,9 +141,22 @@ def add_party(db: Session, user: User, operation_id: int, person_id: int, role_i
         raise ValidationError("person_not_associated_with_project")
     if role is None or not role.active or role.retired_at is not None: raise ValidationError("party_role_invalid")
     now = _now()
+    # Claim the expected operation version atomically before inserting the party.
+    # A read-time version check alone cannot protect against another request
+    # adding a party after this request has loaded the operation.
+    result = db.execute(
+        update(Operation)
+        .where(Operation.id == op.id, Operation.version == expected_version)
+        .values(version=Operation.version + 1, updated_at=now)
+        .execution_options(synchronize_session=False)
+    )
+    if result.rowcount != 1:
+        raise ConflictError("stale_operation")
+    db.refresh(op)
     party = OperationParty(project_id=op.project_id, operation_id=op.id, person_id=person_id, role_id=role_id, sequence_no=sequence_no,
                            created_at=now, updated_at=now, version=1)
-    db.add(party); op.version += 1; op.updated_at = now; db.flush()
+    db.add(party)
+    db.flush()
     _record_workflow_event(db, user, op, "PARTY_ADDED", now, from_status=op.status,
                            to_status=op.status, metadata={"party_id": party.id, "role_id": role_id})
     return party
@@ -227,13 +240,29 @@ def transition_operation(db: Session, user: User, operation_id: int, target_stat
     now = _now()
     previous_state = op.current_workflow_state
     previous_status = op.status
-    op.current_workflow_state = target_state
+    # Use a conditional UPDATE as the actual optimistic-lock boundary. The
+    # earlier version check gives a useful error quickly, but cannot prevent
+    # another request from changing the row between that check and this write.
+    values = {
+        "current_workflow_state": target_state,
+        "version": Operation.version + 1,
+        "updated_at": now,
+    }
     # Keep the short lifecycle status column compatible with its 32-character
     # limit; operation-specific workflow states live in current_workflow_state.
     if target_state in {"DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION"}:
-        op.status = target_state
-    op.version += 1
-    op.updated_at = now
+        values["status"] = target_state
+    result = db.execute(
+        update(Operation)
+        .where(Operation.id == op.id, Operation.version == expected_version)
+        .values(**values)
+        .execution_options(synchronize_session=False)
+    )
+    if result.rowcount != 1:
+        raise ConflictError("stale_operation")
+    # Refresh the identity-mapped object so callers see the version written by
+    # the conditional UPDATE, without issuing a second ORM UPDATE.
+    db.refresh(op)
     event_metadata = {
         "from_workflow_state": previous_state,
         "to_workflow_state": target_state,
@@ -314,6 +343,21 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
 
     now = _now()
     previous_status = op.status
+    # Claim the expected version before allocating a transfer number or writing
+    # snapshots. This is the serialization point for concurrent finalization.
+    claim = db.execute(
+        update(Operation)
+        .where(
+            Operation.id == op.id,
+            Operation.version == expected_version,
+            Operation.status != "FINALIZED",
+        )
+        .values(version=Operation.version + 1, updated_at=now)
+        .execution_options(synchronize_session=False)
+    )
+    if claim.rowcount != 1:
+        raise ConflictError("stale_operation")
+    db.refresh(op)
     if op.parent_contract_id is not None:
         if op.transfer_sequence is not None or op.child_contract_number is not None:
             raise ConflictError("transfer_number_already_allocated")
@@ -341,7 +385,7 @@ def finalize_operation(db: Session, user: User, operation_id: int, expected_vers
                                 created_at=now, snapshot_hash=_sha(data)))
     op.status, op.current_workflow_state = "FINALIZED", "FINALIZED"
     op.finalized_by, op.finalized_at = user.id, now
-    op.current_version_number, op.version, op.updated_at = next_version, op.version + 1, now
+    op.current_version_number, op.updated_at = next_version, now
     db.add(version); db.flush()
     _record_workflow_event(db, user, op, "OPERATION_FINALIZED", now,
                            from_status=previous_status, to_status="FINALIZED",

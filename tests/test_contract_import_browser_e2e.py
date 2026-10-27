@@ -206,7 +206,9 @@ def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(
     expect(page.locator("#startAt")).to_have_value(expected_start)
 
     page.locator("#endAt").click()
-    page.locator("#jalaliNext").click()
+    # Opening the end-date field initializes the picker to that field's month.
+    # Do not advance again: the desired end date is already the following month
+    # relative to the start date selected above.
     page.locator(f'#jalaliDays button[data-jalali-date="{end_date}"]').click()
     expected_end = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in end_date)
     expect(page.locator("#endAt")).to_have_value(expected_end)
