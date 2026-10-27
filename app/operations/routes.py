@@ -9,6 +9,7 @@ from app.operations.service import (
     ConflictError,
     NotFoundError,
     ValidationError,
+    add_party,
     create_operation,
     transition_operation,
 )
@@ -22,6 +23,13 @@ class OperationCreateRequest(BaseModel):
     property_id: int | None = Field(default=None, ge=1)
     appointment_id: int | None = Field(default=None, ge=1)
     parent_contract_id: int | None = Field(default=None, ge=1)
+
+
+class OperationPartyCreateRequest(BaseModel):
+    person_id: int = Field(ge=1)
+    role_id: int = Field(ge=1)
+    sequence_no: int = Field(default=1, ge=1)
+    expected_version: int = Field(ge=1)
 
 
 class OperationTransitionRequest(BaseModel):
@@ -126,6 +134,56 @@ def transition_operation_endpoint(
         "workflow_state": operation.current_workflow_state,
         "version": operation.version,
         "updated_at": operation.updated_at.isoformat(),
+    }
+
+
+
+
+@router.post("/{operation_id}/parties", status_code=201)
+def add_operation_party_endpoint(
+    operation_id: int,
+    payload: OperationPartyCreateRequest,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Add a project-associated person to a draft operation."""
+    try:
+        party = add_party(
+            db,
+            user,
+            operation_id,
+            payload.person_id,
+            payload.role_id,
+            payload.sequence_no,
+            expected_version=payload.expected_version,
+        )
+        db.commit()
+        db.refresh(party)
+    except NotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValidationError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
+
+    return {
+        "party_id": party.id,
+        "project_id": party.project_id,
+        "operation_id": party.operation_id,
+        "person_id": party.person_id,
+        "role_id": party.role_id,
+        "sequence_no": party.sequence_no,
+        "version": party.version,
+        "created_at": party.created_at.isoformat(),
     }
 
 
