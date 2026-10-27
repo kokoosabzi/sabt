@@ -434,3 +434,12 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Asserted that a user without project access receives `403 forbidden`, matching the authorization behavior of the current report routes.
 - [x] Exact-head CI run [39538815596](https://github.com/kokoosabzi/sabt/actions/runs/39538815596) passed the full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
 - [x] PR #55 merged as `0d9cc6df1ecfd3405aeb5aba7b50638f37790fac`; post-merge `main` CI run [39538937466](https://github.com/kokoosabzi/sabt/actions/runs/39538937466) passed the same full suite and migration checks.
+
+
+## Operation transition API — 2026-10-27
+
+- [x] Added authenticated `POST /operations/{operation_id}/transition` backed by the existing project-authorized transition service.
+- [x] Added request validation for target state, expected version, and optional reason; successful requests commit and rejected requests roll back.
+- [x] Mounted the operations router and added route-registration and unauthenticated-request regression tests.
+- [ ] Full pytest, browser E2E, and SQLite migration round-trip checks: **Not run in this session**. PR #58 is a draft pending CI and authenticated success/failure-path API tests.
+- Next task: complete route-level tests for successful transitions, stale versions, forbidden project access, and invalid workflow transitions; then run CI before considering merge.
