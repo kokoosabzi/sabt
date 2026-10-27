@@ -227,13 +227,29 @@ def transition_operation(db: Session, user: User, operation_id: int, target_stat
     now = _now()
     previous_state = op.current_workflow_state
     previous_status = op.status
-    op.current_workflow_state = target_state
+    # Use a conditional UPDATE as the actual optimistic-lock boundary. The
+    # earlier version check gives a useful error quickly, but cannot prevent
+    # another request from changing the row between that check and this write.
+    values = {
+        "current_workflow_state": target_state,
+        "version": Operation.version + 1,
+        "updated_at": now,
+    }
     # Keep the short lifecycle status column compatible with its 32-character
     # limit; operation-specific workflow states live in current_workflow_state.
     if target_state in {"DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION"}:
-        op.status = target_state
-    op.version += 1
-    op.updated_at = now
+        values["status"] = target_state
+    result = db.execute(
+        update(Operation)
+        .where(Operation.id == op.id, Operation.version == expected_version)
+        .values(**values)
+        .execution_options(synchronize_session=False)
+    )
+    if result.rowcount != 1:
+        raise ConflictError("stale_operation")
+    # Refresh the identity-mapped object so callers see the version written by
+    # the conditional UPDATE, without issuing a second ORM UPDATE.
+    db.refresh(op)
     event_metadata = {
         "from_workflow_state": previous_state,
         "to_workflow_state": target_state,
