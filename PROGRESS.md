@@ -467,3 +467,11 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Changed `add_party` to increment the operation version with a conditional database update, rejecting stale concurrent writes before inserting a party or event.
 - [x] Added a regression test that simulates a competing version change after the initial read and asserts the request returns `409 stale_operation` without persisting a party or event.
 - Verification pending: exact-head CI for the new service and test changes.
+
+
+## Atomic operation finalization concurrency — 2026-10-27
+
+- [x] Added a conditional version claim before transfer-number allocation and snapshot writes, so concurrent finalization requests cannot both proceed with the same expected version.
+- [x] Added a service regression test simulating a competing version change after validation; stale finalization must raise `stale_operation` and persist no finalization version, property snapshot, or finalization event.
+- Verification pending: exact-head CI for finalization concurrency changes.
+- PR #58 remains open and unmerged.
