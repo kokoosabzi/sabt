@@ -141,9 +141,22 @@ def add_party(db: Session, user: User, operation_id: int, person_id: int, role_i
         raise ValidationError("person_not_associated_with_project")
     if role is None or not role.active or role.retired_at is not None: raise ValidationError("party_role_invalid")
     now = _now()
+    # Claim the expected operation version atomically before inserting the party.
+    # A read-time version check alone cannot protect against another request
+    # adding a party after this request has loaded the operation.
+    result = db.execute(
+        update(Operation)
+        .where(Operation.id == op.id, Operation.version == expected_version)
+        .values(version=Operation.version + 1, updated_at=now)
+        .execution_options(synchronize_session=False)
+    )
+    if result.rowcount != 1:
+        raise ConflictError("stale_operation")
+    db.refresh(op)
     party = OperationParty(project_id=op.project_id, operation_id=op.id, person_id=person_id, role_id=role_id, sequence_no=sequence_no,
                            created_at=now, updated_at=now, version=1)
-    db.add(party); op.version += 1; op.updated_at = now; db.flush()
+    db.add(party)
+    db.flush()
     _record_workflow_event(db, user, op, "PARTY_ADDED", now, from_status=op.status,
                            to_status=op.status, metadata={"party_id": party.id, "role_id": role_id})
     return party
