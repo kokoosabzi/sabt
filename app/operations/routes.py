@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
+from app.auth.authorization import AuthorizationContext, authorize
+from app.db.models import Operation
 from app.operations.service import (
     ConflictError,
     NotFoundError,
@@ -75,9 +77,6 @@ def get_operation_endpoint(
     db: Session = Depends(get_db),
 ) -> dict:
     """Return a single operation only when the caller has project-scoped view access."""
-    from app.auth.authorization import AuthorizationContext, authorize
-    from app.db.models import Operation
-
     operation = db.get(Operation, operation_id)
     if operation is None:
         raise HTTPException(status_code=404, detail="operation_not_found")
