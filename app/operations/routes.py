@@ -1,10 +1,11 @@
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
 from app.auth.authorization import AuthorizationContext, authorize
-from app.db.models import Operation
+from app.db.models import Operation, OperationParty, PartyRole, Person
 from app.operations.service import (
     ConflictError,
     NotFoundError,
@@ -185,6 +186,54 @@ def add_operation_party_endpoint(
         "version": party.version,
         "created_at": party.created_at.isoformat(),
     }
+
+
+
+
+@router.get("/{operation_id}/parties")
+def list_operation_parties_endpoint(
+    operation_id: int,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """List parties attached to an operation after project-scoped view authorization."""
+    operation = db.get(Operation, operation_id)
+    if operation is None:
+        raise HTTPException(status_code=404, detail="operation_not_found")
+    try:
+        authorize(
+            db,
+            user,
+            "operation.view",
+            AuthorizationContext(project_id=operation.project_id),
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    parties = db.scalars(
+        select(OperationParty)
+        .where(
+            OperationParty.operation_id == operation.id,
+            OperationParty.project_id == operation.project_id,
+        )
+        .order_by(OperationParty.role_id, OperationParty.sequence_no, OperationParty.id)
+    ).all()
+    result = []
+    for party in parties:
+        person = db.get(Person, party.person_id)
+        role = db.get(PartyRole, party.role_id)
+        result.append({
+            "party_id": party.id,
+            "person_id": party.person_id,
+            "first_name": person.first_name if person else None,
+            "last_name": person.last_name if person else None,
+            "role_id": party.role_id,
+            "role_code": role.code if role else None,
+            "role_name": role.name if role else None,
+            "sequence_no": party.sequence_no,
+            "version": party.version,
+        })
+    return {"operation_id": operation.id, "parties": result}
 
 
 @router.get("/{operation_id}")
