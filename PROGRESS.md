@@ -440,6 +440,7 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 
 - [x] Added authenticated `POST /operations/{operation_id}/transition` backed by the existing project-authorized transition service.
 - [x] Added request validation for target state, expected version, and optional reason; successful requests commit and rejected requests roll back.
-- [x] Mounted the operations router and added route-registration and unauthenticated-request regression tests.
-- [ ] Full pytest, browser E2E, and SQLite migration round-trip checks: **Not run in this session**. PR #58 is a draft pending CI and authenticated success/failure-path API tests.
-- Next task: complete route-level tests for successful transitions, stale versions, forbidden project access, and invalid workflow transitions; then run CI before considering merge.
+- [x] Mounted the operations router.
+- [x] Expanded route-level API tests to cover successful transitions and event recording, authentication, stale versions, forbidden permission, invalid/skipped states, and missing operations.
+- [ ] Full pytest, browser E2E, and SQLite migration round-trip checks: **Awaiting CI verification** on draft PR #58.
+- Next task: inspect exact-head CI results, fix any failures, and only then consider marking the PR ready for review.
