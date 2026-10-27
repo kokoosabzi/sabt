@@ -9,8 +9,8 @@ from sqlalchemy.pool import StaticPool
 from app.auth.dependencies import current_user, get_db
 from app.db.base import Base
 from app.db.models import (
-    Operation, OperationType, OperationTypeWorkflow, Permission, Project,
-    ProjectAccess, ProjectOperationType, Role, RolePermission, User, UserRole,
+    Operation, OperationParty, OperationType, OperationTypeWorkflow, PartyRole, Permission, Person, Project,
+    ProjectAccess, ProjectOperationType, ProjectPerson, Role, RolePermission, User, UserRole,
     WorkflowEvent,
 )
 from app.main import app
@@ -31,10 +31,15 @@ def api_context():
                                    active=True, system_defined=True,
                                    created_at=now, updated_at=now)
     role = Role(code="transition-editor", name="Transition Editor", active=True)
+    person = Person(first_name="Test", last_name="Party", created_at=now,
+                    updated_at=now, version=1, is_active=True)
+    party_role = PartyRole(code="TEST_PARTY", name="Test Party", active=True,
+                           system_defined=False, created_at=now, updated_at=now)
     permission = Permission(code="operation.edit", name="Edit operation")
     view_permission = Permission(code="operation.view", name="View operation")
     create_permission = Permission(code="operation.create", name="Create operation")
-    db.add_all([user, project, operation_type, role, permission, view_permission, create_permission])
+    db.add_all([user, project, operation_type, role, person, party_role,
+                permission, view_permission, create_permission])
     db.flush()
     db.add_all([
         RolePermission(role_id=role.id, permission_id=permission.id),
@@ -43,6 +48,8 @@ def api_context():
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True,
                       granted_at=now, version=1),
+        ProjectPerson(project_id=project.id, person_id=person.id, active=True,
+                      created_at=now, updated_at=now),
         ProjectOperationType(project_id=project.id, operation_type_id=operation_type.id,
                              enabled=True, created_at=now, updated_at=now, version=1),
     ])
@@ -390,3 +397,45 @@ def test_create_operation_rejects_inactive_or_unenabled_type(api_context) -> Non
     assert response.status_code == 422
     assert response.json()["detail"] == "operation_type_not_enabled_for_project"
     assert db.scalar(select(func.count()).select_from(Operation)) == 1
+
+
+
+def test_add_operation_party_succeeds_and_increments_operation_version(api_context) -> None:
+    client, db, _, project, operation = api_context
+    person = db.query(Person).filter_by(first_name="Test", last_name="Party").one()
+    role = db.query(PartyRole).filter_by(code="TEST_PARTY").one()
+
+    response = client.post(
+        f"/operations/{operation.id}/parties",
+        json={"person_id": person.id, "role_id": role.id, "sequence_no": 1, "expected_version": 1},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["operation_id"] == operation.id
+    assert payload["project_id"] == project.id
+    assert payload["person_id"] == person.id
+    assert payload["role_id"] == role.id
+    db.refresh(operation)
+    assert operation.version == 2
+    assert db.scalar(select(func.count()).select_from(WorkflowEvent).where(
+        WorkflowEvent.operation_id == operation.id,
+        WorkflowEvent.event_type == "PARTY_ADDED",
+    )) == 1
+
+
+def test_add_operation_party_rejects_stale_version(api_context) -> None:
+    client, db, _, _, operation = api_context
+    person = db.query(Person).filter_by(first_name="Test", last_name="Party").one()
+    role = db.query(PartyRole).filter_by(code="TEST_PARTY").one()
+
+    response = client.post(
+        f"/operations/{operation.id}/parties",
+        json={"person_id": person.id, "role_id": role.id, "sequence_no": 1, "expected_version": 9},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "stale_operation"
+    assert db.scalar(select(func.count()).select_from(OperationParty).where(
+        OperationParty.operation_id == operation.id,
+    )) == 0
