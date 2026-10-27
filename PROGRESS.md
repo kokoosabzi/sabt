@@ -453,3 +453,11 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Exact-head CI run [#619](https://github.com/kokoosabzi/sabt/actions/runs/40576122396) passed on commit `32a6ec29b3b9ffd60522913e92c07e65187b661d`: full test suite, Chromium browser E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
 - [x] Updated PR #58 verification notes with the exact-head CI result; PR remains open and unmerged.
 - Next task: continue Phase 0 audit of service/resource project isolation and transaction boundaries before expanding the operation API surface.
+
+## Atomic workflow transition concurrency — 2026-10-27
+
+- [x] Replaced the transition's read-then-write version increment with a conditional database update on the expected version.
+- [x] Added a regression test simulating a competing version change between the initial read and conditional update; stale transition returns `409 stale_operation` and records no transition event.
+- [x] Exact-head CI run [#622](https://github.com/kokoosabzi/sabt/actions/runs/40577183228) passed the full test suite, Chromium browser E2E, fresh SQLite migration, Alembic head verification, and downgrade/re-upgrade.
+- [x] Updated PR #58 verification notes; PR remains open and unmerged.
+- Next task: continue the Phase 0 audit with transaction/concurrency checks for other operation mutations, especially adding parties.
