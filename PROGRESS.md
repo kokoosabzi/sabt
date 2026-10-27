@@ -442,5 +442,6 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added request validation for target state, expected version, and optional reason; successful requests commit and rejected requests roll back.
 - [x] Mounted the operations router and added API tests for successful transitions/event recording, authentication, stale versions, forbidden permission, invalid/skipped states, and missing operations.
 - [x] Fixed two failures found by CI: the route test now checks the public OpenAPI schema (compatible with deferred FastAPI routers), and the Jalali browser test no longer advances the end-date picker an extra month.
-- [ ] Re-run the full test suite, browser E2E, and SQLite migration round-trip checks on the latest head before review or merge.
-- Next task: verify exact-head CI; address any remaining failures before marking PR #58 ready for review.
+- [x] Exact-head CI run [40573573599](https://github.com/kokoosabzi/sabt/actions/runs/40573573599) passed the full test suite, Chromium browser setup/E2E, fresh SQLite upgrade, Alembic head verification, and downgrade/re-upgrade.
+- [x] PR #58 marked ready for review after exact-head CI passed; it remains open and unmerged.
+- Next task: continue Phase 0 audit with focused API/service authorization and project-isolation coverage.
