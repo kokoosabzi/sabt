@@ -183,3 +183,38 @@ def test_operation_transition_rejects_user_without_project_access(api_context) -
         WorkflowEvent.operation_id == operation.id,
         WorkflowEvent.event_type == "OPERATION_WORKFLOW_TRANSITIONED",
     )) == 0
+
+def test_operation_transition_rejects_permission_scoped_to_another_project(api_context) -> None:
+    client, db, user, project, operation = api_context
+    now = datetime.now(timezone.utc)
+    other_project = Project(
+        code="TRANSITION-OTHER",
+        name="Other Project",
+        status="ACTIVE",
+        timezone="Asia/Tehran",
+        created_at=now,
+        updated_at=now,
+        version=1,
+    )
+    db.add(other_project)
+    db.flush()
+    db.query(UserRole).filter_by(user_id=user.id).update(
+        {UserRole.project_id: other_project.id}
+    )
+    db.commit()
+
+    # The user still has access to the operation's project, but the edit role
+    # is scoped to a different project and must not authorize this transition.
+    assert db.query(ProjectAccess).filter_by(
+        user_id=user.id, project_id=project.id, active=True
+    ).count() == 1
+    response = client.post(
+        f"/operations/{operation.id}/transition",
+        json={"target_state": "IN_PROGRESS", "expected_version": 1},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "forbidden"
+    db.refresh(operation)
+    assert operation.current_workflow_state == "DRAFT"
+    assert operation.version == 1
