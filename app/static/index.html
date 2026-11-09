@@ -404,7 +404,7 @@
   }
   navToggle.addEventListener('click',()=>setNavOpen(!navHost.classList.contains('is-open')));
   navHost.addEventListener('click',event=>{
-    if(event.target.closest('button[data-page]'))setNavOpen(false);
+    if(event.target.closest('button[data-page]'))setNavOpen(false,true);
   });
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&navHost.classList.contains('is-open'))setNavOpen(false,true);
@@ -412,7 +412,7 @@
   document.addEventListener('pointerdown',event=>{
     if(!navHost.classList.contains('is-open'))return;
     if(navHost.contains(event.target)||navToggle.contains(event.target))return;
-    setNavOpen(false);
+    setNavOpen(false,true);
   });
   document.querySelectorAll('#sabtNav button').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
   document.querySelectorAll('.koko-sabt-actions [data-page]').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
