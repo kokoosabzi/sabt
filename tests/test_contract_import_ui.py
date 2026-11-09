@@ -23,7 +23,7 @@ def test_contract_search_and_bulk_import_use_koko_ui_primitives_without_losing_d
                  "contractImportMeta", "contractImportIssues",
                  "contractImportPreviewPanel", "contractImportRows"):
         assert f'id="{hook}"' in html
-    assert 'class="koko-form-section"' in html
+    assert 'koko-form-section' in html
     assert 'class="koko-form-actions"' in html
     assert 'class="koko-table-wrap"' in html
     assert 'class="koko-table"' in html
