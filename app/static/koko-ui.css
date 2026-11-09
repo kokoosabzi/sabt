@@ -65,3 +65,20 @@ body{background:var(--koko-bg)}
 .koko-tab.active{background:#e8edff;border-color:#cdd8ff;color:#3f61df}.koko-tab.active>button:first-child{color:#3f61df;font-weight:700}
 .koko-tab-close{padding:2px 7px!important;background:transparent!important;color:var(--koko-muted)!important;box-shadow:none!important}
 .koko-tab-close:hover{background:#fce5eb!important;color:#b83e58!important}
+
+/* Unified responsive navigation shell */
+.nav-toggle{display:none}
+@media(max-width:950px){
+  #appView>header{position:sticky;top:0;z-index:80;padding:10px 12px;margin:0 -12px 14px;background:var(--kt-surface,rgba(255,255,255,.96));border-bottom:1px solid var(--koko-border);backdrop-filter:blur(12px)}
+  #appView .nav-toggle{display:inline-flex;align-items:center;justify-content:center}
+  #appView .layout{position:relative;display:block}
+  #appView .layout>nav#sabtNav{display:none;position:fixed;z-index:90;top:72px;right:12px;width:min(310px,calc(100vw - 24px));max-height:calc(100vh - 88px);overflow:auto;grid-template-columns:1fr;gap:4px;padding:12px;background:var(--kt-surface,#fff);border:1px solid var(--koko-border);border-radius:16px;box-shadow:var(--koko-shadow)}
+  #appView .layout>nav#sabtNav.is-open{display:grid}
+  #appView .layout>main{width:100%}
+}
+@media(max-width:560px){
+  #appView>header .brand h1{font-size:17px}
+  #appView>header .brand p{display:none}
+  #appView>header .row{gap:6px}
+  #appView .layout>nav#sabtNav{top:64px}
+}
