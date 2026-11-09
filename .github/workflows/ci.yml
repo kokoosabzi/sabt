@@ -18,6 +18,14 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - name: Set up Node.js for UI script validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate Koko UI JavaScript syntax
+        run: |
+          node --check app/static/koko-theme-engine.js
+          node --check app/static/koko-workspace-tabs.js
       - name: Install package and test dependencies
         run: python -m pip install -e ".[test]"
       - name: Install Chromium for browser E2E tests
