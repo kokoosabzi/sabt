@@ -47,7 +47,7 @@
   <div id="appView" class="shell hidden">
     <header>
       <div class="brand"><div class="logo">س</div><div><h1>پرتال مدیریتی SABT</h1><p>نمای وضعیت، گردش کار و سوابق قرارداد</p></div></div>
-      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="navToggle" class="btn secondary nav-toggle" type="button" aria-controls="sabtNav" aria-expanded="false">منو</button><button id="logoutButton" class="btn secondary">خروج</button></div>
+      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="navToggle" class="btn secondary nav-toggle" type="button" aria-label="باز و بسته کردن منوی اصلی" aria-controls="sabtNav" aria-expanded="false">منو</button><button id="logoutButton" class="btn secondary">خروج</button></div>
     </header>
     <div class="layout">
       <nav id="sabtNav" aria-label="منوی گزارش‌ها">
@@ -382,7 +382,8 @@
   function setNavOpen(open,returnFocus=false){
     navHost.classList.toggle('is-open',open);
     navToggle.setAttribute('aria-expanded',String(open));
-    if(!open&&returnFocus)navToggle.focus();
+    if(open)navHost.querySelector('button[data-page]')?.focus();
+    else if(returnFocus)navToggle.focus();
   }
   navToggle.addEventListener('click',()=>setNavOpen(!navHost.classList.contains('is-open')));
   navHost.addEventListener('click',event=>{
