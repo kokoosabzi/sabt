@@ -44,6 +44,24 @@ def test_koko_dark_theme_covers_forms_tables_dialogs_and_legacy_surfaces(page):
         controlMatchesDark: document.getElementById("control").matches(':root[data-koko-theme="dark"] input.koko-control'),
         controlSurface: getComputedStyle(document.documentElement).getPropertyValue("--koko-surface").trim(),
         controlBackground: getComputedStyle(document.getElementById("control")).background,
+        controlMatchesClass: document.getElementById("control").matches(':root[data-koko-theme="dark"] input.koko-control'),
+        controlRules: (() => {
+          const el = document.getElementById("control");
+          const found = [];
+          for (const sheet of document.styleSheets) {
+            try {
+              for (const rule of sheet.cssRules) {
+                if (!rule.selectorText) continue;
+                try {
+                  if (el.matches(rule.selectorText) && (rule.style.background || rule.style.backgroundColor)) {
+                    found.push({selector:rule.selectorText.slice(0, 100),background:rule.style.background,backgroundColor:rule.style.backgroundColor,important:rule.style.getPropertyPriority("background")});
+                  }
+                } catch (_) {}
+              }
+            } catch (_) {}
+          }
+          return found;
+        })(),
         table: read("table-wrap"),
         tableHead: read("table-head"),
         dialog: read("dialog"),
@@ -56,6 +74,7 @@ def test_koko_dark_theme_covers_forms_tables_dialogs_and_legacy_surfaces(page):
     assert colors["controlMatchesDark"] is True, colors
     assert colors["controlMatchesClass"] is True, colors
     assert colors["controlSurface"] == "#192633", colors
+    assert any("rgb(25, 38, 51)" in (rule["background"] + rule["backgroundColor"]) for rule in colors["controlRules"]), colors["controlRules"][-4:]
     for key in ("metric", "form", "control", "table", "dialog"):
         assert colors[key]["background"] == "rgb(25, 38, 51)", colors["controlRules"][-8:] if key == "control" else colors[key]
     assert colors["tableHead"]["background"] == "rgb(34, 52, 66)"
