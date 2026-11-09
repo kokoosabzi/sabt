@@ -320,7 +320,7 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
 
     # Closing the active tab returns to the previous open page, not a blank state.
-    page.get_by_role("button", name="گزارش گردش کار", exact=True).click()
+    page.locator('nav button[data-page="workflow"]').click()
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("گزارش گردش کار")
     page.get_by_role("button", name="بستن گزارش گردش کار").click()
     expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
