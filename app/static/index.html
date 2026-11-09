@@ -111,26 +111,43 @@
           <section class="panel"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
         </section>
         <section id="contractPage" class="page hidden">
-          <section class="panel"><h2>جست‌وجوی گردش قرارداد</h2><p style="margin-bottom:14px">شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p><form id="contractForm" class="row"><input id="contractNumber" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required><button class="btn" type="submit">جست‌وجو</button></form></section>
-          <section id="contractResult" class="panel hidden"><div class="row" style="justify-content:flex-end;margin-bottom:12px"><button id="contractPrint" class="btn secondary">چاپ / ذخیره PDF</button></div><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
+          <section class="panel koko-form-section">
+            <header><h2>جست‌وجوی گردش قرارداد</h2></header>
+            <p>شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p>
+            <form id="contractForm" class="koko-form">
+              <div class="koko-form-grid is-three-columns">
+                <label class="koko-field">شماره قرارداد مادر
+                  <input id="contractNumber" class="koko-control" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required>
+                </label>
+              </div>
+              <div class="koko-form-actions"><button class="koko-button" type="submit">جست‌وجو</button></div>
+            </form>
+          </section>
+          <section id="contractResult" class="panel koko-form-section hidden">
+            <div class="koko-form-actions"><button id="contractPrint" class="koko-button is-secondary" type="button">چاپ / ذخیره PDF</button></div>
+            <div id="contractSummary"></div>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div>
+          </section>
         </section>
 
         <section id="contractImportPage" class="page hidden">
-          <section class="panel">
-            <h2>ورود گروهی قراردادهای مادر</h2>
-            <p style="margin-bottom:14px">فایل CSV یا Excel با ستون‌های suffix و initial_person_id و ستون اختیاری property_id انتخاب کنید. ابتدا پیش‌نمایش و خطاها را بررسی کنید؛ تا زمان تأیید نهایی هیچ قراردادی ثبت نمی‌شود.</p>
-            <div class="row">
-              <input id="contractImportFile" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها">
-              <button id="contractImportPreview" class="btn">بارگذاری و پیش‌نمایش</button>
-              <button id="contractImportRevalidate" class="btn" disabled>اعتبارسنجی مجدد پس از اصلاح</button>
-              <button id="contractImportConfirm" class="btn" disabled>تأیید و ثبت همه قراردادها</button>
+          <section class="panel koko-form-section">
+            <header><h2>ورود گروهی قراردادهای مادر</h2></header>
+            <p>فایل CSV یا Excel با ستون‌های suffix و initial_person_id و ستون اختیاری property_id انتخاب کنید. ابتدا پیش‌نمایش و خطاها را بررسی کنید؛ تا زمان تأیید نهایی هیچ قراردادی ثبت نمی‌شود.</p>
+            <div class="koko-form">
+              <div class="koko-field"><label for="contractImportFile">فایل قراردادها (CSV یا Excel)</label><input id="contractImportFile" class="koko-control" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها"></div>
+              <div class="koko-form-actions">
+                <button id="contractImportPreview" class="koko-button" type="button">بارگذاری و پیش‌نمایش</button>
+                <button id="contractImportRevalidate" class="koko-button is-secondary" type="button" disabled>اعتبارسنجی مجدد پس از اصلاح</button>
+                <button id="contractImportConfirm" class="koko-button is-success" type="button" disabled>تأیید و ثبت همه قراردادها</button>
+              </div>
             </div>
-            <p id="contractImportMeta" class="muted" style="margin-top:12px"></p>
-            <div id="contractImportIssues" class="error"></div>
+            <p id="contractImportMeta" class="muted"></p>
+            <div id="contractImportIssues" class="error" role="alert"></div>
           </section>
-          <section id="contractImportPreviewPanel" class="panel hidden">
-            <h2>پیش‌نمایش ردیف‌ها</h2>
-            <div class="table-wrap"><table><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
+          <section id="contractImportPreviewPanel" class="panel koko-form-section hidden">
+            <header><h2>پیش‌نمایش ردیف‌ها</h2></header>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
           </section>
         </section>
       </main>
