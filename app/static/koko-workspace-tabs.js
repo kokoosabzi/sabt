@@ -65,6 +65,7 @@
   };
 
   host.addEventListener('click', event => {
+    host.dataset.lastClickDebug = event.target.tagName + ':' + String(event.target.className || '');
     const closeButton = event.target.closest('button[data-close-tab]');
     if (!closeButton || !host.contains(closeButton)) return;
 
