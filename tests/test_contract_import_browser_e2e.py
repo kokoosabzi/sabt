@@ -335,6 +335,11 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     expect(page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close")).to_have_attribute("data-close-tab", "workflow")
     page.evaluate("""() => {
         window.__kokoNavigationCalls = [];
+        window.__kokoDirectCloseClicked = false;
+        window.__kokoHostCloseClicked = false;
+        const close = document.querySelector('#koko-workspace-tabs .koko-tab.active .koko-tab-close');
+        close.addEventListener('click', () => { window.__kokoDirectCloseClicked = true; });
+        document.getElementById('koko-workspace-tabs').addEventListener('click', () => { window.__kokoHostCloseClicked = true; });
         const original = window.sabtNavigatePage;
         window.sabtNavigatePage = (id) => {
             const result = original(id);
