@@ -343,6 +343,7 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
         };
     }""")
     page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close").click()
+    assert page.locator("#koko-workspace-tabs").get_attribute("data-last-click-debug") == "BUTTON:koko-tab-close"
     assert page.locator("#koko-workspace-tabs").get_attribute("data-close-debug") == "workflow|workflow"
     assert page.evaluate("window.__kokoNavigationCalls") == [["dashboard", True]]
     expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
