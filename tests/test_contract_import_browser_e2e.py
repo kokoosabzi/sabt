@@ -191,24 +191,25 @@ def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(
     expect(page.locator("#startAt")).not_to_have_value("")
     expect(page.locator("#endAt")).not_to_have_value("")
 
-    # Select dates through the picker only; derive the test dates from its current Jalali month.
+    # Select dates through the picker only. Read the month actually displayed by
+    # the picker: the report defaults are project-timezone based and can straddle
+    # a Jalali month boundary independently of the browser's local date.
     to_latin = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
-    year_text, month_text, _ = page.locator("#startAt").input_value().translate(to_latin).split("/")
-    year, month = int(year_text), int(month_text)
-    start_date = f"{year:04d}/{month:02d}/01"
-    next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
-    end_date = f"{next_year:04d}/{next_month:02d}/01"
 
     page.locator("#startAt").click()
     expect(page.locator("#jalaliPicker")).to_be_visible()
+    start_month = page.locator("#jalaliMonthTitle").inner_text().translate(to_latin)
+    start_year, start_month_number = map(int, start_month.split("/"))
+    start_date = f"{start_year:04d}/{start_month_number:02d}/01"
     page.locator(f'#jalaliDays button[data-jalali-date="{start_date}"]').click()
     expected_start = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in start_date)
     expect(page.locator("#startAt")).to_have_value(expected_start)
 
     page.locator("#endAt").click()
-    # Opening the end-date field initializes the picker to that field's month.
-    # Do not advance again: the desired end date is already the following month
-    # relative to the start date selected above.
+    end_month = page.locator("#jalaliMonthTitle").inner_text().translate(to_latin)
+    end_year, end_month_number = map(int, end_month.split("/"))
+    # Pick day two so the selected end instant remains after start at 00:00.
+    end_date = f"{end_year:04d}/{end_month_number:02d}/02"
     page.locator(f'#jalaliDays button[data-jalali-date="{end_date}"]').click()
     expected_end = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in end_date)
     expect(page.locator("#endAt")).to_have_value(expected_end)
@@ -298,3 +299,64 @@ def test_browser_jalali_picker_today_close_escape_and_month_year_boundaries(brow
     }""")
     expected_today_fa = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in expected_today)
     expect(start).to_have_value(expected_today_fa)
+
+
+def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, page: Page):
+    page.goto(browser_app["base_url"] + "/portal/")
+    page.get_by_label("نام کاربری").fill("browser-import-admin")
+    page.get_by_label("گذرواژه").fill("e2e-test-password")
+    page.get_by_role("button", name="ورود امن").click()
+
+    # Theme controls apply immediately and survive a full page reload.
+    launcher = page.locator("#koko-theme-launcher")
+    expect(launcher).to_be_visible()
+    launcher.click()
+    panel = page.locator("#koko-theme-panel")
+    expect(panel).to_be_visible()
+    panel.locator("#kt-theme").select_option("dark")
+    expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
+    expect(panel).to_have_attribute("aria-hidden", "false")
+    expect(launcher).to_have_attribute("aria-expanded", "true")
+    assert page.locator("html").evaluate(
+        "(el) => getComputedStyle(el).getPropertyValue('--koko-bg').trim() === '#101923'"
+    )
+    page.keyboard.press("Escape")
+    expect(panel).to_be_hidden()
+    expect(launcher).to_have_attribute("aria-expanded", "false")
+    page.reload()
+    expect(page.locator("#koko-theme-launcher")).to_be_visible()
+    expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
+
+    # Authentication is intentionally independent from local UI preferences.
+    if page.locator("#loginView").is_visible():
+        page.get_by_label("نام کاربری").fill("browser-import-admin")
+        page.get_by_label("گذرواژه").fill("e2e-test-password")
+        page.get_by_role("button", name="ورود امن").click()
+
+    # Closing the active tab returns to the previous open page, not a blank state.
+    page.locator('nav button[data-page="workflow"]').click()
+    expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("گزارش گردش کار")
+    assert page.evaluate("typeof window.sabtNavigatePage") == "function"
+    assert page.evaluate("JSON.parse(sessionStorage.getItem('sabt.workspace.tabs.v1') || '[]').some(tab => tab.id === 'workflow')")
+    expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_have_attribute("data-page", "workflow")
+    expect(page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close")).to_have_attribute("data-close-tab", "workflow")
+    page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close").click()
+    expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
+    expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("نمای مدیریتی")
+
+    # Reset is persistent too, and the floating controls remain inside a narrow viewport.
+    launcher.click()
+    panel.locator("#kt-reset").click()
+    expect(page.locator("html")).to_have_attribute("data-koko-theme", "pastel")
+    page.set_viewport_size({"width": 390, "height": 844})
+    expect(launcher).to_be_visible()
+    assert page.locator("body").evaluate("(el) => el.scrollWidth <= window.innerWidth")
+
+    # The responsive navigation opens as a drawer and closes after navigation.
+    toggle = page.locator("#navToggle")
+    expect(toggle).to_be_visible()
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-expanded", "true")
+    page.locator('#sabtNav button[data-page="events"]').click()
+    expect(toggle).to_have_attribute("aria-expanded", "false")
+    expect(page.locator("#eventsPage")).to_be_visible()

@@ -22,13 +22,14 @@
     .btn{border:0;border-radius:9px;padding:11px 15px;background:#183b56;color:white;cursor:pointer;font-weight:700}.btn.secondary{background:#edf2f7;color:#263b50}.btn:disabled{opacity:.5;cursor:not-allowed}
     .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.metric{padding:17px}.metric span{display:block;color:#667085;font-size:12px}.metric strong{display:block;font-size:27px;margin-top:12px;font-weight:800;color:#173d57}
     .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,td{padding:12px 10px;text-align:right;border-bottom:1px solid #edf0f4}th{color:#667085;font-weight:700;background:#f9fafb}
-    .date-control{position:relative}.date-control input{cursor:pointer;background:#fff;padding-left:38px}.time-selects{display:flex;align-items:center;gap:6px}.time-selects select{min-width:0;flex:1;padding:10px;border:1px solid #d0d8e2;border-radius:9px;background:#fff;color:#182230;font:inherit}.date-picker-popover{position:fixed;z-index:1000;width:290px;padding:14px;background:#fff;border:1px solid #d0d8e2;border-radius:14px;box-shadow:0 14px 40px #172b4d24}.date-picker-heading,.date-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.date-picker-heading strong{font-size:14px}.date-picker-heading .btn,.date-picker-footer .btn{padding:7px 10px}.date-picker-weekdays,.date-picker-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px;text-align:center}.date-picker-weekdays{font-size:11px;color:#667085}.date-picker-days button{border:0;border-radius:8px;padding:8px 0;background:#f5f7fa;color:#182230;cursor:pointer}.date-picker-days button:hover,.date-picker-days button:focus{background:#dcecf4;outline:2px solid #7199ae}.date-picker-days button.selected{background:#183b56;color:white}.date-picker-days button.today{box-shadow:inset 0 0 0 1px #183b56}.date-picker-days .empty{min-height:32px}.date-picker-footer{margin-top:12px}.muted{color:#667085;font-size:12px}.error{color:#b42318;background:#fff1f0;border-radius:9px;padding:10px;margin-bottom:12px;display:none}.success{color:#067647}.hidden{display:none!important}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{max-width:250px}
+    .date-control{position:relative}.date-control input{cursor:pointer;background:#fff;padding-left:38px}.time-selects{display:flex;align-items:center;gap:6px}.time-selects select{min-width:0;flex:1;padding:10px;border:1px solid #d0d8e2;border-radius:9px;background:#fff;color:#182230;font:inherit}.date-picker-popover{position:fixed;z-index:10000;width:290px;padding:14px;background:#fff;border:1px solid #d0d8e2;border-radius:14px;box-shadow:0 14px 40px #172b4d24}.date-picker-heading,.date-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.date-picker-heading strong{font-size:14px}.date-picker-heading .btn,.date-picker-footer .btn{padding:7px 10px}.date-picker-weekdays,.date-picker-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px;text-align:center}.date-picker-weekdays{font-size:11px;color:#667085}.date-picker-days button{border:0;border-radius:8px;padding:8px 0;background:#f5f7fa;color:#182230;cursor:pointer}.date-picker-days button:hover,.date-picker-days button:focus{background:#dcecf4;outline:2px solid #7199ae}.date-picker-days button.selected{background:#183b56;color:white}.date-picker-days button.today{box-shadow:inset 0 0 0 1px #183b56}.date-picker-days .empty{min-height:32px}.date-picker-footer{margin-top:12px}.muted{color:#667085;font-size:12px}.error{color:#b42318;background:#fff1f0;border-radius:9px;padding:10px;margin-bottom:12px;display:none}.success{color:#067647}.hidden{display:none!important}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{max-width:250px}
     .login{max-width:520px;margin:48px auto}.login .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.login .fields .full{grid-column:1/-1}
     .section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
     footer{color:#98a2b3;font-size:11px;text-align:center;padding:10px}
     @media(max-width:950px){.layout{grid-template-columns:1fr}nav{position:static;display:grid;grid-template-columns:repeat(2,1fr)}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:560px){.shell{padding:12px}header{align-items:flex-start}.metrics{gap:8px}.metric{padding:12px}.metric strong{font-size:22px}.filters,.login .fields{grid-template-columns:1fr}.login .fields .full{grid-column:auto}.panel{padding:14px}nav{grid-template-columns:1fr 1fr}}
   </style>
+  <link rel="stylesheet" href="/portal/koko-ui.css">
 </head>
 <body>
   <div id="loginView" class="shell login">
@@ -46,10 +47,10 @@
   <div id="appView" class="shell hidden">
     <header>
       <div class="brand"><div class="logo">س</div><div><h1>پرتال مدیریتی SABT</h1><p>نمای وضعیت، گردش کار و سوابق قرارداد</p></div></div>
-      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="logoutButton" class="btn secondary">خروج</button></div>
+      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="navToggle" class="btn secondary nav-toggle" type="button" aria-label="باز و بسته کردن منوی اصلی" aria-controls="sabtNav" aria-expanded="false">منو</button><button id="logoutButton" class="btn secondary">خروج</button></div>
     </header>
     <div class="layout">
-      <nav aria-label="منوی گزارش‌ها">
+      <nav id="sabtNav" aria-label="منوی گزارش‌ها">
         <button class="active" data-page="dashboard">نمای مدیریتی</button>
         <button data-page="workflow">گزارش گردش کار</button>
         <button data-page="events">رخدادهای گردش کار</button>
@@ -57,67 +58,96 @@
         <button data-page="contractImport">ورود گروهی قراردادها</button>
       </nav>
       <main>
+        <div id="koko-workspace-tabs" class="koko-workspace-tabs" role="group" aria-label="صفحه‌های باز"></div>
         <div id="globalError" class="error"></div>
-        <section class="panel">
-          <div class="section-title"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
-          <div class="filters">
-            <div><label for="projectId">شناسه پروژه</label><input id="projectId" type="number" min="1" step="1" value="1" required></div>
-            <div><label for="startAt">از تاریخ شمسی</label><div class="date-control"><input id="startAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="startHour">ساعت شروع (۲۴ ساعته)</label><div class="time-selects"><select id="startHour" aria-label="ساعت شروع"></select><span>:</span><select id="startMinute" aria-label="دقیقه شروع"></select></div></div>
-            <div><label for="endAt">تا تاریخ شمسی</label><div class="date-control"><input id="endAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="endHour">ساعت پایان (۲۴ ساعته)</label><div class="time-selects"><select id="endHour" aria-label="ساعت پایان"></select><span>:</span><select id="endMinute" aria-label="دقیقه پایان"></select></div></div>
-            <div><p id="dateInputHelp" class="muted">تاریخ را از تقویم شمسی انتخاب کنید و ساعت را از فهرست ساعت و دقیقه برگزینید؛ منطقه زمانی پروژه اعمال می‌شود.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
+        <section class="panel koko-form-section koko-report-range">
+          <div class="koko-section-heading"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
+          <div class="filters koko-form-grid is-four-columns">
+            <div class="koko-field"><label for="projectId">شناسه پروژه</label><input id="projectId" class="koko-control" type="number" min="1" step="1" value="1" required></div>
+            <div class="koko-field"><label for="startAt">از تاریخ شمسی</label><div class="date-control"><input class="koko-control" id="startAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="startHour">ساعت شروع (۲۴ ساعته)</label><div class="time-selects"><select id="startHour" aria-label="ساعت شروع"></select><span>:</span><select id="startMinute" aria-label="دقیقه شروع"></select></div></div>
+            <div class="koko-field"><label for="endAt">تا تاریخ شمسی</label><div class="date-control"><input class="koko-control" id="endAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="endHour">ساعت پایان (۲۴ ساعته)</label><div class="time-selects"><select id="endHour" aria-label="ساعت پایان"></select><span>:</span><select id="endMinute" aria-label="دقیقه پایان"></select></div></div>
+            <div class="koko-field"><p id="dateInputHelp" class="muted">تاریخ را از تقویم شمسی انتخاب کنید و ساعت را از فهرست ساعت و دقیقه برگزینید؛ منطقه زمانی پروژه اعمال می‌شود.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
           </div>
         </section>
         <section id="dashboardPage" class="page">
+          <section class="koko-welcome">
+            <div><span class="koko-eyebrow">SABT · CONTRACT MANAGEMENT</span><h2>نمای کلی سامانه ثبت</h2><p>مدیریت گردش قراردادها، عملیات و انتقال‌ها در یک نگاه</p></div>
+            <div class="koko-welcome-mark" aria-hidden="true">⌂</div>
+          </section>
+          <section class="koko-section-heading"><div><h2>دسترسی سریع</h2><p>ورود مستقیم به بخش‌های اصلی مدیریت قرارداد</p></div></section>
+          <section class="koko-sabt-actions">
+            <button class="koko-action koko-card-blue" data-page="contract"><span class="koko-action-icon">⌕</span><strong>جست‌وجوی قرارداد</strong><small>مشاهده زنجیره انتقال</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-mint" data-page="contractImport"><span class="koko-action-icon">⇧</span><strong>ورود گروهی قرارداد</strong><small>بارگذاری Excel و CSV</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-lilac" data-page="workflow"><span class="koko-action-icon">▤</span><strong>گزارش گردش کار</strong><small>پیگیری عملیات سامانه</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-peach" data-page="events"><span class="koko-action-icon">◷</span><strong>رخدادها</strong><small>تاریخچه تغییرات ثبت‌شده</small><span class="koko-action-arrow">←</span></button>
+          </section>
           <div class="row" style="margin-bottom:14px"><button id="summaryExportXlsx" class="btn secondary">خروجی Excel شاخص‌ها</button><button id="summaryPrint" class="btn secondary">چاپ / ذخیره PDF</button></div>
-          <div class="metrics">
-            <div class="metric"><span>عملیات ایجادشده در بازه</span><strong id="createdMetric">—</strong></div>
-            <div class="metric"><span>عملیات نهایی‌شده در بازه</span><strong id="finalizedMetric">—</strong></div>
-            <div class="metric"><span>عملیات باز در حال حاضر</span><strong id="openMetric">—</strong></div>
-            <div class="metric"><span>انتقال نهایی‌شده در بازه</span><strong id="transfersMetric">—</strong></div>
+          <div class="metrics koko-sabt-metrics">
+            <div class="metric koko-metric koko-card-lilac"><span>عملیات ایجادشده در بازه</span><strong id="createdMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-mint"><span>عملیات نهایی‌شده در بازه</span><strong id="finalizedMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-blue"><span>عملیات باز در حال حاضر</span><strong id="openMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-peach"><span>انتقال نهایی‌شده در بازه</span><strong id="transfersMetric">—</strong></div>
           </div>
           <section class="panel"><h2>عملیات ایجادشده به تفکیک وضعیت</h2><div id="statusMetrics" class="row muted">برای دریافت شاخص‌ها، «دریافت گزارش» را انتخاب کنید.</div></section>
           <section class="panel"><h2>توضیحات و حدود داده</h2><p>شاخص‌ها فقط از رکوردهای ذخیره‌شده محاسبه می‌شوند. زمان رسیدگی و مدت حضور در هر وضعیت تا زمانی که تمام رخدادهای لازم ثبت نشده باشند محاسبه نمی‌شوند.</p></section>
         </section>
         <section id="workflowPage" class="page hidden">
-          <section class="panel">
-            <div class="section-title"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
-            <div class="filters">
-              <div><label for="statusFilter">وضعیت</label><select id="statusFilter"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
-              <div><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" type="number" min="1"></div>
-              <div><label for="contractFilter">شماره قرارداد مادر</label><input id="contractFilter" inputmode="numeric" maxlength="6" placeholder="مثلاً 760123"></div>
-              <div><label for="creatorFilter">شناسه ثبت‌کننده</label><input id="creatorFilter" type="number" min="1"></div>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
+            <div class="filters koko-form-grid is-four-columns">
+              <div class="koko-field"><label for="statusFilter">وضعیت</label><select id="statusFilter" class="koko-control"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
+              <div class="koko-field"><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" class="koko-control" type="number" min="1"></div>
+              <div class="koko-field"><label for="contractFilter">شماره قرارداد مادر</label><input id="contractFilter" class="koko-control" inputmode="numeric" maxlength="6" placeholder="مثلاً 760123"></div>
+              <div class="koko-field"><label for="creatorFilter">شناسه ثبت‌کننده</label><input id="creatorFilter" class="koko-control" type="number" min="1"></div>
             </div>
           </section>
-          <section class="panel"><div id="workflowMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>ثبت‌کننده</th><th>تاریخ ایجاد</th><th>نهایی‌شدن</th></tr></thead><tbody id="workflowRows"><tr><td colspan="8">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div><div class="row" style="margin-top:14px"><button id="prevPage" class="btn secondary">قبلی</button><span id="pageMeta" class="muted"></span><button id="nextPage" class="btn secondary">بعدی</button></div></section>
+          <section class="panel koko-form-section"><div id="workflowMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>ثبت‌کننده</th><th>تاریخ ایجاد</th><th>نهایی‌شدن</th></tr></thead><tbody id="workflowRows"><tr><td colspan="8">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div><div class="row" style="margin-top:14px"><button id="prevPage" class="btn secondary">قبلی</button><span id="pageMeta" class="muted"></span><button id="nextPage" class="btn secondary">بعدی</button></div></section>
         </section>
         <section id="eventsPage" class="page hidden">
-          <section class="panel">
-            <div class="section-title"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
-            <div class="filters"><div><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" type="number" min="1"></div><div><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" type="number" min="1"></div></div>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
+            <div class="filters koko-form-grid is-three-columns"><div class="koko-field"><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter" class="koko-control"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div class="koko-field"><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" class="koko-control" type="number" min="1"></div><div class="koko-field"><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" class="koko-control" type="number" min="1"></div></div>
           </section>
-          <section class="panel"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
+          <section class="panel koko-form-section"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
         </section>
         <section id="contractPage" class="page hidden">
-          <section class="panel"><h2>جست‌وجوی گردش قرارداد</h2><p style="margin-bottom:14px">شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p><form id="contractForm" class="row"><input id="contractNumber" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required><button class="btn" type="submit">جست‌وجو</button></form></section>
-          <section id="contractResult" class="panel hidden"><div class="row" style="justify-content:flex-end;margin-bottom:12px"><button id="contractPrint" class="btn secondary">چاپ / ذخیره PDF</button></div><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
+          <section class="panel koko-form-section">
+            <header><h2>جست‌وجوی گردش قرارداد</h2></header>
+            <p>شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p>
+            <form id="contractForm" class="koko-form">
+              <div class="koko-form-grid is-three-columns">
+                <label class="koko-field">شماره قرارداد مادر
+                  <input id="contractNumber" class="koko-control" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required>
+                </label>
+              </div>
+              <div class="koko-form-actions"><button class="koko-button" type="submit">جست‌وجو</button></div>
+            </form>
+          </section>
+          <section id="contractResult" class="panel koko-form-section hidden">
+            <div class="koko-form-actions"><button id="contractPrint" class="koko-button is-secondary" type="button">چاپ / ذخیره PDF</button></div>
+            <div id="contractSummary"></div>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div>
+          </section>
         </section>
 
         <section id="contractImportPage" class="page hidden">
-          <section class="panel">
-            <h2>ورود گروهی قراردادهای مادر</h2>
-            <p style="margin-bottom:14px">فایل CSV یا Excel با ستون‌های suffix و initial_person_id و ستون اختیاری property_id انتخاب کنید. ابتدا پیش‌نمایش و خطاها را بررسی کنید؛ تا زمان تأیید نهایی هیچ قراردادی ثبت نمی‌شود.</p>
-            <div class="row">
-              <input id="contractImportFile" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها">
-              <button id="contractImportPreview" class="btn">بارگذاری و پیش‌نمایش</button>
-              <button id="contractImportRevalidate" class="btn" disabled>اعتبارسنجی مجدد پس از اصلاح</button>
-              <button id="contractImportConfirm" class="btn" disabled>تأیید و ثبت همه قراردادها</button>
+          <section class="panel koko-form-section">
+            <header><h2>ورود گروهی قراردادهای مادر</h2></header>
+            <p>فایل CSV یا Excel با ستون‌های suffix و initial_person_id و ستون اختیاری property_id انتخاب کنید. ابتدا پیش‌نمایش و خطاها را بررسی کنید؛ تا زمان تأیید نهایی هیچ قراردادی ثبت نمی‌شود.</p>
+            <div class="koko-form">
+              <div class="koko-field"><label for="contractImportFile">فایل قراردادها (CSV یا Excel)</label><input id="contractImportFile" class="koko-control" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها"></div>
+              <div class="koko-form-actions">
+                <button id="contractImportPreview" class="koko-button" type="button">بارگذاری و پیش‌نمایش</button>
+                <button id="contractImportRevalidate" class="koko-button is-secondary" type="button" disabled>اعتبارسنجی مجدد پس از اصلاح</button>
+                <button id="contractImportConfirm" class="koko-button is-success" type="button" disabled>تأیید و ثبت همه قراردادها</button>
+              </div>
             </div>
-            <p id="contractImportMeta" class="muted" style="margin-top:12px"></p>
-            <div id="contractImportIssues" class="error"></div>
+            <p id="contractImportMeta" class="muted"></p>
+            <div id="contractImportIssues" class="error" role="alert"></div>
           </section>
-          <section id="contractImportPreviewPanel" class="panel hidden">
-            <h2>پیش‌نمایش ردیف‌ها</h2>
-            <div class="table-wrap"><table><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
+          <section id="contractImportPreviewPanel" class="panel koko-form-section hidden">
+            <header><h2>پیش‌نمایش ردیف‌ها</h2></header>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
           </section>
         </section>
       </main>
@@ -353,7 +383,39 @@
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeJalaliPicker()});
   $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();await loadActivePage()}catch(err){showError(err.message,'loginError')}});
   $('logoutButton').addEventListener('click',async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}token='';sessionStorage.removeItem('sabt_token');showLogin()});
-  document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===button));activePage=button.dataset.page;document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));$(activePage+'Page').classList.remove('hidden');clearError();loadActivePage()}));
+  function navigateToPage(target){
+    const navButton=document.querySelector('nav button[data-page="'+target+'"]');
+    if(!navButton||!$(target+'Page'))return false;
+    document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===navButton));
+    activePage=target;
+    document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));
+    $(activePage+'Page').classList.remove('hidden');
+    clearError();
+    loadActivePage();
+    return true;
+  }
+  window.sabtNavigatePage=navigateToPage;
+  const navToggle=$('navToggle'),navHost=$('sabtNav');
+  function setNavOpen(open,returnFocus=false){
+    navHost.classList.toggle('is-open',open);
+    navToggle.setAttribute('aria-expanded',String(open));
+    if(open)navHost.querySelector('button[data-page]')?.focus();
+    else if(returnFocus)navToggle.focus();
+  }
+  navToggle.addEventListener('click',()=>setNavOpen(!navHost.classList.contains('is-open')));
+  navHost.addEventListener('click',event=>{
+    if(event.target.closest('button[data-page]'))setNavOpen(false,true);
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&navHost.classList.contains('is-open'))setNavOpen(false,true);
+  });
+  document.addEventListener('pointerdown',event=>{
+    if(!navHost.classList.contains('is-open'))return;
+    if(navHost.contains(event.target)||navToggle.contains(event.target))return;
+    setNavOpen(false,true);
+  });
+  document.querySelectorAll('#sabtNav button').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
+  document.querySelectorAll('.koko-sabt-actions [data-page]').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
   $('loadButton').addEventListener('click',()=>loadActivePage());
   $('workflowRefresh').addEventListener('click',async()=>{page=0;try{await loadProjectContext();await loadWorkflow()}catch(err){showError(err.message)}});
   $('eventsRefresh').addEventListener('click',async()=>{try{await loadProjectContext();await loadEvents()}catch(err){showError(err.message)}});
@@ -575,5 +637,7 @@
   if(token){showApp();loadActivePage().catch(()=>showLogin())}else showLogin();
 })();
 </script>
+  <script src="/portal/koko-workspace-tabs.js" defer></script>
+  <script src="/portal/koko-theme-engine.js" defer></script>
 </body>
 </html>
