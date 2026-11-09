@@ -348,6 +348,8 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
         };
     }""")
     page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close").click()
+    assert page.evaluate("window.__kokoDirectCloseClicked") is True
+    assert page.evaluate("window.__kokoHostCloseClicked") is True
     assert page.locator("#koko-workspace-tabs").get_attribute("data-last-click-debug") == "BUTTON:koko-tab-close"
     assert page.locator("#koko-workspace-tabs").get_attribute("data-close-debug") == "workflow|workflow"
     assert page.evaluate("window.__kokoNavigationCalls") == [["dashboard", True]]
