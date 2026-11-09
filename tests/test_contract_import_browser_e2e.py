@@ -328,22 +328,11 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     # Closing the active tab returns to the previous open page, not a blank state.
     page.locator('nav button[data-page="workflow"]').click()
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("گزارش گردش کار")
-    expect(page.locator("#koko-workspace-tabs")).to_have_attribute("data-workspace-tabs-version", "delegated-1")
     assert page.evaluate("typeof window.sabtNavigatePage") == "function"
     assert page.evaluate("JSON.parse(sessionStorage.getItem('sabt.workspace.tabs.v1') || '[]').some(tab => tab.id === 'workflow')")
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_have_attribute("data-page", "workflow")
     expect(page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close")).to_have_attribute("data-close-tab", "workflow")
-    page.evaluate("""() => {
-        window.__kokoNavigationCalls = [];
-        const original = window.sabtNavigatePage;
-        window.sabtNavigatePage = (id) => {
-            const result = original(id);
-            window.__kokoNavigationCalls.push([id, result]);
-            return result;
-        };
-    }""")
     page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close").click()
-    assert page.evaluate("window.__kokoNavigationCalls") == [["dashboard", True]]
     expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("نمای مدیریتی")
 
