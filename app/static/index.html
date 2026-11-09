@@ -47,10 +47,10 @@
   <div id="appView" class="shell hidden">
     <header>
       <div class="brand"><div class="logo">س</div><div><h1>پرتال مدیریتی SABT</h1><p>نمای وضعیت، گردش کار و سوابق قرارداد</p></div></div>
-      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="logoutButton" class="btn secondary">خروج</button></div>
+      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="navToggle" class="btn secondary nav-toggle" type="button" aria-controls="sabtNav" aria-expanded="false">منو</button><button id="logoutButton" class="btn secondary">خروج</button></div>
     </header>
     <div class="layout">
-      <nav aria-label="منوی گزارش‌ها">
+      <nav id="sabtNav" aria-label="منوی گزارش‌ها">
         <button class="active" data-page="dashboard">نمای مدیریتی</button>
         <button data-page="workflow">گزارش گردش کار</button>
         <button data-page="events">رخدادهای گردش کار</button>
@@ -378,7 +378,25 @@
     return true;
   }
   window.sabtNavigatePage=navigateToPage;
-  document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
+  const navToggle=$('navToggle'),navHost=$('sabtNav');
+  function setNavOpen(open,returnFocus=false){
+    navHost.classList.toggle('is-open',open);
+    navToggle.setAttribute('aria-expanded',String(open));
+    if(!open&&returnFocus)navToggle.focus();
+  }
+  navToggle.addEventListener('click',()=>setNavOpen(!navHost.classList.contains('is-open')));
+  navHost.addEventListener('click',event=>{
+    if(event.target.closest('button[data-page]'))setNavOpen(false);
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&navHost.classList.contains('is-open'))setNavOpen(false,true);
+  });
+  document.addEventListener('pointerdown',event=>{
+    if(!navHost.classList.contains('is-open'))return;
+    if(navHost.contains(event.target)||navToggle.contains(event.target))return;
+    setNavOpen(false);
+  });
+  document.querySelectorAll('#sabtNav button').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
   document.querySelectorAll('.koko-sabt-actions [data-page]').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
   $('loadButton').addEventListener('click',()=>loadActivePage());
   $('workflowRefresh').addEventListener('click',async()=>{page=0;try{await loadProjectContext();await loadWorkflow()}catch(err){showError(err.message)}});
