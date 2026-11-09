@@ -69,12 +69,23 @@
           </div>
         </section>
         <section id="dashboardPage" class="page">
+          <section class="koko-welcome">
+            <div><span class="koko-eyebrow">SABT · CONTRACT MANAGEMENT</span><h2>نمای کلی سامانه ثبت</h2><p>مدیریت گردش قراردادها، عملیات و انتقال‌ها در یک نگاه</p></div>
+            <div class="koko-welcome-mark" aria-hidden="true">⌂</div>
+          </section>
+          <section class="koko-section-heading"><div><h2>دسترسی سریع</h2><p>ورود مستقیم به بخش‌های اصلی مدیریت قرارداد</p></div></section>
+          <section class="koko-sabt-actions">
+            <button class="koko-action koko-card-blue" data-page="contract"><span class="koko-action-icon">⌕</span><strong>جست‌وجوی قرارداد</strong><small>مشاهده زنجیره انتقال</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-mint" data-page="contractImport"><span class="koko-action-icon">⇧</span><strong>ورود گروهی قرارداد</strong><small>بارگذاری Excel و CSV</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-lilac" data-page="workflow"><span class="koko-action-icon">▤</span><strong>گزارش گردش کار</strong><small>پیگیری عملیات سامانه</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-peach" data-page="events"><span class="koko-action-icon">◷</span><strong>رخدادها</strong><small>تاریخچه تغییرات ثبت‌شده</small><span class="koko-action-arrow">←</span></button>
+          </section>
           <div class="row" style="margin-bottom:14px"><button id="summaryExportXlsx" class="btn secondary">خروجی Excel شاخص‌ها</button><button id="summaryPrint" class="btn secondary">چاپ / ذخیره PDF</button></div>
-          <div class="metrics">
-            <div class="metric"><span>عملیات ایجادشده در بازه</span><strong id="createdMetric">—</strong></div>
-            <div class="metric"><span>عملیات نهایی‌شده در بازه</span><strong id="finalizedMetric">—</strong></div>
-            <div class="metric"><span>عملیات باز در حال حاضر</span><strong id="openMetric">—</strong></div>
-            <div class="metric"><span>انتقال نهایی‌شده در بازه</span><strong id="transfersMetric">—</strong></div>
+          <div class="metrics koko-sabt-metrics">
+            <div class="metric koko-metric koko-card-lilac"><span>عملیات ایجادشده در بازه</span><strong id="createdMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-mint"><span>عملیات نهایی‌شده در بازه</span><strong id="finalizedMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-blue"><span>عملیات باز در حال حاضر</span><strong id="openMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-peach"><span>انتقال نهایی‌شده در بازه</span><strong id="transfersMetric">—</strong></div>
           </div>
           <section class="panel"><h2>عملیات ایجادشده به تفکیک وضعیت</h2><div id="statusMetrics" class="row muted">برای دریافت شاخص‌ها، «دریافت گزارش» را انتخاب کنید.</div></section>
           <section class="panel"><h2>توضیحات و حدود داده</h2><p>شاخص‌ها فقط از رکوردهای ذخیره‌شده محاسبه می‌شوند. زمان رسیدگی و مدت حضور در هر وضعیت تا زمانی که تمام رخدادهای لازم ثبت نشده باشند محاسبه نمی‌شوند.</p></section>
