@@ -5,6 +5,7 @@
   const storageKey = 'sabt.workspace.tabs.v1';
   const host = document.getElementById('koko-workspace-tabs');
   if (!host) return;
+  host.dataset.workspaceTabsVersion = 'delegated-1';
 
   const buttons = () => [...document.querySelectorAll('nav button[data-page]')];
   const currentPage = () => buttons().find(button => button.classList.contains('active'))?.dataset.page;
