@@ -29,7 +29,7 @@
     @media(max-width:950px){.layout{grid-template-columns:1fr}nav{position:static;display:grid;grid-template-columns:repeat(2,1fr)}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:560px){.shell{padding:12px}header{align-items:flex-start}.metrics{gap:8px}.metric{padding:12px}.metric strong{font-size:22px}.filters,.login .fields{grid-template-columns:1fr}.login .fields .full{grid-column:auto}.panel{padding:14px}nav{grid-template-columns:1fr 1fr}}
   </style>
-  <link rel="stylesheet" href="/static/koko-ui.css">
+  <link rel="stylesheet" href="/portal/koko-ui.css">
 </head>
 <body>
   <div id="loginView" class="shell login">
@@ -589,7 +589,7 @@
   if(token){showApp();loadActivePage().catch(()=>showLogin())}else showLogin();
 })();
 </script>
-  <script src="/static/koko-workspace-tabs.js" defer></script>
-  <script src="/static/koko-theme-engine.js" defer></script>
+  <script src="/portal/koko-workspace-tabs.js" defer></script>
+  <script src="/portal/koko-theme-engine.js" defer></script>
 </body>
 </html>
