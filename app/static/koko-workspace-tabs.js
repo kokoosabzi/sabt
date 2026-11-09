@@ -68,6 +68,7 @@
     if (!closeButton || !host.contains(closeButton)) return;
 
     const id = closeButton.dataset.closeTab;
+    host.dataset.closeDebug = id + '|' + String(currentPage());
     const index = tabs.findIndex(tab => tab.id === id);
     if (index < 0) return;
 
