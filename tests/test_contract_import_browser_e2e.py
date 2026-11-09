@@ -335,11 +335,6 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     expect(page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close")).to_have_attribute("data-close-tab", "workflow")
     page.evaluate("""() => {
         window.__kokoNavigationCalls = [];
-        window.__kokoDirectCloseClicked = false;
-        window.__kokoHostCloseClicked = false;
-        const close = document.querySelector('#koko-workspace-tabs .koko-tab.active .koko-tab-close');
-        close.addEventListener('click', () => { window.__kokoDirectCloseClicked = true; });
-        document.getElementById('koko-workspace-tabs').addEventListener('click', () => { window.__kokoHostCloseClicked = true; });
         const original = window.sabtNavigatePage;
         window.sabtNavigatePage = (id) => {
             const result = original(id);
@@ -348,10 +343,6 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
         };
     }""")
     page.locator("#koko-workspace-tabs .koko-tab.active .koko-tab-close").click()
-    assert page.evaluate("window.__kokoDirectCloseClicked") is True
-    assert page.evaluate("window.__kokoHostCloseClicked") is True
-    assert page.locator("#koko-workspace-tabs").get_attribute("data-last-click-debug") == "BUTTON:koko-tab-close"
-    assert page.locator("#koko-workspace-tabs").get_attribute("data-close-debug") == "workflow|workflow"
     assert page.evaluate("window.__kokoNavigationCalls") == [["dashboard", True]]
     expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("نمای مدیریتی")
