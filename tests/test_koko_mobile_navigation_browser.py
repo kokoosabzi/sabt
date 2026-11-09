@@ -46,7 +46,7 @@ def test_sabt_mobile_navigation_escape_outside_click_and_focus_return(page):
     expect(toggle).to_be_focused()
 
     toggle.click()
-    page.locator("#outside").click()
+    page.mouse.click(5, 700)
     expect(nav).to_be_hidden()
     expect(toggle).to_have_attribute("aria-expanded", "false")
     expect(toggle).to_be_focused()
