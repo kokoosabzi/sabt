@@ -315,6 +315,14 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     expect(panel).to_be_visible()
     panel.locator("#kt-theme").select_option("dark")
     expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
+    expect(panel).to_have_attribute("aria-hidden", "false")
+    expect(launcher).to_have_attribute("aria-expanded", "true")
+    assert page.locator("html").evaluate(
+        "(el) => getComputedStyle(el).getPropertyValue('--koko-bg').trim() === '#101923'"
+    )
+    page.keyboard.press("Escape")
+    expect(panel).to_be_hidden()
+    expect(launcher).to_have_attribute("aria-expanded", "false")
     page.reload()
     expect(page.locator("#koko-theme-launcher")).to_be_visible()
     expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
