@@ -60,13 +60,13 @@
       <main>
         <div id="koko-workspace-tabs" class="koko-workspace-tabs" role="tablist" aria-label="صفحه‌های باز"></div>
         <div id="globalError" class="error"></div>
-        <section class="panel">
-          <div class="section-title"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
-          <div class="filters">
-            <div><label for="projectId">شناسه پروژه</label><input id="projectId" type="number" min="1" step="1" value="1" required></div>
-            <div><label for="startAt">از تاریخ شمسی</label><div class="date-control"><input id="startAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="startHour">ساعت شروع (۲۴ ساعته)</label><div class="time-selects"><select id="startHour" aria-label="ساعت شروع"></select><span>:</span><select id="startMinute" aria-label="دقیقه شروع"></select></div></div>
-            <div><label for="endAt">تا تاریخ شمسی</label><div class="date-control"><input id="endAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="endHour">ساعت پایان (۲۴ ساعته)</label><div class="time-selects"><select id="endHour" aria-label="ساعت پایان"></select><span>:</span><select id="endMinute" aria-label="دقیقه پایان"></select></div></div>
-            <div><p id="dateInputHelp" class="muted">تاریخ را از تقویم شمسی انتخاب کنید و ساعت را از فهرست ساعت و دقیقه برگزینید؛ منطقه زمانی پروژه اعمال می‌شود.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
+        <section class="panel koko-form-section koko-report-range">
+          <div class="koko-section-heading"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
+          <div class="filters koko-form-grid is-four-columns">
+            <div class="koko-field"><label for="projectId">شناسه پروژه</label><input id="projectId" class="koko-control" type="number" min="1" step="1" value="1" required></div>
+            <div class="koko-field"><label for="startAt">از تاریخ شمسی</label><div class="date-control"><input class="koko-control" id="startAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="startHour">ساعت شروع (۲۴ ساعته)</label><div class="time-selects"><select id="startHour" aria-label="ساعت شروع"></select><span>:</span><select id="startMinute" aria-label="دقیقه شروع"></select></div></div>
+            <div class="koko-field"><label for="endAt">تا تاریخ شمسی</label><div class="date-control"><input class="koko-control" id="endAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="endHour">ساعت پایان (۲۴ ساعته)</label><div class="time-selects"><select id="endHour" aria-label="ساعت پایان"></select><span>:</span><select id="endMinute" aria-label="دقیقه پایان"></select></div></div>
+            <div class="koko-field"><p id="dateInputHelp" class="muted">تاریخ را از تقویم شمسی انتخاب کنید و ساعت را از فهرست ساعت و دقیقه برگزینید؛ منطقه زمانی پروژه اعمال می‌شود.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
           </div>
         </section>
         <section id="dashboardPage" class="page">
@@ -92,23 +92,23 @@
           <section class="panel"><h2>توضیحات و حدود داده</h2><p>شاخص‌ها فقط از رکوردهای ذخیره‌شده محاسبه می‌شوند. زمان رسیدگی و مدت حضور در هر وضعیت تا زمانی که تمام رخدادهای لازم ثبت نشده باشند محاسبه نمی‌شوند.</p></section>
         </section>
         <section id="workflowPage" class="page hidden">
-          <section class="panel">
-            <div class="section-title"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
-            <div class="filters">
-              <div><label for="statusFilter">وضعیت</label><select id="statusFilter"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
-              <div><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" type="number" min="1"></div>
-              <div><label for="contractFilter">شماره قرارداد مادر</label><input id="contractFilter" inputmode="numeric" maxlength="6" placeholder="مثلاً 760123"></div>
-              <div><label for="creatorFilter">شناسه ثبت‌کننده</label><input id="creatorFilter" type="number" min="1"></div>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
+            <div class="filters koko-form-grid is-four-columns">
+              <div class="koko-field"><label for="statusFilter">وضعیت</label><select id="statusFilter" class="koko-control"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
+              <div class="koko-field"><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" class="koko-control" type="number" min="1"></div>
+              <div class="koko-field"><label for="contractFilter">شماره قرارداد مادر</label><input id="contractFilter" class="koko-control" inputmode="numeric" maxlength="6" placeholder="مثلاً 760123"></div>
+              <div class="koko-field"><label for="creatorFilter">شناسه ثبت‌کننده</label><input id="creatorFilter" class="koko-control" type="number" min="1"></div>
             </div>
           </section>
-          <section class="panel"><div id="workflowMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>ثبت‌کننده</th><th>تاریخ ایجاد</th><th>نهایی‌شدن</th></tr></thead><tbody id="workflowRows"><tr><td colspan="8">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div><div class="row" style="margin-top:14px"><button id="prevPage" class="btn secondary">قبلی</button><span id="pageMeta" class="muted"></span><button id="nextPage" class="btn secondary">بعدی</button></div></section>
+          <section class="panel koko-form-section"><div id="workflowMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>ثبت‌کننده</th><th>تاریخ ایجاد</th><th>نهایی‌شدن</th></tr></thead><tbody id="workflowRows"><tr><td colspan="8">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div><div class="row" style="margin-top:14px"><button id="prevPage" class="btn secondary">قبلی</button><span id="pageMeta" class="muted"></span><button id="nextPage" class="btn secondary">بعدی</button></div></section>
         </section>
         <section id="eventsPage" class="page hidden">
-          <section class="panel">
-            <div class="section-title"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
-            <div class="filters"><div><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" type="number" min="1"></div><div><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" type="number" min="1"></div></div>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
+            <div class="filters koko-form-grid is-three-columns"><div class="koko-field"><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter" class="koko-control"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div class="koko-field"><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" class="koko-control" type="number" min="1"></div><div class="koko-field"><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" class="koko-control" type="number" min="1"></div></div>
           </section>
-          <section class="panel"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
+          <section class="panel koko-form-section"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
         </section>
         <section id="contractPage" class="page hidden">
           <section class="panel koko-form-section">
