@@ -299,3 +299,37 @@ def test_browser_jalali_picker_today_close_escape_and_month_year_boundaries(brow
     }""")
     expected_today_fa = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in expected_today)
     expect(start).to_have_value(expected_today_fa)
+
+
+def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, page: Page):
+    page.goto(browser_app["base_url"] + "/portal/")
+    page.get_by_label("نام کاربری").fill("browser-import-admin")
+    page.get_by_label("گذرواژه").fill("e2e-test-password")
+    page.get_by_role("button", name="ورود امن").click()
+
+    # Theme controls apply immediately and survive a full page reload.
+    launcher = page.locator("#koko-theme-launcher")
+    expect(launcher).to_be_visible()
+    launcher.click()
+    panel = page.locator("#koko-theme-panel")
+    expect(panel).to_be_visible()
+    panel.locator("#kt-theme").select_option("dark")
+    expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
+    page.reload()
+    expect(page.locator("#koko-theme-launcher")).to_be_visible()
+    expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
+
+    # Closing the active tab returns to the previous open page, not a blank state.
+    page.get_by_role("button", name="گزارش گردش کار").click()
+    expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("گزارش گردش کار")
+    page.get_by_role("button", name="بستن گزارش گردش کار").click()
+    expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
+    expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("نمای مدیریتی")
+
+    # Reset is persistent too, and the floating controls remain inside a narrow viewport.
+    launcher.click()
+    panel.locator("#kt-reset").click()
+    expect(page.locator("html")).to_have_attribute("data-koko-theme", "pastel")
+    page.set_viewport_size({"width": 390, "height": 844})
+    expect(launcher).to_be_visible()
+    assert page.locator("body").evaluate("(el) => el.scrollWidth <= window.innerWidth")
