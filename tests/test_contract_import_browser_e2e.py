@@ -351,3 +351,12 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     page.set_viewport_size({"width": 390, "height": 844})
     expect(launcher).to_be_visible()
     assert page.locator("body").evaluate("(el) => el.scrollWidth <= window.innerWidth")
+
+    # The responsive navigation opens as a drawer and closes after navigation.
+    toggle = page.locator("#navToggle")
+    expect(toggle).to_be_visible()
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-expanded", "true")
+    page.locator('#sabtNav button[data-page="events"]').click()
+    expect(toggle).to_have_attribute("aria-expanded", "false")
+    expect(page.locator("#eventsPage")).to_be_visible()
