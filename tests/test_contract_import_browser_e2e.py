@@ -191,24 +191,25 @@ def test_browser_jalali_calendar_and_time_selectors_submit_project_local_period(
     expect(page.locator("#startAt")).not_to_have_value("")
     expect(page.locator("#endAt")).not_to_have_value("")
 
-    # Select dates through the picker only; derive the test dates from its current Jalali month.
+    # Select dates through the picker only. Read the month actually displayed by
+    # the picker: the report defaults are project-timezone based and can straddle
+    # a Jalali month boundary independently of the browser's local date.
     to_latin = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
-    year_text, month_text, _ = page.locator("#startAt").input_value().translate(to_latin).split("/")
-    year, month = int(year_text), int(month_text)
-    start_date = f"{year:04d}/{month:02d}/01"
-    next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
-    end_date = f"{next_year:04d}/{next_month:02d}/01"
 
     page.locator("#startAt").click()
     expect(page.locator("#jalaliPicker")).to_be_visible()
+    start_month = page.locator("#jalaliMonthTitle").inner_text().translate(to_latin)
+    start_year, start_month_number = map(int, start_month.split("/"))
+    start_date = f"{start_year:04d}/{start_month_number:02d}/01"
     page.locator(f'#jalaliDays button[data-jalali-date="{start_date}"]').click()
     expected_start = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in start_date)
     expect(page.locator("#startAt")).to_have_value(expected_start)
 
     page.locator("#endAt").click()
-    # Opening the end-date field initializes the picker to that field's month.
-    # Do not advance again: the desired end date is already the following month
-    # relative to the start date selected above.
+    end_month = page.locator("#jalaliMonthTitle").inner_text().translate(to_latin)
+    end_year, end_month_number = map(int, end_month.split("/"))
+    # Pick day two so the selected end instant remains after start at 00:00.
+    end_date = f"{end_year:04d}/{end_month_number:02d}/02"
     page.locator(f'#jalaliDays button[data-jalali-date="{end_date}"]').click()
     expected_end = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in end_date)
     expect(page.locator("#endAt")).to_have_value(expected_end)
