@@ -328,6 +328,7 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     # Closing the active tab returns to the previous open page, not a blank state.
     page.locator('nav button[data-page="workflow"]').click()
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("گزارش گردش کار")
+    assert page.evaluate("typeof window.sabtNavigatePage") == "function"
     page.evaluate("""() => {
         window.__kokoNavigationCalls = [];
         const original = window.sabtNavigatePage;
@@ -338,8 +339,8 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
         };
     }""")
     page.get_by_role("button", name="بستن گزارش گردش کار").click()
-    expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
     assert page.evaluate("window.__kokoNavigationCalls") == [["dashboard", True]]
+    expect(page.locator("nav button.active")).to_have_attribute("data-page", "dashboard")
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("نمای مدیریتی")
 
     # Reset is persistent too, and the floating controls remain inside a narrow viewport.
