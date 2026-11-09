@@ -43,11 +43,11 @@ Adopt the supplied Persian RTL dashboard references: soft blue/lavender canvas, 
 - Foundation and theme engine: implemented in all three repositories.
 - Responsive navigation behavior: integrated into each existing application shell.
 - Workspace tabs: integrated with each repository's existing navigation model.
-- Page-level redesign: not yet complete; forms, tables, dashboards, and reports remain application-specific and should be migrated in reviewed groups.
+- Page-level redesign: Sabt dashboard, report-range filters, workflow/event report tables, contract search, and bulk import now use Koko UI primitives; ClinicCore dashboard and operational pages use the shared metric/action patterns; Store dashboard and operational pages use the shared metric/action/table patterns. Remaining page groups should be migrated in reviewed batches.
 - Visual QA: automated Chromium coverage is in place for theme persistence, navigation behavior, workspace tabs, and narrow viewports. A final human review on the target Windows desktop and mobile devices remains recommended.
 
 ## Project-specific adaptations
-- Sabt: contract workflow, transfers, bulk import, and Jalali reporting.
+- Sabt: contract workflow, transfers, bulk import, and Jalali reporting. Report-range controls, workflow/event filters, and report tables use the shared responsive form/table contract while preserving all API and DOM hooks.
 - ClinicCore: patients, appointments, clinical workflows, and clinic schedule.
 - Store: sales, purchases, inventory, people, accounts, and reports.
 
