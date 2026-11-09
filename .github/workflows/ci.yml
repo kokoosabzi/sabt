@@ -2,7 +2,7 @@ name: SABT foundation checks
 
 on:
   push:
-    branches: [main, "codex/**"]
+    branches: [main, "codex/**", "ui/**"]
   pull_request:
     branches: [main]
 
