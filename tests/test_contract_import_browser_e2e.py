@@ -319,6 +319,12 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     expect(page.locator("#koko-theme-launcher")).to_be_visible()
     expect(page.locator("html")).to_have_attribute("data-koko-theme", "dark")
 
+    # Authentication is intentionally independent from local UI preferences.
+    if page.locator("#loginView").is_visible():
+        page.get_by_label("نام کاربری").fill("browser-import-admin")
+        page.get_by_label("گذرواژه").fill("e2e-test-password")
+        page.get_by_role("button", name="ورود امن").click()
+
     # Closing the active tab returns to the previous open page, not a blank state.
     page.locator('nav button[data-page="workflow"]').click()
     expect(page.locator("#koko-workspace-tabs .koko-tab.active")).to_contain_text("گزارش گردش کار")
