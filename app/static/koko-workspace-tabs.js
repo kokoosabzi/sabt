@@ -65,12 +65,10 @@
   };
 
   host.addEventListener('click', event => {
-    host.dataset.lastClickDebug = event.target.tagName + ':' + String(event.target.className || '');
     const closeButton = event.target.closest('button[data-close-tab]');
     if (!closeButton || !host.contains(closeButton)) return;
 
     const id = closeButton.dataset.closeTab;
-    host.dataset.closeDebug = id + '|' + String(currentPage());
     const index = tabs.findIndex(tab => tab.id === id);
     if (index < 0) return;
 
@@ -99,11 +97,11 @@
     }
   });
 
-  new MutationObserver(sync).observe(document.body, {
-    subtree: true,
+  const navObserver = new MutationObserver(sync);
+  buttons().forEach(button => navObserver.observe(button, {
     attributes: true,
     attributeFilter: ['class']
-  });
+  }));
 
   sync();
 })();
