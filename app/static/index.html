@@ -58,6 +58,7 @@
         <button data-page="contractImport">ورود گروهی قراردادها</button>
       </nav>
       <main>
+        <div id="koko-workspace-tabs" class="koko-workspace-tabs" role="tablist" aria-label="صفحه‌های باز"></div>
         <div id="globalError" class="error"></div>
         <section class="panel">
           <div class="section-title"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
@@ -588,5 +589,6 @@
   if(token){showApp();loadActivePage().catch(()=>showLogin())}else showLogin();
 })();
 </script>
+  <script src="/static/koko-workspace-tabs.js" defer></script>
 </body>
 </html>
