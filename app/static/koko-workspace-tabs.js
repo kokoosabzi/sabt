@@ -88,6 +88,10 @@
     }
 
     render();
+    if (!wasActive && remaining.length) {
+      const focusIndex = Math.min(index, remaining.length - 1);
+      host.querySelectorAll('.koko-tab')[focusIndex]?.querySelector('button:not(.koko-tab-close)')?.focus();
+    }
   });
 
   document.addEventListener('click', event => {
