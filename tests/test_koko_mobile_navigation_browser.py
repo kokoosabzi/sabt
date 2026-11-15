@@ -55,3 +55,22 @@ def test_sabt_mobile_navigation_escape_outside_click_and_focus_return(page):
     expect(nav).to_be_hidden()
     expect(toggle).to_have_attribute("aria-expanded", "false")
     expect(toggle).to_be_focused()
+
+
+def test_sabt_workspace_tab_keyboard_focus_survives_closing_inactive_tab(page):
+    script = (ROOT / "app/static/koko-workspace-tabs.js").read_text(encoding="utf-8")
+    page.set_content("""<!doctype html><html lang="fa" dir="rtl"><body>
+      <nav><button data-page="dashboard" class="active">داشبورد</button>
+      <button data-page="reports">گزارش‌ها</button></nav>
+      <div id="koko-workspace-tabs" role="group" aria-label="صفحه‌های باز"></div>
+    </body></html>""")
+    page.add_script_tag(content=script)
+    page.locator('nav button[data-page="reports"]').click()
+    reports = page.locator('#koko-workspace-tabs .koko-tab[data-page="reports"] button').first
+    expect(reports).to_be_visible()
+    close_dashboard = page.get_by_role("button", name="بستن داشبورد")
+    close_dashboard.focus()
+    page.keyboard.press("Enter")
+    expect(page.locator('#koko-workspace-tabs .koko-tab')).to_have_count(1)
+    expect(page.locator('#koko-workspace-tabs .koko-tab button').first).to_be_focused()
+    expect(page.locator('#koko-workspace-tabs .koko-tab')).to_contain_text("گزارش‌ها")
