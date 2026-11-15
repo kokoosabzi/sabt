@@ -59,11 +59,15 @@ def test_sabt_mobile_navigation_escape_outside_click_and_focus_return(page):
 
 def test_sabt_workspace_tab_keyboard_focus_survives_closing_inactive_tab(page):
     script = (ROOT / "app/static/koko-workspace-tabs.js").read_text(encoding="utf-8")
-    page.set_content("""<!doctype html><html lang="fa" dir="rtl"><body>
-      <nav><button data-page="dashboard">داشبورد</button>
-      <button data-page="reports" class="active">گزارش‌ها</button></nav>
-      <div id="koko-workspace-tabs" role="group" aria-label="صفحه‌های باز"></div>
-    </body></html>""")
+    page.route(
+        "http://sabt.test/**",
+        lambda route: route.fulfill(body="""<!doctype html><html lang="fa" dir="rtl"><body>
+          <nav><button data-page="dashboard">داشبورد</button>
+          <button data-page="reports" class="active">گزارش‌ها</button></nav>
+          <div id="koko-workspace-tabs" role="group" aria-label="صفحه‌های باز"></div>
+        </body></html>""", content_type="text/html"),
+    )
+    page.goto("http://sabt.test/")
     page.evaluate("""() => sessionStorage.setItem(
       'sabt.workspace.tabs.v1',
       JSON.stringify([{id: 'dashboard'}, {id: 'reports'}])
