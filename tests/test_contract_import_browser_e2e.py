@@ -278,17 +278,20 @@ def test_browser_jalali_picker_today_close_escape_and_month_year_boundaries(brow
     page.keyboard.press("Escape")
     expect(picker).to_be_hidden()
     expect(start).to_have_attribute("aria-expanded", "false")
+    expect(start).to_be_focused()
     start.click()
     expect(picker).to_be_visible()
     page.locator("#jalaliClose").click()
     expect(picker).to_be_hidden()
     expect(start).to_have_attribute("aria-expanded", "false")
+    expect(start).to_be_focused()
 
     # Today uses the project's configured timezone and fills the date without manual typing.
     start.click()
     page.locator("#jalaliToday").click()
     expect(picker).to_be_hidden()
     expect(start).to_have_attribute("aria-expanded", "false")
+    expect(start).to_be_focused()
     expected_today = page.evaluate("""() => {
       const parts = new Intl.DateTimeFormat(
         'en-US-u-ca-persian-nu-latn',
