@@ -243,10 +243,12 @@
   }
   let jalaliPickerTarget = null;
   let jalaliPickerMonth = null;
-  function closeJalaliPicker() {
+  function closeJalaliPicker(restoreFocus = true) {
+    const target = jalaliPickerTarget;
     $('jalaliPicker').classList.add('hidden');
-    if (jalaliPickerTarget) $(jalaliPickerTarget).setAttribute('aria-expanded','false');
+    if (target) $(target).setAttribute('aria-expanded','false');
     jalaliPickerTarget = null;
+    if (restoreFocus && target) $(target).focus();
   }
   function renderJalaliPicker() {
     if (!jalaliPickerMonth) return;
@@ -379,7 +381,7 @@
   $('jalaliNext').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===12){jalaliPickerMonth.month=1;jalaliPickerMonth.year++}else jalaliPickerMonth.month++;renderJalaliPicker()});
   $('jalaliToday').addEventListener('click',()=>{if(jalaliPickerTarget){const p=projectJalaliToday();$(jalaliPickerTarget).value=toPersianDigits(formatJalali(p.year,p.month,p.day));closeJalaliPicker()}});
   $('jalaliClose').addEventListener('click',closeJalaliPicker);
-  document.addEventListener('pointerdown',e=>{if(!$('jalaliPicker').contains(e.target)&&e.target!==$('startAt')&&e.target!==$('endAt'))closeJalaliPicker()});
+  document.addEventListener('pointerdown',e=>{if(!$('jalaliPicker').contains(e.target)&&e.target!==$('startAt')&&e.target!==$('endAt'))closeJalaliPicker(false)});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeJalaliPicker()});
   $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();await loadActivePage()}catch(err){showError(err.message,'loginError')}});
   $('logoutButton').addEventListener('click',async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}token='';sessionStorage.removeItem('sabt_token');showLogin()});
