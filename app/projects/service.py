@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.authorization import authorize
+from app.auth.authorization import AuthorizationContext, authorize
 from app.db.models import Project, ProjectAccess, User
 
 
@@ -109,9 +109,7 @@ def list_accessible_projects(db: Session, user: User) -> list[Project]:
                 db,
                 user,
                 "project.view",
-                __import__("app.auth.authorization", fromlist=["AuthorizationContext"]).AuthorizationContext(
-                    project_id=project.id
-                ),
+                AuthorizationContext(project_id=project.id),
             )
         except PermissionError:
             continue
