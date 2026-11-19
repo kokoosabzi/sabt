@@ -39,6 +39,9 @@ def test_online_backup_captures_committed_wal_data(tmp_path):
 
         backup = create_backup(source, tmp_path / "backups")
         assert backup.is_file()
+        with sqlite3.connect(backup) as snapshot:
+            assert snapshot.execute("PRAGMA journal_mode").fetchone()[0].lower() == "delete"
+        assert not Path(f"{backup}-wal").exists()
         assert _read_value(backup) == "committed in WAL"
     finally:
         connection.close()
