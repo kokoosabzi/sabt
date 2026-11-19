@@ -42,4 +42,4 @@ The current development branch includes preliminary Windows launchers:
 - Run `start.bat` for the local server and portal.
 - Run `stop.bat` to stop the verified SABT server process.
 
-See [HELP/WINDOWS_INSTALL.md](HELP/WINDOWS_INSTALL.md) and [HELP/ADMIN_BOOTSTRAP.md](HELP/ADMIN_BOOTSTRAP.md) for setup details and data-location safety. The server currently binds only to `127.0.0.1:8000`. Backup/restore, LAN access, password recovery, and a standalone MSI/EXE installer are not yet delivered.
+See [HELP/WINDOWS_INSTALL.md](HELP/WINDOWS_INSTALL.md) and [HELP/ADMIN_BOOTSTRAP.md](HELP/ADMIN_BOOTSTRAP.md) for setup details and data-location safety. The server currently binds only to `127.0.0.1:8000`. SQLite backup and offline restore commands are available through `python -m app.backup`; encrypted backups, retention policy, LAN access, password recovery, and a standalone MSI/EXE installer are not yet delivered.
