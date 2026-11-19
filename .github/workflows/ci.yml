@@ -64,9 +64,11 @@ jobs:
       - name: Verify setup refuses to ignore a repository-local database
         shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $false
           New-Item -ItemType File -Path "sabt.db" -Force | Out-Null
           cmd /c setup.bat
-          if ($LASTEXITCODE -eq 0) {
+          $setupExitCode = $LASTEXITCODE
+          if ($setupExitCode -eq 0) {
             Remove-Item "sabt.db" -Force
             throw "setup.bat accepted a legacy repository database without an explicit data-directory choice."
           }
