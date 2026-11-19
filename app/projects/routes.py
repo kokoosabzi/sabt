@@ -27,7 +27,10 @@ class ProjectCreateRequest(BaseModel):
     @field_validator("timezone")
     @classmethod
     def timezone_must_exist(cls, value: str) -> str:
-        return validate_project_timezone(value)
+        try:
+            return validate_project_timezone(value)
+        except ProjectValidationError as exc:
+            raise ValueError("project_timezone_invalid") from exc
 
 
 @router.post("", status_code=201)
