@@ -2,6 +2,15 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
+## Windows MVP execution track — 2026-11-19
+
+- **Platform scope:** Windows desktop/local-LAN only for the current MVP. Android and mobile application delivery are explicitly out of scope; mobile visual review is not an MVP gate.
+- **Starting GitHub baseline:** PR #59 head `9d530f2ee2d3a94bacb9fb5f84a78dc0688cb007`; its associated GitHub Actions run `43956567360` completed successfully before this workstream.
+- **Confirmed deployment gaps:** no root `setup.bat`, `start.bat`, or `stop.bat`; no first-admin bootstrap or centralized permission seed; runtime SQLite URL was hard-coded as `sqlite:///./sabt.db`, while Alembic separately read `alembic.ini`.
+- **Change in progress:** introduce `SABT_DATA_DIR` as an opt-in stable data-folder setting shared by runtime and Alembic. The historical repository-relative default remains unchanged for development and existing installations. No existing database is moved, copied, or overwritten automatically.
+- **Verification status:** the database-location helper and Alembic/runtime consistency tests have been added. CI for the resulting commit is pending; do not mark the Windows install milestone complete until the PR checks pass.
+- **Next concrete tasks:** verify the database configuration tests in CI; then implement and test one-time interactive administrator bootstrap and a reviewed permission catalog; then implement the minimum project-creation/access workflow needed to reach a usable first project; only then add Windows setup/start/stop scripts and persistence/restart smoke coverage.
+
 ## Current status — reconciled 2026-10-21 (after PR #55)
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
