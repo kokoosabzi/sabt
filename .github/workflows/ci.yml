@@ -47,3 +47,40 @@ jobs:
           alembic downgrade base
           alembic upgrade head
           alembic current
+
+  windows-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      SABT_SKIP_BOOTSTRAP: "1"
+      SABT_NO_BROWSER: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install and migrate using the Windows setup script
+        shell: cmd
+        run: setup.bat
+      - name: Start SABT using the Windows launcher
+        shell: cmd
+        run: start.bat
+      - name: Verify the local health and portal endpoints
+        shell: pwsh
+        run: |
+          $health = Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing
+          if ($health.StatusCode -ne 200) { throw "Health endpoint failed." }
+          $portal = Invoke-WebRequest -Uri "http://127.0.0.1:8000/portal/" -UseBasicParsing
+          if ($portal.StatusCode -ne 200) { throw "Portal endpoint failed." }
+      - name: Stop SABT using the Windows launcher
+        shell: cmd
+        run: stop.bat
+      - name: Verify the server process and PID file are gone
+        shell: pwsh
+        run: |
+          $pidFile = Join-Path $env:LOCALAPPDATA "SABT\\run\\server.pid"
+          if (Test-Path $pidFile) { throw "SABT PID file was not removed." }
+          $remaining = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match "uvicorn app.main:app" }
+          if ($remaining) { throw "SABT server process is still running." }
