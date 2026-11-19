@@ -2,6 +2,15 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
+## First-project onboarding — 2026-11-19
+
+- **Implemented:** `app/projects/service.py` and `app/projects/routes.py` add authenticated project creation and membership-filtered listing. `POST /projects` requires the global `project.create` permission, validates a unique internal code, mandatory unique two-digit contract code (10–99), and IANA timezone, then creates the Project and grants the creator active ProjectAccess in the same transaction.
+- **Portal onboarding:** after login, the portal requests the user's accessible projects. If none exist, it shows a first-project form; after successful creation it selects the new project and continues to the existing dashboard. Existing users with accessible projects proceed directly to the portal.
+- **Security:** unauthenticated users and users without `project.create` cannot create projects. The project list returns only active memberships for which `project.view` authorization succeeds. Project-scoped business permissions still require project access.
+- **Tests added:** API coverage for first project creation, creator access, accessible project listing, unauthenticated/unauthorized denial, invalid two-digit code, and duplicate internal/contract codes; browser coverage for first-run onboarding visibility and automatic project selection.
+- **Verification status:** project API tests passed on commit `786087134c027cd22afe16e6efd8b97e8eafb374` as part of a 226-test CI run. The subsequent portal onboarding and mandatory contract-code changes are awaiting CI on the current head. No Windows installation package is claimed complete.
+- **Next:** complete the portal onboarding CI, then test the full fresh-install path (migrations → first admin → login → first project → dashboard) before implementing Windows setup/start/stop launchers.
+
 ## Initial administrator bootstrap — 2026-11-19
 
 - **Implemented:** centralized permission catalog in `app/auth/permission_catalog.py`; interactive one-time bootstrap in `app/bootstrap.py`; command entry point `sabt-bootstrap`; Windows PowerShell instructions in `HELP/ADMIN_BOOTSTRAP.md`.
