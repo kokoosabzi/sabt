@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.auth.permission_catalog import ADMIN_ROLE_CODE, PERMISSION_CATALOG
 from app.auth.passwords import verify_password
-from app.bootstrap import BootstrapError, create_initial_admin
+from app.bootstrap import BootstrapError, create_initial_admin, get_bootstrap_status
 from app.db.base import Base
 from app.db.models import Permission, Role, RolePermission, User, UserRole
 
@@ -24,6 +24,20 @@ def db():
         yield session
     Base.metadata.drop_all(engine)
     engine.dispose()
+
+
+def test_bootstrap_status_changes_after_first_admin_is_created(db):
+    assert get_bootstrap_status(db) == "needs-admin"
+
+    create_initial_admin(
+        db,
+        username="first.admin",
+        display_name="مدیر نخست",
+        password="a secure initial password",
+    )
+    db.commit()
+
+    assert get_bootstrap_status(db) == "configured"
 
 
 def test_initial_admin_is_created_with_hashed_password_and_full_catalog(db):
