@@ -91,7 +91,6 @@ PERMISSION_CATALOG = (
     ("settings.view", "View settings", "View system settings."),
     ("settings.edit", "Edit settings", "Change system settings."),
     ("workflow.report.view", "View workflow reports", "View workflow and management reports."),
-    ("workflow_report.view", "View legacy workflow reports", "Compatibility permission for legacy report routes."),
 )
 ADMIN_ROLE_CODE = "administrator"
 ADMIN_ROLE_NAME = "مدیر سیستم"
