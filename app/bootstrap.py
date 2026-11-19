@@ -11,6 +11,7 @@ from __future__ import annotations
 import getpass
 import re
 import sys
+from pathlib import Path
 from datetime import datetime, timezone
 
 from alembic.config import Config
@@ -29,7 +30,7 @@ from app.auth.permission_catalog import (
 from app.db.config import get_database_url
 from app.db.models import Permission, Role, RolePermission, User, UserRole
 
-ROOT = __import__("pathlib").Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 MIN_PASSWORD_LENGTH = 12
 USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{2,99}$")
 
