@@ -19,7 +19,7 @@ def test_portal_contains_first_project_setup_fields():
 
 
 def test_first_run_project_setup_is_shown_only_when_user_has_no_projects(page):
-    page.set_content("""<!doctype html><html lang="fa" dir="rtl"><body>
+    page.set_content("""<!doctype html><html lang="fa" dir="rtl"><head><style>.hidden{display:none!important}</style></head><body>
       <section id="projectSetupPanel" class="hidden"></section>
       <div id="appWorkspace" class="layout"></div>
       <input id="projectId" value="1">
