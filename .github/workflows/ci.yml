@@ -119,9 +119,41 @@ jobs:
           if ($projects.total -ne 1) { throw "First project was not returned by the project list." }
           Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-project-id.txt") -Value $project.id
           Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-session-token.txt") -Value $login.access_token
+          $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
+          $python = Join-Path $PWD ".venv\Scripts\python.exe"
+          $backupDirectory = Join-Path $env:RUNNER_TEMP "sabt-backups"
+          $backupPath = & $python -m app.backup create --destination $backupDirectory
+          if ($LASTEXITCODE -ne 0) { throw "Online SQLite backup failed." }
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-backup-path.txt") -Value $backupPath.Trim()
       - name: Stop SABT using the Windows launcher
         shell: cmd
         run: stop.bat
+      - name: Change project data after the backup snapshot
+        shell: pwsh
+        run: |
+          $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
+          $python = Join-Path $PWD ".venv\Scripts\python.exe"
+          $mutate = @'
+          from sqlalchemy import select
+          from app.db.models import Project
+          from app.db.session import SessionLocal
+
+          with SessionLocal.begin() as db:
+              project = db.scalar(select(Project).where(Project.code == "windows-smoke"))
+              project.name = "Changed after backup"
+          '@
+          & $python -c $mutate
+          if ($LASTEXITCODE -ne 0) { throw "Could not mutate project data for restore test." }
+      - name: Restore the online backup while SABT is stopped
+        shell: pwsh
+        run: |
+          $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
+          $python = Join-Path $PWD ".venv\Scripts\python.exe"
+          $backupPath = Get-Content (Join-Path $env:RUNNER_TEMP "sabt-backup-path.txt") -Raw
+          & $python -m app.backup restore $backupPath.Trim() --confirm
+          if ($LASTEXITCODE -ne 0) { throw "Offline database restore failed." }
+          $safetyBackups = Get-ChildItem (Join-Path $env:LOCALAPPDATA "SABT\backups") -Filter "sabt-pre-restore-*.db"
+          if (-not $safetyBackups) { throw "Automatic pre-restore safety backup was not created." }
       - name: Restart SABT using the Windows launcher
         shell: cmd
         run: start.bat
@@ -134,6 +166,9 @@ jobs:
           $projects = Invoke-RestMethod -Uri "http://127.0.0.1:8000/projects" -Headers $headers
           if ($projects.total -ne 1 -or $projects.items[0].id -ne $expectedProjectId) {
             throw "Project data or authenticated session did not survive server restart."
+          }
+          if ($projects.items[0].name -ne "Windows smoke project") {
+            throw "Backup restore did not restore the pre-mutation project data."
           }
       - name: Stop SABT after restart
         shell: cmd
