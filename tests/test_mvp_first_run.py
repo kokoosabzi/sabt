@@ -8,7 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_db
-from app.auth.permission_catalog import PERMISSION_CATALOG
 from app.bootstrap import create_initial_admin
 from app.db.config import get_database_url
 from app.main import app
