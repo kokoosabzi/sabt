@@ -129,7 +129,14 @@ def _verify_migrations(engine) -> None:
         )
 
 
+def _configure_console_encoding() -> None:
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _configure_console_encoding()
     parser = argparse.ArgumentParser(description="Create the first SABT administrator.")
     parser.add_argument(
         "--status",
