@@ -86,6 +86,14 @@ def _sqlite_backup(source: Path, destination: Path) -> None:
         with closing(sqlite3.connect(str(destination), timeout=30)) as destination_connection:
             source_connection.backup(destination_connection)
             destination_connection.commit()
+            # Backups and restored files are standalone snapshots; do not leave
+            # WAL sidecars whose names would no longer match after atomic replace.
+            journal_mode = destination_connection.execute(
+                "PRAGMA journal_mode=DELETE"
+            ).fetchone()
+            if not journal_mode or journal_mode[0].lower() != "delete":
+                raise BackupError("امکان تبدیل فایل snapshot به حالت journal مستقل وجود ندارد.")
+            destination_connection.commit()
 
 
 def _temporary_database_path(directory: Path) -> Path:
