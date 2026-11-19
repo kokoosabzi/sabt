@@ -8,7 +8,7 @@ if not defined LOCALAPPDATA (
   exit /b 1
 )
 
-set "SABT_DATA_DIR=%LOCALAPPDATA%\SABT\data"
+if not defined SABT_DATA_DIR set "SABT_DATA_DIR=%LOCALAPPDATA%\SABT\data"
 set "SABT_LOG_DIR=%LOCALAPPDATA%\SABT\logs"
 set "SABT_RUN_DIR=%LOCALAPPDATA%\SABT\run"
 set "PID_FILE=%SABT_RUN_DIR%\server.pid"
