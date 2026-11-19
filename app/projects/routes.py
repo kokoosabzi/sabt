@@ -20,7 +20,7 @@ class ProjectCreateRequest(BaseModel):
 
     code: str = Field(min_length=2, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]+$")
     name: str = Field(min_length=1, max_length=200)
-    contract_code: str | None = Field(default=None, pattern=r"^[1-9][0-9]$")
+    contract_code: str = Field(pattern=r"^[1-9][0-9]$")
     description: str | None = Field(default=None, max_length=4000)
     timezone: str = Field(default="Asia/Tehran", min_length=1, max_length=64)
 
