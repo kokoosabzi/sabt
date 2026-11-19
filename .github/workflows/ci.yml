@@ -64,14 +64,13 @@ jobs:
       - name: Verify setup refuses to ignore a repository-local database
         shell: pwsh
         run: |
-          $PSNativeCommandUseErrorActionPreference = $false
           New-Item -ItemType File -Path "sabt.db" -Force | Out-Null
-          cmd /c setup.bat
-          $setupExitCode = $LASTEXITCODE
-          if ($setupExitCode -eq 0) {
+          cmd /c "call setup.bat && echo unexpected-success > setup-guard-result.txt || echo expected-refusal > setup-guard-result.txt"
+          if ((Get-Content "setup-guard-result.txt" -Raw).Trim() -ne "expected-refusal") {
             Remove-Item "sabt.db" -Force
             throw "setup.bat accepted a legacy repository database without an explicit data-directory choice."
           }
+          Remove-Item "setup-guard-result.txt" -Force
           Remove-Item "sabt.db" -Force
       - name: Install and migrate using the Windows setup script
         shell: cmd
