@@ -2,6 +2,14 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
+## Initial administrator bootstrap — 2026-11-19
+
+- **Implemented:** centralized permission catalog in `app/auth/permission_catalog.py`; interactive one-time bootstrap in `app/bootstrap.py`; command entry point `sabt-bootstrap`; Windows PowerShell instructions in `HELP/ADMIN_BOOTSTRAP.md`.
+- **Security behavior:** requires an Alembic database at the current head; prompts for username/display name/password without command-line secrets; enforces a 12-character minimum; hashes with the existing Scrypt implementation; creates a global Administrator role, its catalog permissions, and the initial user-role assignment in one transaction; refuses to proceed when any user already exists; does not overwrite accounts or generate a default password.
+- **Authorization note:** the administrator role grants catalogued capabilities, but project-scoped actions still require active membership in the target project under the existing authorization service.
+- **Verification status:** automated tests cover first-admin creation, password hashing, permission seeding, invalid inputs, and refusal after an account exists. CI for the current branch head is pending. No Windows package or launcher is claimed complete.
+- **Known next dependency:** there is not yet a complete project-creation API/UI flow. The next MVP task after CI is a secure first-project creation path that grants the initial administrator active project access, followed by an end-to-end login/project smoke test.
+
 ## Windows MVP execution track — 2026-11-19
 
 - **Platform scope:** Windows desktop/local-LAN only for the current MVP. Android and mobile application delivery are explicitly out of scope; mobile visual review is not an MVP gate.
