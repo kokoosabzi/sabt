@@ -54,6 +54,7 @@ jobs:
     env:
       SABT_SKIP_BOOTSTRAP: "1"
       SABT_NO_BROWSER: "1"
+      PYTHONUTF8: "1"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
