@@ -7,6 +7,8 @@ localized later without changing authorization checks.
 # (code, display name, description)
 PERMISSION_CATALOG = (
     ("dashboard.view", "View dashboard", "View the management dashboard."),
+    ("management_dashboard.view", "View management dashboard", "Permission required by the management summary dashboard."),
+    ("workflow_report.view", "View workflow reports", "Permission required by the workflow reporting service."),
     ("project.view", "View projects", "View projects available to the user."),
     ("project.create", "Create projects", "Create a new project."),
     ("project.edit", "Edit projects", "Edit project configuration."),
