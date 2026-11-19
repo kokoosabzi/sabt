@@ -8,9 +8,16 @@ if not defined LOCALAPPDATA (
   exit /b 1
 )
 
-set "SABT_DATA_DIR=%LOCALAPPDATA%\SABT\data"
+if not defined SABT_DATA_DIR set "SABT_DATA_DIR=%LOCALAPPDATA%\SABT\data"
 set "SABT_LOG_DIR=%LOCALAPPDATA%\SABT\logs"
 set "SABT_RUN_DIR=%LOCALAPPDATA%\SABT\run"
+if exist "%ROOT%sabt.db" if /I not "%SABT_DATA_DIR%\sabt.db"=="%ROOT%sabt.db" (
+  echo ERROR: A repository-local sabt.db already exists.
+  echo SABT will not silently switch to a new empty database or move existing data.
+  echo Set SABT_DATA_DIR to the folder containing that existing sabt.db, then rerun setup.bat.
+  exit /b 1
+)
+
 if not exist "%SABT_DATA_DIR%" mkdir "%SABT_DATA_DIR%"
 if not exist "%SABT_LOG_DIR%" mkdir "%SABT_LOG_DIR%"
 if not exist "%SABT_RUN_DIR%" mkdir "%SABT_RUN_DIR%"
