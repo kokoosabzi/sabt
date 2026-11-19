@@ -1,9 +1,14 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "sqlite:///./sabt.db"
+from app.db.config import get_database_url
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 30})
+DATABASE_URL = get_database_url()
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False, "timeout": 30},
+)
 
 
 @event.listens_for(engine, "connect")
