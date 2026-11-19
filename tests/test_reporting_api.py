@@ -161,7 +161,7 @@ def test_report_endpoints_deny_cross_project_access_even_with_global_report_role
 def test_workflow_events_api_returns_persisted_events_only():
     engine, db, client, project = _context()
     try:
-        now = datetime.now(timezone.utc)
+        now = datetime(2026, 10, 15, 12, 0, tzinfo=timezone.utc)
         operation_type = OperationType(
             code="EVENT-TEST", name="Event Test", active=True, system_defined=False,
             created_at=now, updated_at=now,

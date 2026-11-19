@@ -2,6 +2,23 @@
 
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
+## Initial administrator bootstrap — 2026-11-19
+
+- **Implemented:** centralized permission catalog in `app/auth/permission_catalog.py`; interactive one-time bootstrap in `app/bootstrap.py`; command entry point `sabt-bootstrap`; Windows PowerShell instructions in `HELP/ADMIN_BOOTSTRAP.md`.
+- **Security behavior:** requires an Alembic database at the current head; prompts for username/display name/password without command-line secrets; enforces a 12-character minimum; hashes with the existing Scrypt implementation; creates a global Administrator role, its catalog permissions, and the initial user-role assignment in one transaction; refuses to proceed when any user already exists; does not overwrite accounts or generate a default password.
+- **Authorization note:** the administrator role grants catalogued capabilities, but project-scoped actions still require active membership in the target project under the existing authorization service.
+- **Verification:** GitHub Actions run [44608617274](https://github.com/kokoosabzi/sabt/actions/runs/44608617274) passed on commit `49fa47214537a7af40f4c4049a1c018783c29c7f`: **222 tests passed**, including first-admin creation, Scrypt password verification, permission seeding, invalid inputs, refusal after an account exists, Chromium browser E2E, fresh SQLite migration, Alembic head, and downgrade/re-upgrade. Three non-blocking deprecation warnings remain in the test output. No Windows package or launcher is claimed complete.
+- **Known next dependency:** there is not yet a complete project-creation API/UI flow. The next MVP task after CI is a secure first-project creation path that grants the initial administrator active project access, followed by an end-to-end login/project smoke test.
+
+## Windows MVP execution track — 2026-11-19
+
+- **Platform scope:** Windows desktop/local-LAN only for the current MVP. Android and mobile application delivery are explicitly out of scope; mobile visual review is not an MVP gate.
+- **Starting GitHub baseline:** PR #59 head `9d530f2ee2d3a94bacb9fb5f84a78dc0688cb007`; its associated GitHub Actions run `43956567360` completed successfully before this workstream.
+- **Confirmed deployment gaps:** no root `setup.bat`, `start.bat`, or `stop.bat`; no first-admin bootstrap or centralized permission seed; runtime SQLite URL was hard-coded as `sqlite:///./sabt.db`, while Alembic separately read `alembic.ini`.
+- **Delivered:** `app/db/config.py` now resolves an opt-in `SABT_DATA_DIR` to a stable `sabt.db` path shared by runtime and Alembic. The historical repository-relative default remains unchanged for development and existing installations. No existing database is moved, copied, or overwritten automatically.
+- **Verification:** GitHub Actions PR run [44607369521](https://github.com/kokoosabzi/sabt/actions/runs/44607369521) passed on commit `8d6d3decc6f538065667703f7255419f60e99c50`, including the full pytest suite, Chromium browser tests, fresh SQLite upgrade, Alembic head check, and downgrade/re-upgrade. This verifies the database-path change, not the full Windows installer or MVP.
+- **Next concrete tasks:** verify the database configuration tests in CI; then implement and test one-time interactive administrator bootstrap and a reviewed permission catalog; then implement the minimum project-creation/access workflow needed to reach a usable first project; only then add Windows setup/start/stop scripts and persistence/restart smoke coverage.
+
 ## Current status — reconciled 2026-10-21 (after PR #55)
 
 - **Current phase:** Phase 0 — Foundation audit and stabilization. Reporting/UI additions are available, but they do not replace the foundational lifecycle, security, and data-integrity gates below.
