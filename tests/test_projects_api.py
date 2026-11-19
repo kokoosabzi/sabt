@@ -96,7 +96,7 @@ def test_project_list_contains_only_projects_with_active_membership(api_client):
     created = client.post(
         "/projects",
         headers=headers,
-        json={"code": "visible-project", "name": "پروژه قابل مشاهده"},
+        json={"code": "visible-project", "name": "پروژه قابل مشاهده", "contract_code": "71"},
     )
     assert created.status_code == 201
 
@@ -111,7 +111,7 @@ def test_project_creation_requires_authentication_and_project_create_permission(
 
     assert client.post(
         "/projects",
-        json={"code": "unauthenticated", "name": "بدون ورود"},
+        json={"code": "unauthenticated", "name": "بدون ورود", "contract_code": "72"},
     ).status_code == 401
 
     now = datetime.now(timezone.utc)
@@ -137,7 +137,7 @@ def test_project_creation_requires_authentication_and_project_create_permission(
     denied = client.post(
         "/projects",
         headers=headers,
-        json={"code": "forbidden-project", "name": "نباید ساخته شود"},
+        json={"code": "forbidden-project", "name": "نباید ساخته شود", "contract_code": "73"},
     )
     assert denied.status_code == 403
 
@@ -167,7 +167,7 @@ def test_project_creation_rejects_invalid_contract_code_and_duplicate_codes(api_
     duplicate_internal = client.post(
         "/projects",
         headers=headers,
-        json={"code": "SAME-CODE", "name": "تکرار کد"},
+        json={"code": "SAME-CODE", "name": "تکرار کد", "contract_code": "77"},
     )
     assert duplicate_internal.status_code == 409
 
