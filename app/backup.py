@@ -170,7 +170,14 @@ def restore_backup(
         temporary.unlink(missing_ok=True)
 
 
+def _configure_console_encoding() -> None:
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _configure_console_encoding()
     parser = argparse.ArgumentParser(description="Create or restore SABT SQLite backups.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
