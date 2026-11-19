@@ -64,6 +64,7 @@ def browser_app():
     )
     role = Role(code="browser-import-admin", name="Browser Import Admin", active=True)
     permissions = [
+        Permission(code="project.view", name="View Projects"),
         Permission(code="parent_contract.create", name="Create Parent Contract"),
         Permission(code="management_dashboard.view", name="View Management Dashboard"),
         Permission(code="workflow_report.view", name="View Workflow Reports"),
