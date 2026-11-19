@@ -34,3 +34,12 @@ SABT does not process money. Financial activity occurs outside the system; relat
 - Available first-pass pages: management summary, paginated workflow report, persisted workflow events, and Parent Contract transfer history.
 - Report access requires the corresponding project-scoped permissions. Enter the numeric Project ID to request a report.
 - The reporting period uses a keyboard-accessible Jalali calendar picker and controlled 24-hour hour/minute selectors; users do not type date/time strings manually. The picker uses the browser's built-in Persian calendar data (Intl) and works offline without a third-party CDN. Selected date/time is converted using the authorized project's timezone before UTC timestamps are sent to the API. Report timestamps are displayed in the project timezone with Persian locale formatting. Management summary, workflow, and persisted-event reports provide permission-scoped CSV and Excel exports; these pages and contract history also provide print-ready reports that can be saved as PDF through the browser's print dialog. Excel timestamp columns are explicitly labeled UTC.
+
+## Windows local MVP preview
+
+The current development branch includes preliminary Windows launchers:
+- Run `setup.bat` once to create the Python 3.12 virtual environment, install dependencies, apply migrations, and create the first administrator on a fresh database.
+- Run `start.bat` for the local server and portal.
+- Run `stop.bat` to stop the verified SABT server process.
+
+See [HELP/WINDOWS_INSTALL.md](HELP/WINDOWS_INSTALL.md) and [HELP/ADMIN_BOOTSTRAP.md](HELP/ADMIN_BOOTSTRAP.md) for setup details and data-location safety. The server currently binds only to `127.0.0.1:8000`. Backup/restore, LAN access, password recovery, and a standalone MSI/EXE installer are not yet delivered.
