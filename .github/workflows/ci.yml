@@ -50,7 +50,7 @@ jobs:
 
   windows-smoke:
     runs-on: windows-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     env:
       SABT_SKIP_BOOTSTRAP: "1"
       SABT_NO_BROWSER: "1"
@@ -61,26 +61,86 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Verify setup refuses to ignore a repository-local database
+        shell: pwsh
+        run: |
+          New-Item -ItemType File -Path "sabt.db" -Force | Out-Null
+          cmd /c setup.bat
+          if ($LASTEXITCODE -eq 0) {
+            Remove-Item "sabt.db" -Force
+            throw "setup.bat accepted a legacy repository database without an explicit data-directory choice."
+          }
+          Remove-Item "sabt.db" -Force
       - name: Install and migrate using the Windows setup script
         shell: cmd
         run: setup.bat
+      - name: Create the initial administrator in the configured Windows data directory
+        shell: pwsh
+        run: |
+          $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
+          $python = Join-Path $PWD ".venv\Scripts\python.exe"
+          $seed = @'
+          from app.db.session import SessionLocal
+          from app.bootstrap import create_initial_admin
+
+          with SessionLocal.begin() as db:
+              create_initial_admin(
+                  db,
+                  username="windows.admin",
+                  display_name="Windows CI Administrator",
+                  password="a secure windows ci password",
+              )
+          '@
+          & $python -c $seed
+          if ($LASTEXITCODE -ne 0) { throw "Initial administrator seed failed." }
       - name: Start SABT using the Windows launcher
         shell: cmd
         run: start.bat
-      - name: Verify the local health and portal endpoints
+      - name: Verify health, portal, login, and first project creation
         shell: pwsh
         run: |
           $health = Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing
           if ($health.StatusCode -ne 200) { throw "Health endpoint failed." }
           $portal = Invoke-WebRequest -Uri "http://127.0.0.1:8000/portal/" -UseBasicParsing
           if ($portal.StatusCode -ne 200) { throw "Portal endpoint failed." }
+          $basic = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("windows.admin:a secure windows ci password"))
+          $login = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/auth/login" -Headers @{ Authorization = "Basic $basic" }
+          $headers = @{ Authorization = "Bearer $($login.access_token)" }
+          $body = @{
+            code = "windows-smoke"
+            name = "Windows smoke project"
+            contract_code = "76"
+            timezone = "Asia/Tehran"
+          } | ConvertTo-Json
+          $project = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/projects" -Headers $headers -ContentType "application/json" -Body $body
+          if ($project.id -lt 1) { throw "First project was not created." }
+          $projects = Invoke-RestMethod -Uri "http://127.0.0.1:8000/projects" -Headers $headers
+          if ($projects.total -ne 1) { throw "First project was not returned by the project list." }
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-project-id.txt") -Value $project.id
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-session-token.txt") -Value $login.access_token
       - name: Stop SABT using the Windows launcher
+        shell: cmd
+        run: stop.bat
+      - name: Restart SABT using the Windows launcher
+        shell: cmd
+        run: start.bat
+      - name: Verify project and session persistence after restart
+        shell: pwsh
+        run: |
+          $token = Get-Content (Join-Path $env:RUNNER_TEMP "sabt-session-token.txt") -Raw
+          $expectedProjectId = [int](Get-Content (Join-Path $env:RUNNER_TEMP "sabt-project-id.txt") -Raw)
+          $headers = @{ Authorization = "Bearer $($token.Trim())" }
+          $projects = Invoke-RestMethod -Uri "http://127.0.0.1:8000/projects" -Headers $headers
+          if ($projects.total -ne 1 -or $projects.items[0].id -ne $expectedProjectId) {
+            throw "Project data or authenticated session did not survive server restart."
+          }
+      - name: Stop SABT after restart
         shell: cmd
         run: stop.bat
       - name: Verify the server process and PID file are gone
         shell: pwsh
         run: |
-          $pidFile = Join-Path $env:LOCALAPPDATA "SABT\\run\\server.pid"
+          $pidFile = Join-Path $env:LOCALAPPDATA "SABT\run\server.pid"
           if (Test-Path $pidFile) { throw "SABT PID file was not removed." }
           $remaining = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match "uvicorn app.main:app" }
           if ($remaining) { throw "SABT server process is still running." }
