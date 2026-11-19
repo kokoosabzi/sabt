@@ -8,6 +8,7 @@ when any user already exists. It does not create a default credential.
 """
 from __future__ import annotations
 
+import argparse
 import getpass
 import re
 import sys
@@ -105,6 +106,12 @@ def create_initial_admin(
     return user
 
 
+
+def get_bootstrap_status(db: Session) -> str:
+    """Return a non-sensitive machine-readable first-run status."""
+    return "configured" if db.scalar(select(func.count(User.id))) else "needs-admin"
+
+
 def _verify_migrations(engine) -> None:
     inspector = inspect(engine)
     if "alembic_version" not in inspector.get_table_names():
@@ -122,16 +129,27 @@ def _verify_migrations(engine) -> None:
         )
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Create the first SABT administrator.")
+    parser.add_argument(
+        "--status",
+        action="store_true",
+        help="Print only 'needs-admin' or 'configured' without prompting.",
+    )
+    args = parser.parse_args(argv)
     engine = create_engine(
         get_database_url(),
         connect_args={"check_same_thread": False, "timeout": 30},
     )
     try:
         _verify_migrations(engine)
+        if args.status:
+            with Session(engine) as db:
+                print(get_bootstrap_status(db))
+            return 0
         with Session(engine) as db:
             with db.begin():
-                if db.scalar(select(func.count(User.id))) != 0:
+                if get_bootstrap_status(db) != "needs-admin":
                     raise BootstrapError(
                         "این پایگاه داده قبلاً حساب کاربری دارد؛ ایجاد مدیر اولیه مجاز نیست."
                     )
