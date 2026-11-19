@@ -157,6 +157,13 @@ def test_project_creation_rejects_invalid_contract_code_and_duplicate_codes(api_
     )
     assert invalid.status_code == 422
 
+    invalid_timezone = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "bad-timezone", "name": "منطقه زمانی نامعتبر", "contract_code": "78", "timezone": "Not/A_Real_Zone"},
+    )
+    assert invalid_timezone.status_code == 422
+
     first = client.post(
         "/projects",
         headers=headers,
