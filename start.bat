@@ -43,7 +43,7 @@ if /I "%BOOTSTRAP_STATUS%"=="needs-admin" (
   )
 )
 
-for /f "delims=" %%P in ('powershell -NoProfile -Command "if (Test-Path '%PID_FILE%') { $id = (Get-Content '%PID_FILE%' -Raw).Trim(); $p = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $id) -ErrorAction SilentlyContinue; if ($p -and $p.CommandLine -match 'uvicorn app.main:app') { Write-Output 'RUNNING' } else { Remove-Item '%PID_FILE%' -Force -ErrorAction SilentlyContinue } }"') do set "SERVER_STATE=%%P"
+for /f "delims=" %%P in ('powershell -NoProfile -Command "if (Test-Path '%PID_FILE%') { $serverProcessId = (Get-Content '%PID_FILE%' -Raw).Trim(); $p = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $serverProcessId) -ErrorAction SilentlyContinue; if ($p -and $p.CommandLine -match 'uvicorn app.main:app') { Write-Output 'RUNNING' } else { Remove-Item '%PID_FILE%' -Force -ErrorAction SilentlyContinue } }"') do set "SERVER_STATE=%%P"
 if /I "%SERVER_STATE%"=="RUNNING" (
   echo SABT is already running at http://127.0.0.1:8000/portal/
   if not "%SABT_NO_BROWSER%"=="1" start "" "http://127.0.0.1:8000/portal/"
