@@ -16,7 +16,7 @@ from app.main import app
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_fresh_windows_style_database_admin_login_first_project_and_dashboard(
+def test_fresh_configured_database_admin_login_first_project_and_dashboard(
     tmp_path, monkeypatch
 ):
     data_directory = tmp_path / "SABT data"
