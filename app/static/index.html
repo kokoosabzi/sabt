@@ -69,6 +69,8 @@
         <button data-page="events">رخدادهای گردش کار</button>
         <button data-page="contract">گردش قرارداد</button>
         <button data-page="contractImport">ورود گروهی قراردادها</button>
+        <button data-page="people">اشخاص پروژه</button>
+        <button data-page="properties">املاک پروژه</button>
       </nav>
       <main>
         <div id="koko-workspace-tabs" class="koko-workspace-tabs" role="group" aria-label="صفحه‌های باز"></div>
@@ -93,6 +95,8 @@
             <button class="koko-action koko-card-mint" data-page="contractImport"><span class="koko-action-icon">⇧</span><strong>ورود گروهی قرارداد</strong><small>بارگذاری Excel و CSV</small><span class="koko-action-arrow">←</span></button>
             <button class="koko-action koko-card-lilac" data-page="workflow"><span class="koko-action-icon">▤</span><strong>گزارش گردش کار</strong><small>پیگیری عملیات سامانه</small><span class="koko-action-arrow">←</span></button>
             <button class="koko-action koko-card-peach" data-page="events"><span class="koko-action-icon">◷</span><strong>رخدادها</strong><small>تاریخچه تغییرات ثبت‌شده</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-blue" data-page="people"><span class="koko-action-icon">♙</span><strong>اشخاص پروژه</strong><small>ثبت و جست‌وجوی اشخاص</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-mint" data-page="properties"><span class="koko-action-icon">⌂</span><strong>املاک پروژه</strong><small>ثبت و جست‌وجوی واحدها</small><span class="koko-action-arrow">←</span></button>
           </section>
           <div class="row" style="margin-bottom:14px"><button id="summaryExportXlsx" class="btn secondary">خروجی Excel شاخص‌ها</button><button id="summaryPrint" class="btn secondary">چاپ / ذخیره PDF</button></div>
           <div class="metrics koko-sabt-metrics">
@@ -163,7 +167,56 @@
             <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
           </section>
         </section>
-      </main>
+              <section id="peoplePage" class="page hidden">
+          <section class="koko-welcome"><div><span class="koko-eyebrow">SABT · PEOPLE</span><h2>اشخاص پروژه</h2><p>ثبت و جست‌وجوی اشخاص؛ هر شخص به‌صورت رکورد مستقل نگهداری و به پروژه متصل می‌شود.</p></div><div class="koko-welcome-mark" aria-hidden="true">♙</div></section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>ثبت شخص جدید</h2><p>در صورت مشاهده شناسه تکراری، سامانه هشدار می‌دهد و رکوردها را خودکار ادغام نمی‌کند.</p></div></div>
+            <form id="personForm">
+              <div class="koko-form-grid is-three-columns">
+                <div class="koko-field"><label for="personFirstName">نام *</label><input id="personFirstName" class="koko-control" maxlength="100" required></div>
+                <div class="koko-field"><label for="personLastName">نام خانوادگی *</label><input id="personLastName" class="koko-control" maxlength="100" required></div>
+                <div class="koko-field"><label for="personFatherName">نام پدر</label><input id="personFatherName" class="koko-control" maxlength="100"></div>
+                <div class="koko-field"><label for="personNationalId">کد ملی / شناسه</label><input id="personNationalId" class="koko-control" inputmode="numeric" maxlength="32"></div>
+                <div class="koko-field"><label for="personMobile">تلفن همراه</label><input id="personMobile" class="koko-control" inputmode="tel" maxlength="32"></div>
+                <div class="koko-field"><label for="personAddress">نشانی</label><input id="personAddress" class="koko-control" maxlength="4000"></div>
+                <div class="koko-field" style="grid-column:1/-1"><label for="personNotes">توضیحات</label><textarea id="personNotes" class="koko-control" rows="2" maxlength="4000"></textarea></div>
+              </div>
+              <div class="koko-form-actions"><button id="personSubmit" type="submit" class="btn">ثبت شخص</button><span id="peopleStatus" class="muted" aria-live="polite"></span></div>
+            </form>
+          </section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>فهرست اشخاص</h2><p>فقط اشخاص متصل به پروژه انتخاب‌شده نمایش داده می‌شوند.</p></div></div>
+            <div class="filters koko-form-grid is-three-columns"><div class="koko-field"><label for="peopleSearch">جست‌وجو</label><input id="peopleSearch" class="koko-control" type="search" placeholder="نام، کد ملی یا تلفن"></div><div class="koko-field"><label>&nbsp;</label><button id="peopleRefresh" type="button" class="btn secondary">جست‌وجو / تازه‌سازی</button></div></div>
+            <div id="peopleMeta" class="muted" style="margin-bottom:10px" aria-live="polite"></div>
+            <div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>نام و نام خانوادگی</th><th>نام پدر</th><th>کد ملی / شناسه</th><th>تلفن همراه</th></tr></thead><tbody id="peopleRows"><tr><td colspan="4">برای نمایش اشخاص، پروژه را انتخاب کنید.</td></tr></tbody></table></div>
+          </section>
+        </section>
+        <section id="propertiesPage" class="page hidden">
+          <section class="koko-welcome"><div><span class="koko-eyebrow">SABT · PROPERTIES</span><h2>املاک و واحدهای پروژه</h2><p>ثبت و جست‌وجوی واحدها و اتصال رکورد ملک به پروژه.</p></div><div class="koko-welcome-mark" aria-hidden="true">⌂</div></section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>ثبت ملک / واحد جدید</h2><p>حداقل یکی از شماره واحد، کد واحد یا پلاک باید ثبت شود.</p></div></div>
+            <form id="propertyForm">
+              <div class="koko-form-grid is-three-columns">
+                <div class="koko-field"><label for="propertyBlock">بلوک / برج</label><input id="propertyBlock" class="koko-control" maxlength="100"></div>
+                <div class="koko-field"><label for="propertyFloor">طبقه</label><input id="propertyFloor" class="koko-control" maxlength="32"></div>
+                <div class="koko-field"><label for="propertyOrientation">جهت / موقعیت</label><input id="propertyOrientation" class="koko-control" maxlength="64"></div>
+                <div class="koko-field"><label for="propertyUnitNumber">شماره واحد</label><input id="propertyUnitNumber" class="koko-control" maxlength="64"></div>
+                <div class="koko-field"><label for="propertyUnitCode">کد واحد</label><input id="propertyUnitCode" class="koko-control" maxlength="128"></div>
+                <div class="koko-field"><label for="propertyPlaque">شماره پلاک</label><input id="propertyPlaque" class="koko-control" maxlength="64"></div>
+                <div class="koko-field" style="grid-column:1/-1"><label for="propertyAddress">نشانی</label><input id="propertyAddress" class="koko-control" maxlength="4000"></div>
+                <div class="koko-field" style="grid-column:1/-1"><label for="propertyNotes">توضیحات</label><textarea id="propertyNotes" class="koko-control" rows="2" maxlength="4000"></textarea></div>
+              </div>
+              <div class="koko-form-actions"><button id="propertySubmit" type="submit" class="btn">ثبت ملک</button><span id="propertiesStatus" class="muted" aria-live="polite"></span></div>
+            </form>
+          </section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>فهرست املاک</h2><p>فقط املاک متصل به پروژه انتخاب‌شده نمایش داده می‌شوند.</p></div></div>
+            <div class="filters koko-form-grid is-three-columns"><div class="koko-field"><label for="propertiesSearch">جست‌وجو</label><input id="propertiesSearch" class="koko-control" type="search" placeholder="بلوک، طبقه، واحد، کد یا پلاک"></div><div class="koko-field"><label>&nbsp;</label><button id="propertiesRefresh" type="button" class="btn secondary">جست‌وجو / تازه‌سازی</button></div></div>
+            <div id="propertiesMeta" class="muted" style="margin-bottom:10px" aria-live="polite"></div>
+            <div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>بلوک / برج</th><th>طبقه</th><th>شماره واحد</th><th>کد واحد</th><th>پلاک</th><th>نشانی</th></tr></thead><tbody id="propertiesRows"><tr><td colspan="6">برای نمایش املاک، پروژه را انتخاب کنید.</td></tr></tbody></table></div>
+          </section>
+        </section>
+</main>
     </div>
     <footer>SABT · نسخه اولیه پرتال گزارش‌ها · تمام داده‌ها از API مجاز سامانه دریافت می‌شوند.</footer>
   </div>
