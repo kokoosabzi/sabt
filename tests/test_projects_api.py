@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.auth.passwords import hash_password
 from app.bootstrap import create_initial_admin
 from app.db.base import Base
-from app.db.models import Project, ProjectAccess, User
+from app.db.models import OperationType, OperationTypeWorkflow, PartyRole, Project, ProjectAccess, ProjectOperationType, User
 from app.auth.dependencies import get_db
 from app.main import app
 
@@ -184,3 +184,32 @@ def test_project_creation_rejects_invalid_contract_code_and_duplicate_codes(api_
         json={"code": "different-code", "name": "تکرار کد قرارداد", "contract_code": "76"},
     )
     assert duplicate_contract.status_code == 409
+
+def test_new_project_receives_default_transfer_type_workflow_and_approved_buyer_role(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        '/projects',
+        headers=headers,
+        json={'code': 'transfer-defaults', 'name': 'پروژه انتقال', 'contract_code': '82'},
+    )
+    assert created.status_code == 201
+    project_id = created.json()['id']
+    with Session(engine) as db:
+        transfer_type = db.scalar(select(OperationType).where(OperationType.code == 'TRANSFER'))
+        buyer_role = db.scalar(select(PartyRole).where(PartyRole.code == 'BUYER_TRANSFEREE'))
+        project_type = db.scalar(select(ProjectOperationType).where(
+            ProjectOperationType.project_id == project_id,
+            ProjectOperationType.operation_type_id == transfer_type.id,
+        ))
+        states = set(db.scalars(select(OperationTypeWorkflow.state_code).where(
+            OperationTypeWorkflow.project_id == project_id,
+            OperationTypeWorkflow.operation_type_id == transfer_type.id,
+            OperationTypeWorkflow.active.is_(True),
+        )).all())
+        assert transfer_type is not None and transfer_type.active is True
+        assert buyer_role is not None and buyer_role.active is True
+        assert buyer_role.name == 'خریدار / منتقل‌الیه مورد تأیید'
+        assert project_type is not None and project_type.enabled is True
+        assert states == {'DRAFT', 'IN_PROGRESS', 'READY_FOR_FINALIZATION'}
