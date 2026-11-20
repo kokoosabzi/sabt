@@ -78,11 +78,11 @@
 - [x] Add additive Alembic migration for Project.contract_code, ParentContract, and Operation transfer-chain fields.
 - [x] Add matching ORM models/constraints and update the logical ERD/database schema documentation.
 - [x] Verify migration upgrade/downgrade/re-upgrade and ORM table/column/foreign-key/nullability parity in CI (run `38590960614`).
-- [x] Add pure validation/formatting helpers and tests for two-digit Project contract codes, six-digit Parent Contract numbers, four-digit suffixes, and positive child sequences.\n- [ ] Integrate validation helpers into authorized Parent Contract creation and enforce project-code immutability after first use.
-- [ ] Add transactional transfer child-number allocation on finalization; never use MAX()+1.
+- [x] Add pure validation/formatting helpers and tests for two-digit Project contract codes, six-digit Parent Contract numbers, four-digit suffixes, and positive child sequences.\n- [x] Integrate validation helpers into authorized Parent Contract creation and enforce project-code immutability after first use.
+- [x] Add transactional transfer child-number allocation on finalization; never use MAX()+1.
 - [x] Add service tests for authorized Parent Contract creation, leading-zero preservation, missing project code, invalid suffixes, project membership/property association, duplicate suffix, and missing project access.
 - [x] Add tests for project-code immutability, stale project versions, and invalid project contract codes.
-- [ ] Add tests for transfer sequence uniqueness and rollback.
+- [x] Add tests for transfer sequence uniqueness and rollback.
 
 ### Phase 1 — Complete operation lifecycle
 - [ ] Define and implement working snapshots at operation creation.
@@ -506,3 +506,12 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added a service regression test simulating a competing version change after validation; stale finalization must raise `stale_operation` and persist no finalization version, property snapshot, or finalization event.
 - Verification pending: exact-head CI for finalization concurrency changes.
 - PR #58 remains open and unmerged.
+## Manual Parent Contract and transfer finalization API — 2026-11-20
+
+- **Manual Parent Contract API:** added authenticated `POST /contracts/parent`. It uses the project's fixed two-digit code plus a validated four-digit suffix, preserves leading zeroes, requires active project membership for the initial person and optional property, and maps authorization/validation/conflict failures to 403/422/409 without partial writes.
+- **Operation finalization API:** added authenticated `POST /operations/{operation_id}/finalize` with mandatory `expected_version` and optional reason. The route owns the transaction boundary and commits the immutable operation version, person/property snapshots, transfer number allocation, and workflow event together; rejected finalizations roll back.
+- **Transfer API regression tests:** added coverage for manual parent creation, duplicate/invalid suffixes, authentication and create permission, finalization readiness, stale versions, finalize permission denial, immutable snapshots, and the finalized transfer/current-owner response.
+- **End-to-end transfer API test:** creates Parent Contract `760123`, creates a transfer Operation, adds the `BUYER_TRANSFEREE` party, advances through `DRAFT → IN_PROGRESS → READY_FOR_FINALIZATION`, finalizes to `760123/1`, and verifies the approved transferee becomes current owner. A negative test proves missing buyer/transferee rolls back the transfer sequence.
+- **Windows runner smoke expanded:** after first project creation it seeds isolated person/property/type data, executes the real Parent Contract and transfer APIs, verifies `760123/1` and current owner, creates an online backup, deliberately mutates the project name and transfer sequence/child number, restores the backup, restarts SABT, and verifies the original transfer and session are intact.
+- **Verified CI:** GitHub Actions run [44764282904](https://github.com/kokoosabzi/sabt/actions/runs/44764282904) passed on commit `12122edfbc801921910311402bcc9e6c04f119e9`: **248 tests passed, 4 warnings**; fresh SQLite upgrade/head/downgrade/re-upgrade passed; Windows setup, login, project creation, Parent Contract creation, transfer finalization, approved current-owner lookup, backup mutation, restore, restart persistence and PID/process cleanup all passed.
+- **Scope limitation:** this is API and automated Windows-runner verification, not a complete user-facing transaction-entry UI. Person/property CRUD screens and operation entry/approval forms are still needed before calling the entire SABT workflow a usable desktop MVP. Manual acceptance on the user's own Windows machine remains outstanding.
