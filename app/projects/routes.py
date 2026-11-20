@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
 from app.auth.authorization import AuthorizationContext, authorize
-from app.db.models import OperationType, PartyRole, Project, ProjectOperationType, User
+from app.db.models import OperationType, OperationTypeWorkflow, PartyRole, Project, ProjectOperationType, User
 from app.projects.service import (
     ProjectConflictError,
     ProjectValidationError,
@@ -125,6 +125,66 @@ def list_project_operation_types_endpoint(
     ).order_by(OperationType.name, OperationType.id)).all()
     return {"items": [{"id": item.id, "code": item.code, "name": item.name} for item in items]}
 
+
+
+@router.get("/{project_id}/operation-types/{operation_type_id}/workflow-states")
+def list_project_operation_workflow_states_endpoint(
+    project_id: int,
+    operation_type_id: int,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return the effective ordered workflow for an enabled project operation type."""
+    project = db.get(Project, project_id)
+    if project is None or project.status != "ACTIVE":
+        raise HTTPException(status_code=404, detail="project_not_found")
+    try:
+        authorize(db, user, "operation.view", AuthorizationContext(project_id=project_id))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail="Forbidden") from exc
+
+    enabled = db.scalar(select(ProjectOperationType.id).where(
+        ProjectOperationType.project_id == project_id,
+        ProjectOperationType.operation_type_id == operation_type_id,
+        ProjectOperationType.enabled.is_(True),
+    ))
+    if enabled is None:
+        raise HTTPException(status_code=404, detail="project_operation_type_not_found")
+
+    states = db.scalars(
+        select(OperationTypeWorkflow)
+        .where(
+            OperationTypeWorkflow.project_id == project_id,
+            OperationTypeWorkflow.operation_type_id == operation_type_id,
+            OperationTypeWorkflow.active.is_(True),
+        )
+        .order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)
+    ).all()
+    source = "project"
+    if not states:
+        states = db.scalars(
+            select(OperationTypeWorkflow)
+            .where(
+                OperationTypeWorkflow.project_id.is_(None),
+                OperationTypeWorkflow.operation_type_id == operation_type_id,
+                OperationTypeWorkflow.active.is_(True),
+            )
+            .order_by(OperationTypeWorkflow.sequence_no, OperationTypeWorkflow.id)
+        ).all()
+        source = "global"
+    codes = [state.state_code for state in states]
+    sequences = [state.sequence_no for state in states]
+    valid = len(codes) == len(set(codes)) and len(sequences) == len(set(sequences))
+    return {
+        "project_id": project_id,
+        "operation_type_id": operation_type_id,
+        "source": source,
+        "valid": valid,
+        "items": [
+            {"state_code": state.state_code, "sequence_no": state.sequence_no}
+            for state in states
+        ],
+    }
 
 
 @router.get("/{project_id}/party-roles")
