@@ -12,6 +12,7 @@ from app.operations.service import (
     ValidationError,
     add_party,
     create_operation,
+    finalize_operation,
     transition_operation,
 )
 
@@ -35,6 +36,11 @@ class OperationPartyCreateRequest(BaseModel):
 
 class OperationTransitionRequest(BaseModel):
     target_state: str = Field(min_length=1, max_length=64)
+    expected_version: int = Field(ge=1)
+    reason: str | None = Field(default=None, max_length=2000)
+
+
+class OperationFinalizeRequest(BaseModel):
     expected_version: int = Field(ge=1)
     reason: str | None = Field(default=None, max_length=2000)
 
