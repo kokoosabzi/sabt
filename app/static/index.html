@@ -578,6 +578,8 @@
     const button=$('createOperationButton');button.disabled=true;$('operationCreateStatus').textContent='';
     try{
       const projectId=selectedProjectId();
+      await loadOperationWorkflowStates(projectId,Number($('operationTypeSelect').value));
+      if(!activeWorkflowValid)throw new Error('پیکربندی مراحل گردش کار انتقال معتبر نیست.');
       const contractNumber=$('operationParentNumber').value.trim();
       const history=await api('/contracts/parent/'+encodeURIComponent(contractNumber)+'/history');
       if(history.parent.project_id!==projectId)throw new Error('این قرارداد مادر متعلق به پروژه انتخاب‌شده نیست.');
@@ -613,7 +615,10 @@
       $('operationActionStatus').textContent='طرف عملیات با موفقیت ثبت شد.';
     }catch(err){showError(err.message)}finally{button.disabled=false}
   });
-  $('operationTypeSelect').addEventListener('change',()=>loadOperationWorkflowStates(selectedProjectId(),Number($('operationTypeSelect').value)).catch(err=>showError(err.message)));
+  $('operationTypeSelect').addEventListener('change',()=>{
+    if(activeOperation){$('operationTypeSelect').value=String(activeOperation.operation_type_id);return;}
+    loadOperationWorkflowStates(selectedProjectId(),Number($('operationTypeSelect').value)).catch(err=>showError(err.message));
+  });
   $('operationNextStateButton').addEventListener('click',advanceToNextConfiguredState);
   $('operationFinalizeButton').addEventListener('click',async()=>{
     if(!activeOperation)return;
@@ -653,7 +658,7 @@
   }
   async function loadOperationsPage(){
     const projectId=selectedProjectId();
-    if(operationsProjectId!==projectId){activeOperation=null;operationsProjectId=projectId;$('operationWorkspace').classList.add('hidden')}
+    if(operationsProjectId!==projectId){activeOperation=null;activeWorkflowStates=[];activeWorkflowValid=false;operationsProjectId=projectId;$('operationWorkspace').classList.add('hidden')}
     const [types,people,properties,roles]=await Promise.all([
       api('/projects/'+projectId+'/operation-types'),
       api('/people?'+query({project_id:projectId,limit:100})),
