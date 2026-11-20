@@ -209,7 +209,6 @@ jobs:
           if ($history.transfers[0].child_contract_number -ne "760123/1" -or $history.transfers[0].transfer_sequence -ne 1) { throw "Transfer child number was not restored from the backup." }
           if ($history.current_owner.source -ne "latest_valid_finalized_transfer" -or $history.current_owner.people[0].person_id -ne $seed.buyer_id) { throw "Approved transferee ownership did not survive backup restore." }
           Write-Host "Verified restored transfer 760123/1 and approved current owner after restart."
-          }
       - name: Stop SABT after restart
         shell: cmd
         run: stop.bat
