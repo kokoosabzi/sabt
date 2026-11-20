@@ -122,6 +122,28 @@ jobs:
           Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-session-token.txt") -Value $login.access_token
           $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
           $python = Join-Path $PWD ".venv\Scripts\python.exe"
+          & $python scripts/windows_seed_transfer.py $project.id
+          if ($LASTEXITCODE -ne 0) { throw "Could not seed project-scoped transfer test data." }
+          $seed = Get-Content (Join-Path $env:TEMP "sabt-windows-transfer-seed.json") -Raw | ConvertFrom-Json
+          $parentBody = @{ project_id = [int]$project.id; suffix = "0123"; initial_person_id = [int]$seed.initial_owner_id; property_id = [int]$seed.property_id } | ConvertTo-Json
+          $parent = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/contracts/parent" -Headers $headers -ContentType "application/json" -Body $parentBody
+          if ($parent.contract_number -ne "760123") { throw "Parent Contract did not preserve the six-digit number." }
+          $operationBody = @{ project_id = [int]$project.id; operation_type_id = [int]$seed.operation_type_id; property_id = [int]$seed.property_id; parent_contract_id = [int]$parent.id } | ConvertTo-Json
+          $operation = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/operations" -Headers $headers -ContentType "application/json" -Body $operationBody
+          $partyBody = @{ person_id = [int]$seed.buyer_id; role_id = [int]$seed.buyer_role_id; sequence_no = 1; expected_version = 1 } | ConvertTo-Json
+          Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/operations/$($operation.operation_id)/parties" -Headers $headers -ContentType "application/json" -Body $partyBody | Out-Null
+          $inProgressBody = @{ target_state = "IN_PROGRESS"; expected_version = 2; reason = "Windows smoke" } | ConvertTo-Json
+          Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/operations/$($operation.operation_id)/transition" -Headers $headers -ContentType "application/json" -Body $inProgressBody | Out-Null
+          $readyBody = @{ target_state = "READY_FOR_FINALIZATION"; expected_version = 3; reason = "Windows smoke" } | ConvertTo-Json
+          Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/operations/$($operation.operation_id)/transition" -Headers $headers -ContentType "application/json" -Body $readyBody | Out-Null
+          $finalizeBody = @{ expected_version = 4; reason = "Approved buyer / transferee" } | ConvertTo-Json
+          $finalized = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/operations/$($operation.operation_id)/finalize" -Headers $headers -ContentType "application/json" -Body $finalizeBody
+          if ($finalized.child_contract_number -ne "760123/1") { throw "Transfer child number was not allocated correctly." }
+          $history = Invoke-RestMethod -Uri "http://127.0.0.1:8000/contracts/parent/760123/history" -Headers $headers
+          if ($history.current_owner.source -ne "latest_valid_finalized_transfer" -or $history.current_owner.people[0].person_id -ne $seed.buyer_id) { throw "Approved buyer did not become the current owner." }
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-parent-contract-id.txt") -Value $parent.id
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP "sabt-operation-id.txt") -Value $operation.operation_id
+          Write-Host "Core contract transfer API passed: 760123/1; approved transferee is current owner."
           $backupDirectory = Join-Path $env:RUNNER_TEMP "sabt-backups"
           $backupPath = & $python -m app.backup create --destination $backupDirectory
           if ($LASTEXITCODE -ne 0) { throw "Online SQLite backup failed." }
