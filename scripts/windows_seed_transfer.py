@@ -1,4 +1,4 @@
-"""Seed only the master data needed by the Windows transfer API smoke test."""
+"""Seed only people/property records for the Windows transfer API smoke test."""
 from __future__ import annotations
 
 import json
@@ -25,47 +25,31 @@ def main() -> int:
         project = db.get(Project, project_id)
         if project is None or project.contract_code != "76":
             raise SystemExit("Windows smoke project with contract code 76 was not found.")
-
-        operation_type = db.scalar(select(OperationType).where(OperationType.code == "WINDOWS-TRANSFER-SMOKE"))
+        operation_type = db.scalar(select(OperationType).where(
+            OperationType.code == "TRANSFER", OperationType.active.is_(True), OperationType.retired_at.is_(None),
+        ))
         if operation_type is None:
-            operation_type = OperationType(code="WINDOWS-TRANSFER-SMOKE", name="Windows Transfer Smoke",
-                                           active=True, system_defined=False, created_at=now, updated_at=now)
-            db.add(operation_type)
-            db.flush()
-
+            raise SystemExit("Canonical TRANSFER operation type was not seeded during administrator bootstrap.")
         project_type = db.scalar(select(ProjectOperationType).where(
             ProjectOperationType.project_id == project_id,
             ProjectOperationType.operation_type_id == operation_type.id,
+            ProjectOperationType.enabled.is_(True),
         ))
         if project_type is None:
-            project_type = ProjectOperationType(project_id=project_id, operation_type_id=operation_type.id,
-                                                 enabled=True, created_at=now, updated_at=now, version=1)
-            db.add(project_type)
-            db.flush()
-        else:
-            project_type.enabled = True
-
-        for state_code, sequence_no in (("DRAFT", 1), ("IN_PROGRESS", 2), ("READY_FOR_FINALIZATION", 3)):
-            state = db.scalar(select(OperationTypeWorkflow).where(
-                OperationTypeWorkflow.project_id == project_id,
-                OperationTypeWorkflow.operation_type_id == operation_type.id,
-                OperationTypeWorkflow.state_code == state_code,
-            ))
-            if state is None:
-                db.add(OperationTypeWorkflow(project_id=project_id, operation_type_id=operation_type.id,
-                                             state_code=state_code, sequence_no=sequence_no, active=True))
-            else:
-                state.sequence_no = sequence_no
-                state.active = True
-
-        buyer_role = db.scalar(select(PartyRole).where(PartyRole.code == "BUYER_TRANSFEREE"))
+            raise SystemExit("New project did not receive the default TRANSFER operation type.")
+        expected_states = {"DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION"}
+        active_states = set(db.scalars(select(OperationTypeWorkflow.state_code).where(
+            OperationTypeWorkflow.project_id == project_id,
+            OperationTypeWorkflow.operation_type_id == operation_type.id,
+            OperationTypeWorkflow.active.is_(True),
+        )).all())
+        if active_states != expected_states:
+            raise SystemExit(f"Default transfer workflow is incomplete: {sorted(active_states)}")
+        buyer_role = db.scalar(select(PartyRole).where(
+            PartyRole.code == "BUYER_TRANSFEREE", PartyRole.active.is_(True), PartyRole.retired_at.is_(None),
+        ))
         if buyer_role is None:
-            buyer_role = PartyRole(code="BUYER_TRANSFEREE", name="Buyer / Transferee", active=True,
-                                   system_defined=True, created_at=now, updated_at=now)
-            db.add(buyer_role)
-            db.flush()
-        elif not buyer_role.active or buyer_role.retired_at is not None:
-            raise SystemExit("BUYER_TRANSFEREE party role is inactive or retired.")
+            raise SystemExit("Canonical BUYER_TRANSFEREE role was not seeded during administrator bootstrap.")
 
         initial_owner = Person(first_name="Windows", last_name="Initial Owner", national_id="9912345678",
                                mobile="09120000001", created_at=now, updated_at=now, version=1, is_active=True)
