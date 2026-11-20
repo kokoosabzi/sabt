@@ -158,6 +158,8 @@ jobs:
         run: |
           $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
           $python = Join-Path $PWD ".venv\Scripts\python.exe"
+          $env:SABT_SMOKE_PARENT_ID = (Get-Content (Join-Path $env:RUNNER_TEMP "sabt-parent-contract-id.txt") -Raw).Trim()
+          $env:SABT_SMOKE_OPERATION_ID = (Get-Content (Join-Path $env:RUNNER_TEMP "sabt-operation-id.txt") -Raw).Trim()
           $mutate = @'
           import os
           from sqlalchemy import select
