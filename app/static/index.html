@@ -688,7 +688,7 @@
   async function advanceToNextConfiguredState(){
     if(!activeOperation)return;
     const currentIndex=activeWorkflowStates.findIndex(state=>state.state_code===activeOperation.workflow_state);
-    const nextState=currentIndex>=0?activeWorkflowStates[currentIndex+1]:null;
+    const nextState=currentIndex>=0&&activeOperation.workflow_state!=='READY_FOR_FINALIZATION'?activeWorkflowStates[currentIndex+1]:null;
     if(!activeWorkflowValid||!nextState){showError('مرحله بعدی معتبر در پیکربندی گردش کار پیدا نشد.');return;}
     await advanceOperation(nextState.state_code,'مرحله '+nextState.state_code);
   }
@@ -747,7 +747,7 @@
     $('operationRoleSelect').disabled=finalized;
     $('addOperationPartyButton').disabled=finalized;
     const currentIndex=activeWorkflowStates.findIndex(state=>state.state_code===activeOperation.workflow_state);
-    const nextState=currentIndex>=0?activeWorkflowStates[currentIndex+1]:null;
+    const nextState=currentIndex>=0&&activeOperation.workflow_state!=='READY_FOR_FINALIZATION'?activeWorkflowStates[currentIndex+1]:null;
     $('operationNextStateButton').disabled=finalized||!activeWorkflowValid||!nextState;
     $('operationNextStateButton').textContent=nextState?'مرحله بعد: '+nextState.state_code:'مرحله بعدی در گردش کار موجود نیست';
     $('operationFinalizeButton').disabled=finalized||activeOperation.workflow_state!=='READY_FOR_FINALIZATION';
