@@ -66,6 +66,12 @@ def browser_app():
     permissions = [
         Permission(code="project.view", name="View Projects"),
         Permission(code="parent_contract.create", name="Create Parent Contract"),
+        Permission(code="person.create", name="Create People"),
+        Permission(code="person.view", name="View People"),
+        Permission(code="person.edit", name="Associate People"),
+        Permission(code="property.create", name="Create Properties"),
+        Permission(code="property.view", name="View Properties"),
+        Permission(code="property.edit", name="Associate Properties"),
         Permission(code="management_dashboard.view", name="View Management Dashboard"),
         Permission(code="workflow_report.view", name="View Workflow Reports"),
     ]
@@ -364,3 +370,43 @@ def test_browser_koko_theme_persistence_and_workspace_tab_close(browser_app, pag
     page.locator('#sabtNav button[data-page="events"]').click()
     expect(toggle).to_have_attribute("aria-expanded", "false")
     expect(page.locator("#eventsPage")).to_be_visible()
+
+def test_browser_people_and_properties_forms_use_project_scoped_apis(browser_app, page: Page):
+    page.goto(browser_app['base_url'] + '/portal/')
+    page.get_by_label('نام کاربری').fill('browser-import-admin')
+    page.get_by_label('گذرواژه').fill('e2e-test-password')
+    page.get_by_role('button', name='ورود امن').click()
+
+    page.locator("#sabtNav button[data-page='people']").click()
+    page.locator('#personFirstName').fill('مریم')
+    page.locator('#personLastName').fill('رضایی')
+    page.locator('#personFatherName').fill('علی')
+    page.locator('#personNationalId').fill('0012345678')
+    page.locator('#personMobile').fill('09120000000')
+    page.locator('#personSubmit').click()
+    expect(page.locator('#peopleRows')).to_contain_text('مریم رضایی')
+    expect(page.locator('#peopleStatus')).to_contain_text('با موفقیت ثبت شد')
+
+    page.locator('#personFirstName').fill('مریم')
+    page.locator('#personLastName').fill('رضایی دوم')
+    page.locator('#personNationalId').fill('0012345678')
+    page.locator('#personSubmit').click()
+    expect(page.locator('#peopleStatus')).to_contain_text('احتمال رکورد مشابه')
+    expect(page.locator('#peopleStatus')).to_contain_text('ادغامی انجام نشد')
+    expect(page.locator('#peopleRows')).to_contain_text('رضایی دوم')
+
+    page.locator("#sabtNav button[data-page='properties']").click()
+    page.locator('#propertyBlock').fill('A')
+    page.locator('#propertyFloor').fill('3')
+    page.locator('#propertyUnitNumber').fill('301')
+    page.locator('#propertyUnitCode').fill('A-301')
+    page.locator('#propertyPlaque').fill('301')
+    page.locator('#propertySubmit').click()
+    expect(page.locator('#propertiesRows')).to_contain_text('A-301')
+    expect(page.locator('#propertiesStatus')).to_contain_text('با موفقیت ثبت شد')
+
+    page.locator('#propertyUnitNumber').fill('301')
+    page.locator('#propertyUnitCode').fill('A-301')
+    page.locator('#propertySubmit').click()
+    expect(page.locator('#propertiesStatus')).to_contain_text('احتمال رکورد مشابه')
+    expect(page.locator('#propertiesStatus')).to_contain_text('ادغامی انجام نشد')
