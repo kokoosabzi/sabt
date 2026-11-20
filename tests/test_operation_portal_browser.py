@@ -95,11 +95,11 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
     expect(page.locator("#operationRoleSelect")).to_have_value("8")
 
     page.locator("#operationTypeSelect").select_option("3")
-    expect(page.locator("#operationNextStateButton")).to_have_text("مرحله بعد: IN_PROGRESS")
     page.locator("#operationParentNumber").fill("760123")
     page.locator("#operationForm").evaluate("(form) => form.requestSubmit()")
     expect(page.locator("#operationWorkspace")).to_be_visible()
     expect(page.locator("#operationSummary")).to_contain_text("760123")
+    expect(page.locator("#operationNextStateButton")).to_have_text("مرحله بعد: IN_PROGRESS")
     expect(page.locator("#operationsRows")).to_contain_text("101")
 
     page.evaluate("window.clearActiveOperation()")
