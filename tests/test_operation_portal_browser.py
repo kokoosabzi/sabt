@@ -21,8 +21,7 @@ def test_operations_portal_exposes_the_transfer_workflow_controls():
     assert 'id="operationForm"' in OPERATIONS_MARKUP
     assert 'id="operationParentNumber"' in OPERATIONS_MARKUP
     assert 'id="operationPartyForm"' in OPERATIONS_MARKUP
-    assert 'id="operationStartButton"' in OPERATIONS_MARKUP
-    assert 'id="operationReadyButton"' in OPERATIONS_MARKUP
+    assert 'id="operationNextStateButton"' in OPERATIONS_MARKUP
     assert 'id="operationFinalizeButton"' in OPERATIONS_MARKUP
 
 
@@ -56,6 +55,7 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
       async function api(path, options={}){
         calls.push({path,method:options.method||'GET',body:options.body?JSON.parse(options.body):null});
         if(path==='/projects/7/operation-types')return {items:[{id:3,code:'TRANSFER',name:'انتقال مالکیت'}]};
+        if(path==='/projects/7/operation-types/3/workflow-states')return {project_id:7,operation_type_id:3,source:'project',valid:true,items:[{state_code:'DRAFT',sequence_no:1},{state_code:'IN_PROGRESS',sequence_no:2},{state_code:'READY_FOR_FINALIZATION',sequence_no:3}]};
         if(path.startsWith('/people?'))return {items:[{id:21,first_name:'علی',last_name:'رضایی'}]};
         if(path.startsWith('/properties?'))return {items:[{id:31,unit_number:'۱۰۱',block_tower:'برج الف'}]};
         if(path==='/projects/7/party-roles')return {items:[{id:8,code:'BUYER_TRANSFEREE',name:'خریدار / منتقل‌الیه مورد تأیید'}]};
@@ -92,6 +92,7 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
     expect(page.locator("#operationRoleSelect")).to_have_value("8")
 
     page.locator("#operationTypeSelect").select_option("3")
+    expect(page.locator("#operationNextStateButton")).to_have_text("مرحله بعد: IN_PROGRESS")
     page.locator("#operationParentNumber").fill("760123")
     page.locator("#operationForm").evaluate("(form) => form.requestSubmit()")
     expect(page.locator("#operationWorkspace")).to_be_visible()
@@ -108,9 +109,10 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
     page.locator("#addOperationPartyButton").click()
     expect(page.locator("#operationPartyRows")).to_contain_text("علی رضایی")
 
-    page.locator("#operationStartButton").click()
+    page.locator("#operationNextStateButton").click()
     expect(page.locator("#operationSummary")).to_contain_text("IN_PROGRESS")
-    page.locator("#operationReadyButton").click()
+    expect(page.locator("#operationNextStateButton")).to_have_text("مرحله بعد: READY_FOR_FINALIZATION")
+    page.locator("#operationNextStateButton").click()
     expect(page.locator("#operationSummary")).to_contain_text("READY_FOR_FINALIZATION")
     page.locator("#operationFinalizeButton").click()
     expect(page.locator("#operationActionStatus")).to_contain_text("760123/1")
