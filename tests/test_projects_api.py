@@ -213,3 +213,6 @@ def test_new_project_receives_default_transfer_type_workflow_and_approved_buyer_
         assert buyer_role.name == 'خریدار / منتقل‌الیه مورد تأیید'
         assert project_type is not None and project_type.enabled is True
         assert states == {'DRAFT', 'IN_PROGRESS', 'READY_FOR_FINALIZATION'}
+    operation_types = client.get(f'/projects/{project_id}/operation-types', headers=headers)
+    assert operation_types.status_code == 200
+    assert any(item['code'] == 'TRANSFER' for item in operation_types.json()['items'])
