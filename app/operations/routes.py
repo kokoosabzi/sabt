@@ -144,6 +144,49 @@ def transition_operation_endpoint(
     }
 
 
+@router.post("/{operation_id}/finalize")
+def finalize_operation_endpoint(
+    operation_id: int,
+    payload: OperationFinalizeRequest,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Finalize a ready operation and commit snapshots, numbering and events atomically."""
+    try:
+        version = finalize_operation(db, user, operation_id, payload.expected_version, payload.reason)
+        db.commit()
+        db.refresh(version)
+        operation = db.get(Operation, operation_id)
+        db.refresh(operation)
+    except NotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValidationError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
+
+    return {
+        "operation_id": operation.id,
+        "status": operation.status,
+        "workflow_state": operation.current_workflow_state,
+        "version": operation.version,
+        "operation_version_id": version.id,
+        "version_number": version.version_number,
+        "child_contract_number": operation.child_contract_number,
+        "transfer_sequence": operation.transfer_sequence,
+        "finalized_at": operation.finalized_at.isoformat() if operation.finalized_at else None,
+    }
+
+
 
 
 @router.post("/{operation_id}/parties", status_code=201)
