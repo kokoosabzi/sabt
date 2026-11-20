@@ -338,3 +338,31 @@ def test_project_workflow_state_endpoint_falls_back_to_global_configuration(api_
     assert [item["state_code"] for item in response.json()["items"]] == [
         "DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION",
     ]
+
+
+def test_project_workflow_state_endpoint_flags_ambiguous_sequence_numbers(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "workflow-invalid", "name": "پروژه گردش کار نامعتبر", "contract_code": "87"},
+    )
+    project_id = created.json()["id"]
+    with Session(engine) as db:
+        operation_type = db.scalar(select(OperationType).where(OperationType.code == "TRANSFER"))
+        db.add(OperationTypeWorkflow(
+            operation_type_id=operation_type.id, project_id=project_id,
+            state_code="AMBIGUOUS_STAGE", sequence_no=2, active=True,
+        ))
+        operation_type_id = operation_type.id
+        db.commit()
+
+    response = client.get(
+        f"/projects/{project_id}/operation-types/{operation_type_id}/workflow-states",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["valid"] is False
