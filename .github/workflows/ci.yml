@@ -80,6 +80,8 @@ jobs:
         shell: pwsh
         run: |
           $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
+          $env:SABT_SMOKE_PARENT_ID = Get-Content (Join-Path $env:RUNNER_TEMP "sabt-parent-contract-id.txt") -Raw
+          $env:SABT_SMOKE_OPERATION_ID = Get-Content (Join-Path $env:RUNNER_TEMP "sabt-operation-id.txt") -Raw
           $python = Join-Path $PWD ".venv\Scripts\python.exe"
           $seed = @'
           from app.db.session import SessionLocal
@@ -157,13 +159,19 @@ jobs:
           $env:SABT_DATA_DIR = Join-Path $env:LOCALAPPDATA "SABT\data"
           $python = Join-Path $PWD ".venv\Scripts\python.exe"
           $mutate = @'
+          import os
           from sqlalchemy import select
-          from app.db.models import Project
+          from app.db.models import Operation, ParentContract, Project
           from app.db.session import SessionLocal
 
           with SessionLocal.begin() as db:
               project = db.scalar(select(Project).where(Project.code == "windows-smoke"))
               project.name = "Changed after backup"
+              parent = db.get(ParentContract, int(os.environ["SABT_SMOKE_PARENT_ID"]))
+              operation = db.get(Operation, int(os.environ["SABT_SMOKE_OPERATION_ID"]))
+              parent.next_transfer_sequence = 100
+              operation.transfer_sequence = 99
+              operation.child_contract_number = f"{parent.contract_number}/99"
           '@
           & $python -c $mutate
           if ($LASTEXITCODE -ne 0) { throw "Could not mutate project data for restore test." }
