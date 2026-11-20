@@ -201,6 +201,13 @@ jobs:
           if ($projects.items[0].name -ne "Windows smoke project") {
             throw "Backup restore did not restore the pre-mutation project data."
           }
+          $seed = Get-Content (Join-Path $env:TEMP "sabt-windows-transfer-seed.json") -Raw | ConvertFrom-Json
+          $history = Invoke-RestMethod -Uri "http://127.0.0.1:8000/contracts/parent/760123/history" -Headers $headers
+          if ($history.parent.id -ne [int](Get-Content (Join-Path $env:RUNNER_TEMP "sabt-parent-contract-id.txt") -Raw)) { throw "Parent Contract did not survive restore." }
+          if ($history.transfers[0].child_contract_number -ne "760123/1" -or $history.transfers[0].transfer_sequence -ne 1) { throw "Transfer child number was not restored from the backup." }
+          if ($history.current_owner.source -ne "latest_valid_finalized_transfer" -or $history.current_owner.people[0].person_id -ne $seed.buyer_id) { throw "Approved transferee ownership did not survive backup restore." }
+          Write-Host "Verified restored transfer 760123/1 and approved current owner after restart."
+          }
       - name: Stop SABT after restart
         shell: cmd
         run: stop.bat
