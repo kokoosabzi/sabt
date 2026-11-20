@@ -127,6 +127,7 @@ def test_operations_list_can_filter_by_status(api_context):
 def test_operations_list_requires_authentication_and_project_view_permission(api_context):
     client, db, project, _, _, role, permission = api_context
 
+    app.dependency_overrides.pop(current_user)
     assert client.get(f"/operations?project_id={project.id}").status_code == 401
 
     app.dependency_overrides[current_user] = lambda: db.query(User).filter_by(
