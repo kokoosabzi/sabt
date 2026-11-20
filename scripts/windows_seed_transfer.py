@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -88,7 +89,7 @@ def main() -> int:
             "buyer_role_id": buyer_role.id,
             "property_id": property_record.id,
         }
-    output = Path(sys.argv[0]).resolve().parents[1] / "windows-transfer-seed.json"
+    output = Path(tempfile.gettempdir()) / "sabt-windows-transfer-seed.json"
     output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result))
     return 0
