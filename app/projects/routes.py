@@ -174,7 +174,13 @@ def list_project_operation_workflow_states_endpoint(
         source = "global"
     codes = [state.state_code for state in states]
     sequences = [state.sequence_no for state in states]
-    valid = len(codes) == len(set(codes)) and len(sequences) == len(set(sequences))
+    valid = (
+        len(codes) == len(set(codes))
+        and len(sequences) == len(set(sequences))
+        and "DRAFT" in codes
+        and "READY_FOR_FINALIZATION" in codes
+        and "FINALIZED" not in codes
+    )
     return {
         "project_id": project_id,
         "operation_type_id": operation_type_id,
