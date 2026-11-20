@@ -216,3 +216,57 @@ def test_new_project_receives_default_transfer_type_workflow_and_approved_buyer_
     operation_types = client.get(f'/projects/{project_id}/operation-types', headers=headers)
     assert operation_types.status_code == 200
     assert any(item['code'] == 'TRANSFER' for item in operation_types.json()['items'])
+
+
+
+def test_project_party_role_list_returns_active_approved_buyer_role(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "party-role-project", "name": "پروژه نقش طرفین", "contract_code": "83"},
+    )
+    assert created.status_code == 201
+    project_id = created.json()["id"]
+
+    response = client.get(f"/projects/{project_id}/party-roles", headers=headers)
+
+    assert response.status_code == 200
+    buyer = next(item for item in response.json()["items"] if item["code"] == "BUYER_TRANSFEREE")
+    assert buyer["name"] == "خریدار / منتقل‌الیه مورد تأیید"
+    assert buyer["id"] > 0
+
+
+def test_project_party_role_list_requires_authentication_and_operation_view_permission(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    admin_headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=admin_headers,
+        json={"code": "party-role-security", "name": "پروژه کنترل دسترسی", "contract_code": "84"},
+    )
+    project_id = created.json()["id"]
+
+    assert client.get(f"/projects/{project_id}/party-roles").status_code == 401
+
+    now = datetime.now(timezone.utc)
+    with Session(engine) as db:
+        db.add(User(
+            username="role.reader",
+            password_hash=hash_password("a role reader password"),
+            display_name="کاربر بدون مجوز",
+            active=True,
+            created_at=now,
+            updated_at=now,
+            version=1,
+        ))
+        db.commit()
+    login = client.post("/auth/login", auth=("role.reader", "a role reader password"))
+    denied = client.get(
+        f"/projects/{project_id}/party-roles",
+        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+    )
+    assert denied.status_code == 403
