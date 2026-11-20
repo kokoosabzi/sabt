@@ -31,6 +31,7 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
         '<!doctype html><html lang="fa" dir="rtl"><head><style>.hidden{display:none!important}</style></head>'
         '<body><main>' + OPERATIONS_MARKUP + '</main></body></html>'
     )
+    page.locator("#operationsPage").evaluate("(element) => element.classList.remove('hidden')")
     setup = """
       const $ = id => document.getElementById(id);
       let activeOperation = null;
