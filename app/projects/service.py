@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.authorization import AuthorizationContext, authorize
 from app.db.models import Project, ProjectAccess, User
+from app.operations.catalog import OperationCatalogError, ensure_project_transfer_workflow
 
 
 class ProjectError(Exception):
@@ -79,6 +80,11 @@ def create_project(
     )
     db.add(project)
     db.flush()
+    try:
+        ensure_project_transfer_workflow(db, project.id)
+    except OperationCatalogError as exc:
+        raise ProjectValidationError(str(exc)) from exc
+
     db.add(
         ProjectAccess(
             user_id=user.id,
