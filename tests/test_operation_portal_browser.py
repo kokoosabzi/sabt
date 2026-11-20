@@ -35,6 +35,9 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
       const $ = id => document.getElementById(id);
       let activeOperation = null;
       let operationsProjectId = null;
+      let operationsCache = [];
+      let activeWorkflowStates = [];
+      let activeWorkflowValid = false;
       const operationState = {
         operation_id: 101, project_id: 7, status: 'DRAFT',
         workflow_state: 'DRAFT', version: 1, created_at: '2026-11-20T10:00:00Z',
