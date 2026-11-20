@@ -659,13 +659,14 @@
       api('/properties?'+query({project_id:projectId,limit:100})),
       api('/projects/'+projectId+'/party-roles')
     ]);
-    setSelectOptions('operationTypeSelect',types.items||[],'انتخاب نوع عملیات',item=>item.name+' ('+item.code+')');
+    const transferTypes=(types.items||[]).filter(item=>item.code==='TRANSFER');
+    setSelectOptions('operationTypeSelect',transferTypes,'انتقال مالکیت',item=>item.name+' ('+item.code+')');
     setSelectOptions('operationPersonSelect',people.items||[],'انتخاب شخص',item=>item.first_name+' '+item.last_name+' · '+item.id);
     setSelectOptions('operationPropertySelect',properties.items||[],'بدون انتخاب ملک',item=>[item.block_tower,item.unit_number,item.unit_code,item.plaque_number].filter(Boolean).join(' · ')+' · '+item.id);
     setSelectOptions('operationRoleSelect',roles.items||[],'انتخاب نقش',item=>item.name);
     const buyer=(roles.items||[]).find(item=>item.code==='BUYER_TRANSFEREE');
     if(buyer)$('operationRoleSelect').value=String(buyer.id);
-    $('createOperationButton').disabled=!(types.items||[]).length;
+    $('createOperationButton').disabled=!transferTypes.length;
     $('addOperationPartyButton').disabled=!(people.items||[]).length||!(roles.items||[]).length;
     if(activeOperation)await refreshOperationWorkspace();
     await loadOperationsList();
