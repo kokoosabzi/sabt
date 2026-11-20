@@ -1,5 +1,14 @@
 # SABT Development Progress
 
+## Transfer operation portal and Windows MVP verification — 2026-11-20
+
+- **Portal implementation:** added a Koko UI workspace for the transfer lifecycle. It loads the project's enabled operation types, people, properties, and active party roles; resolves the six-digit Parent Contract to its project-scoped record; creates the Operation; adds parties with optimistic version checks; and exposes the configured transfer transitions and finalization.
+- **Party-role API:** added `GET /projects/{project_id}/party-roles`, requiring an active project and project-scoped `operation.view`. The response exposes only active, non-retired roles; tests verify the approved Buyer / Transferee role and deny unauthenticated or unauthorized callers.
+- **Browser coverage:** added a Chromium browser test that exercises the portal's transfer creation, party addition, transition sequence, and finalization against a deterministic API test double. This validates the client-side flow; it is not a live-browser-to-Windows-server test.
+- **Exact-head verification:** GitHub Actions run [44768823633](https://github.com/kokoosabzi/sabt/actions/runs/44768823633) passed on commit `dbfd36b7a15b3e36f2c9e153654230fc913a5957`: **262 tests passed, 4 warnings**; fresh SQLite upgrade, Alembic head, and downgrade/re-upgrade passed. The `windows-smoke` job also passed setup, fresh migration, administrator bootstrap, launcher startup, health/portal, API login, first project, Parent Contract `760123`, transfer finalization to `760123/1`, approved current-owner verification, online backup, post-backup mutation, offline restore, restart persistence, and process/PID cleanup.
+- **Scope and limitations:** the new portal page currently focuses on Parent Contract transfers and manages the operation created during the current page session. A searchable list and reopening/resuming of previously created draft/in-progress operations are still needed. Other operation-specific forms and a complete approvals/records UI are not claimed complete. The server remains local-only on `127.0.0.1:8000`; manual acceptance on the user's own Windows PC is still outstanding.
+- **Next:** add an authorized project-scoped operations list and a resume/open flow so existing work can be continued after navigation, browser refresh, and server restart. Keep the transfer state machine driven by the configured workflow rather than assuming every future operation uses the transfer states.
+
 > This is the execution ledger. A checked item means it is complete at the stated verification level. Do not mark a feature implemented merely because its schema or design document exists.
 
 ## First-project onboarding — 2026-11-19
