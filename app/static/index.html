@@ -222,6 +222,11 @@
         <section id="operationsPage" class="page hidden">
           <section class="koko-welcome"><div><span class="koko-eyebrow">SABT · OPERATIONS</span><h2>ثبت و پیگیری انتقال مالکیت</h2><p>ایجاد عملیات انتقال برای قرارداد مادر، ثبت خریدار / منتقل‌الیه مورد تأیید و طی‌کردن مراحل گردش کار.</p></div><div class="koko-welcome-mark" aria-hidden="true">⇄</div></section>
           <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>عملیات ثبت‌شده در پروژه</h2><p>عملیات‌های قبلی را باز کنید و ادامه دهید؛ این فهرست پس از راه‌اندازی مجدد نیز از دیتابیس بازیابی می‌شود.</p></div><button id="operationsRefreshButton" type="button" class="koko-button is-secondary">به‌روزرسانی فهرست</button></div>
+            <div id="operationsListMeta" class="muted" aria-live="polite"></div>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>مرحله</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>تاریخ ایجاد</th><th>اقدام</th></tr></thead><tbody id="operationsRows"><tr><td colspan="8">برای نمایش عملیات، پروژه را انتخاب کنید.</td></tr></tbody></table></div>
+          </section>
+          <section class="panel koko-form-section">
             <div class="koko-section-heading"><div><h2>۱. ایجاد عملیات جدید</h2><p>ابتدا قرارداد مادر را با شماره شش‌رقمی پیدا کنید. عملیات و ارتباط آن با قرارداد در یک تراکنش ذخیره می‌شود.</p></div></div>
             <form id="operationForm">
               <div class="koko-form-grid is-three-columns">
@@ -264,6 +269,7 @@
   let stagedContractImport = null;
   let activeOperation = null;
   let operationsProjectId = null;
+  let operationsCache = [];
   let lastContractHistory = null;
   let projectTimezone = 'Asia/Tehran', contextProjectId = null, defaultsInitialized = false;
   const fmt = value => value ? new Intl.DateTimeFormat('fa-IR', {
@@ -587,6 +593,7 @@
       $('operationWorkspace').classList.remove('hidden');
       $('operationCreateStatus').textContent='عملیات شماره '+activeOperation.id+' ایجاد شد.';
       await refreshOperationWorkspace();
+      await loadOperationsList();
     }catch(err){showError(err.message)}finally{button.disabled=false}
   });
   $('operationPartyForm').addEventListener('submit',async event=>{
@@ -601,6 +608,7 @@
         sequence_no:(parties.parties||[]).length+1,expected_version:activeOperation.version
       })});
       await refreshOperationWorkspace();
+      await loadOperationsList();
       $('operationActionStatus').textContent='طرف عملیات با موفقیت ثبت شد.';
     }catch(err){showError(err.message)}finally{button.disabled=false}
   });
@@ -614,6 +622,7 @@
       activeOperation={...activeOperation,...result};
       $('operationActionStatus').textContent=result.child_contract_number?'انتقال نهایی شد؛ شماره قرارداد فرزند: '+result.child_contract_number:'عملیات با موفقیت نهایی شد.';
       await refreshOperationWorkspace();
+      await loadOperationsList();
     }catch(err){showError(err.message)}finally{button.disabled=false}
   });
 
@@ -659,7 +668,47 @@
     $('createOperationButton').disabled=!(types.items||[]).length;
     $('addOperationPartyButton').disabled=!(people.items||[]).length||!(roles.items||[]).length;
     if(activeOperation)await refreshOperationWorkspace();
+    await loadOperationsList();
   }
+  async function loadOperationsList(){
+    const projectId=selectedProjectId();
+    const data=await api('/operations?'+query({project_id:projectId,limit:100,offset:0}));
+    operationsCache=data.items||[];
+    const body=$('operationsRows');body.replaceChildren();
+    if(!operationsCache.length){
+      const row=document.createElement('tr');const cell=document.createElement('td');cell.colSpan=8;cell.textContent='هنوز عملیاتی برای این پروژه ثبت نشده است.';row.appendChild(cell);body.appendChild(row);
+    }else{
+      operationsCache.forEach(item=>{
+        const row=document.createElement('tr');
+        [item.operation_id,item.operation_type_name,item.status,item.workflow_state,item.parent_contract_number||'—',item.child_contract_number||'—',fmt(item.created_at)].forEach(value=>{
+          const cell=document.createElement('td');cell.textContent=value??'—';row.appendChild(cell);
+        });
+        const actionCell=document.createElement('td');const button=document.createElement('button');
+        button.type='button';button.className='koko-button is-secondary';button.dataset.operationId=String(item.operation_id);
+        button.textContent='بازکردن / ادامه';actionCell.appendChild(button);row.appendChild(actionCell);body.appendChild(row);
+      });
+    }
+    $('operationsListMeta').textContent='تعداد عملیات: '+(data.pagination?.total??operationsCache.length);
+  }
+  async function openOperation(item){
+    activeOperation={
+      id:item.operation_id,project_id:selectedProjectId(),version:item.version,status:item.status,
+      workflow_state:item.workflow_state,parent_contract_id:item.parent_contract_id,
+      contract_number:item.parent_contract_number||null
+    };
+    if(item.parent_contract_number)$('operationParentNumber').value=item.parent_contract_number;
+    if(item.property_id)$('operationPropertySelect').value=String(item.property_id);
+    $('operationWorkspace').classList.remove('hidden');
+    $('operationActionStatus').textContent='عملیات '+item.operation_id+' برای ادامه بارگذاری شد.';
+    await refreshOperationWorkspace();
+  }
+  $('operationsRefreshButton').addEventListener('click',()=>loadOperationsList().catch(err=>showError(err.message)));
+  $('operationsRows').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-operation-id]');
+    if(!button)return;
+    const item=operationsCache.find(entry=>String(entry.operation_id)===button.dataset.operationId);
+    if(item)openOperation(item).catch(err=>showError(err.message));
+  });
   async function refreshOperationWorkspace(){
     if(!activeOperation)return;
     const [operation,parties]=await Promise.all([
@@ -686,6 +735,7 @@
       })});
       activeOperation={...activeOperation,...result};
       await refreshOperationWorkspace();
+      await loadOperationsList();
       $('operationActionStatus').textContent='مرحله «'+label+'» با موفقیت ثبت شد.';
     }catch(err){showError(err.message)}finally{button.disabled=false;await refreshOperationWorkspace().catch(()=>{})}
   }
