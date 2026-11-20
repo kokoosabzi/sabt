@@ -13,6 +13,8 @@ from app.contracts.import_routes import router as contract_import_router
 from app.reports.routes import router as reports_router
 from app.operations.routes import router as operations_router
 from app.projects.routes import router as projects_router
+from app.people.routes import router as people_router
+from app.properties.routes import router as properties_router
 from app.reports.service import get_management_summary
 
 app = FastAPI(title="SABT", version="0.1.0")
@@ -22,6 +24,8 @@ app.include_router(contract_import_router)
 app.include_router(reports_router)
 app.include_router(operations_router)
 app.include_router(projects_router)
+app.include_router(people_router)
+app.include_router(properties_router)
 basic = HTTPBasic()
 bearer = HTTPBearer(auto_error=False)
 
