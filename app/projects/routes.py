@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
-from app.db.models import User
+from app.auth.authorization import AuthorizationContext, authorize
+from app.db.models import OperationType, Project, ProjectOperationType, User
 from app.projects.service import (
     ProjectConflictError,
     ProjectValidationError,
@@ -99,3 +101,27 @@ def list_projects_endpoint(
         ],
         "total": len(projects),
     }
+
+@router.get("/{project_id}/operation-types")
+def list_project_operation_types_endpoint(
+    project_id: int,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    project = db.get(Project, project_id)
+    if project is None or project.status != "ACTIVE":
+        raise HTTPException(status_code=404, detail="project_not_found")
+    try:
+        authorize(db, user, "operation.view", AuthorizationContext(project_id=project_id))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail="Forbidden") from exc
+    items = db.scalars(select(OperationType).join(
+        ProjectOperationType, ProjectOperationType.operation_type_id == OperationType.id,
+    ).where(
+        ProjectOperationType.project_id == project_id,
+        ProjectOperationType.enabled.is_(True),
+        OperationType.active.is_(True),
+        OperationType.retired_at.is_(None),
+    ).order_by(OperationType.name, OperationType.id)).all()
+    return {"items": [{"id": item.id, "code": item.code, "name": item.name} for item in items]}
+
