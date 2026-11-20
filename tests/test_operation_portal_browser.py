@@ -39,7 +39,7 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
       let activeWorkflowStates = [];
       let activeWorkflowValid = false;
       const operationState = {
-        operation_id: 101, project_id: 7, status: 'DRAFT',
+        operation_id: 101, project_id: 7, operation_type_id: 3, status: 'DRAFT',
         workflow_state: 'DRAFT', version: 1, created_at: '2026-11-20T10:00:00Z',
         updated_at: '2026-11-20T10:00:00Z', parent_contract_id: 55
       };
