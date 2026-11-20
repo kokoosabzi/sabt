@@ -29,11 +29,13 @@ def api_context():
                     version=1, is_active=True)
     role = Role(code="api-viewer", name="API Viewer", active=True)
     permission = Permission(code="parent_contract.view", name="View Parent Contract")
+    create_permission = Permission(code="parent_contract.create", name="Create Parent Contract")
     report_permission = Permission(code="workflow.report.view", name="View Workflow Reports")
-    db.add_all([user, project, person, role, permission, report_permission])
+    db.add_all([user, project, person, role, permission, create_permission, report_permission])
     db.flush()
     db.add_all([
         RolePermission(role_id=role.id, permission_id=permission.id),
+        RolePermission(role_id=role.id, permission_id=create_permission.id),
         RolePermission(role_id=role.id, permission_id=report_permission.id),
         UserRole(user_id=user.id, role_id=role.id, project_id=None),
         ProjectAccess(user_id=user.id, project_id=project.id, active=True, granted_at=now, version=1),
@@ -110,4 +112,66 @@ def test_parent_contract_history_api_requires_authentication(api_context):
     client, _, _, _ = api_context
     app.dependency_overrides.pop(current_user)
     response = client.get("/contracts/parent/760123/history")
+    assert response.status_code == 401
+
+
+def test_parent_contract_create_api_generates_six_digit_number(api_context):
+    client, _, _, project = api_context
+    response = client.post("/contracts/parent", json={
+        "project_id": project.id,
+        "suffix": "0124",
+        "initial_person_id": 1,
+    })
+    assert response.status_code == 201
+    body = response.json()
+    assert body["contract_number"] == "760124"
+    assert body["suffix"] == "0124"
+    assert body["project_id"] == project.id
+    assert body["status"] == "ACTIVE"
+    assert body["next_transfer_sequence"] == 1
+
+
+def test_parent_contract_create_api_rejects_duplicate_suffix(api_context):
+    client, _, _, project = api_context
+    response = client.post("/contracts/parent", json={
+        "project_id": project.id,
+        "suffix": "0123",
+        "initial_person_id": 1,
+    })
+    assert response.status_code == 409
+    assert response.json()["detail"] == "parent_contract_suffix_exists"
+
+
+@pytest.mark.parametrize("suffix", ["123", "12A4", "１２３４", "12345"])
+def test_parent_contract_create_api_rejects_invalid_suffix(api_context, suffix):
+    client, _, _, project = api_context
+    response = client.post("/contracts/parent", json={
+        "project_id": project.id,
+        "suffix": suffix,
+        "initial_person_id": 1,
+    })
+    assert response.status_code == 422
+
+
+def test_parent_contract_create_api_requires_create_permission(api_context):
+    client, db, _, project = api_context
+    create_permission = db.query(Permission).filter_by(code="parent_contract.create").one()
+    db.query(RolePermission).filter_by(permission_id=create_permission.id).delete()
+    db.commit()
+    response = client.post("/contracts/parent", json={
+        "project_id": project.id,
+        "suffix": "0124",
+        "initial_person_id": 1,
+    })
+    assert response.status_code == 403
+
+
+def test_parent_contract_create_api_requires_authentication(api_context):
+    client, _, _, project = api_context
+    app.dependency_overrides.pop(current_user)
+    response = client.post("/contracts/parent", json={
+        "project_id": project.id,
+        "suffix": "0124",
+        "initial_person_id": 1,
+    })
     assert response.status_code == 401
