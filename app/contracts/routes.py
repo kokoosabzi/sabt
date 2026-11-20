@@ -1,14 +1,68 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
 from app.contracts.service import (
+    ParentContractConflictError,
     ParentContractNotFoundError,
     ParentContractValidationError,
+    create_parent_contract,
     get_parent_contract_history,
 )
 
 router = APIRouter(prefix="/contracts/parent", tags=["contracts"])
+
+
+class ParentContractCreateRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+    project_id: int = Field(ge=1)
+    suffix: str = Field(min_length=4, max_length=4, pattern=r"^[0-9]{4}$")
+    initial_person_id: int = Field(ge=1)
+    property_id: int | None = Field(default=None, ge=1)
+
+
+@router.post("", status_code=201)
+def create_parent_contract_endpoint(
+    payload: ParentContractCreateRequest,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Create a stable Parent Contract root using the project contract code."""
+    try:
+        record = create_parent_contract(
+            db, user, payload.project_id, payload.suffix,
+            payload.initial_person_id, payload.property_id,
+        )
+        db.commit()
+        db.refresh(record)
+    except ParentContractNotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ParentContractConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ParentContractValidationError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
+
+    return {
+        "id": record.id,
+        "project_id": record.project_id,
+        "contract_number": record.contract_number,
+        "suffix": record.suffix,
+        "initial_person_id": record.initial_person_id,
+        "property_id": record.property_id,
+        "status": record.status,
+        "next_transfer_sequence": record.next_transfer_sequence,
+        "version": record.version,
+    }
 
 
 @router.get("/{contract_number}/history")
