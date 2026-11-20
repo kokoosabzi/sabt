@@ -30,6 +30,7 @@ from app.auth.permission_catalog import (
 )
 from app.db.config import get_database_url
 from app.db.models import Permission, Role, RolePermission, User, UserRole
+from app.operations.catalog import OperationCatalogError, ensure_system_operation_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 MIN_PASSWORD_LENGTH = 12
@@ -89,6 +90,11 @@ def create_initial_admin(
     for permission in permissions.values():
         if permission.id not in existing_links:
             db.add(RolePermission(role_id=role.id, permission_id=permission.id))
+
+    try:
+        ensure_system_operation_catalog(db)
+    except OperationCatalogError as exc:
+        raise BootstrapError(str(exc)) from exc
 
     user = User(
         username=normalized_username,
