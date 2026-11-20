@@ -38,11 +38,14 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
       let operationsProjectId = null;
       const operationState = {
         operation_id: 101, project_id: 7, status: 'DRAFT',
-        workflow_state: 'DRAFT', version: 1, created_at: '2026-11-20T10:00:00Z'
+        workflow_state: 'DRAFT', version: 1, created_at: '2026-11-20T10:00:00Z',
+        updated_at: '2026-11-20T10:00:00Z', parent_contract_id: 55
       };
+      let operationCreated = false;
       const parties = [];
       const calls = [];
       function selectedProjectId(){ return 7; }
+      function fmt(value){ return value || '—'; }
       function query(values){ return new URLSearchParams(values).toString(); }
       function showError(message){ window.lastOperationError = message; }
       function renderTextRows(bodyId, items, fields, emptyText){
@@ -57,7 +60,8 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
         if(path.startsWith('/properties?'))return {items:[{id:31,unit_number:'۱۰۱',block_tower:'برج الف'}]};
         if(path==='/projects/7/party-roles')return {items:[{id:8,code:'BUYER_TRANSFEREE',name:'خریدار / منتقل‌الیه مورد تأیید'}]};
         if(path==='/contracts/parent/760123/history')return {parent:{id:55,project_id:7,contract_number:'760123',property_id:31}};
-        if(path==='/operations'&&options.method==='POST')return {...operationState,operation_id:101,parent_contract_id:55,version:1};
+        if(path.startsWith('/operations?'))return {items:operationCreated?[{...operationState,operation_type_name:'انتقال مالکیت',parent_contract_number:'760123',property_id:31,child_contract_number:operationState.child_contract_number||null,transfer_sequence:operationState.transfer_sequence||null}]:[],pagination:{limit:100,offset:0,total:operationCreated?1:0,has_more:false}};
+        if(path==='/operations'&&options.method==='POST'){operationCreated=true;return {...operationState,operation_id:101,parent_contract_id:55,version:1};}
         if(path==='/operations/101')return {...operationState};
         if(path==='/operations/101/parties'&&options.method==='POST'){
           const body=JSON.parse(options.body);parties.push({party_id:1,person_id:body.person_id,first_name:'علی',last_name:'رضایی',role_id:body.role_id,role_name:'خریدار / منتقل‌الیه مورد تأیید',sequence_no:body.sequence_no});
@@ -69,7 +73,7 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
           return {...operationState};
         }
         if(path==='/operations/101/finalize'&&options.method==='POST'){
-          operationState.status='FINALIZED';operationState.workflow_state='FINALIZED';operationState.version++;
+          operationState.status='FINALIZED';operationState.workflow_state='FINALIZED';operationState.version++;operationState.child_contract_number='760123/1';
           return {operation_id:101,status:'FINALIZED',workflow_state:'FINALIZED',version:operationState.version,child_contract_number:'760123/1'};
         }
         throw new Error('Unexpected API call: '+path+' '+(options.method||'GET'));
@@ -79,6 +83,7 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
       window.loadOperationsPage = loadOperationsPage;
       window.getOperationCalls = () => calls;
       window.getOperationState = () => activeOperation;
+      window.clearActiveOperation = () => { activeOperation = null; $('operationWorkspace').classList.add('hidden'); };
     """)
 
     page.evaluate("async () => await window.loadOperationsPage()")
@@ -89,6 +94,13 @@ def test_browser_can_create_and_finalize_a_transfer_through_the_portal(page):
     page.locator("#operationTypeSelect").select_option("3")
     page.locator("#operationParentNumber").fill("760123")
     page.locator("#operationForm").evaluate("(form) => form.requestSubmit()")
+    expect(page.locator("#operationWorkspace")).to_be_visible()
+    expect(page.locator("#operationSummary")).to_contain_text("760123")
+    expect(page.locator("#operationsRows")).to_contain_text("101")
+
+    page.evaluate("window.clearActiveOperation()")
+    page.locator("#operationsRefreshButton").click()
+    page.locator("#operationsRows button[data-operation-id='101']").click()
     expect(page.locator("#operationWorkspace")).to_be_visible()
     expect(page.locator("#operationSummary")).to_contain_text("760123")
 
