@@ -313,21 +313,22 @@ def test_project_workflow_state_endpoint_falls_back_to_global_configuration(api_
     project_id = created.json()["id"]
     with Session(engine) as db:
         operation_type = db.scalar(select(OperationType).where(OperationType.code == "TRANSFER"))
+        operation_type_id = operation_type.id
         db.query(OperationTypeWorkflow).filter_by(
-            project_id=project_id, operation_type_id=operation_type.id
+            project_id=project_id, operation_type_id=operation_type_id
         ).delete()
         db.add_all([
-            OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=None,
+            OperationTypeWorkflow(operation_type_id=operation_type_id, project_id=None,
                                   state_code="DRAFT", sequence_no=1, active=True),
-            OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=None,
+            OperationTypeWorkflow(operation_type_id=operation_type_id, project_id=None,
                                   state_code="IN_PROGRESS", sequence_no=2, active=True),
-            OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=None,
+            OperationTypeWorkflow(operation_type_id=operation_type_id, project_id=None,
                                   state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
         ])
         db.commit()
 
     response = client.get(
-        f"/projects/{project_id}/operation-types/{operation_type.id}/workflow-states",
+        f"/projects/{project_id}/operation-types/{operation_type_id}/workflow-states",
         headers=headers,
     )
 
