@@ -249,8 +249,7 @@
             <div class="koko-table-wrap" style="margin-top:14px"><table class="koko-table"><thead><tr><th>شخص</th><th>نقش</th><th>ترتیب</th></tr></thead><tbody id="operationPartyRows"><tr><td colspan="3">هنوز طرفی ثبت نشده است.</td></tr></tbody></table></div>
             <div class="koko-section-heading" style="margin-top:18px"><div><h3>۳. مراحل گردش کار</h3><p>هر مرحله فقط پس از ثبت موفق مرحله قبل فعال می‌شود.</p></div></div>
             <div class="koko-form-actions">
-              <button id="operationStartButton" class="koko-button is-secondary" type="button">شروع رسیدگی</button>
-              <button id="operationReadyButton" class="koko-button is-secondary" type="button">آماده نهایی‌سازی</button>
+              <button id="operationNextStateButton" class="koko-button is-secondary" type="button" disabled>مرحله بعدی گردش کار</button>
               <button id="operationFinalizeButton" class="koko-button" type="button">نهایی‌سازی انتقال</button>
             </div>
             <p id="operationActionStatus" class="muted" aria-live="polite"></p>
@@ -270,6 +269,8 @@
   let activeOperation = null;
   let operationsProjectId = null;
   let operationsCache = [];
+  let activeWorkflowStates = [];
+  let activeWorkflowValid = false;
   let lastContractHistory = null;
   let projectTimezone = 'Asia/Tehran', contextProjectId = null, defaultsInitialized = false;
   const fmt = value => value ? new Intl.DateTimeFormat('fa-IR', {
@@ -589,7 +590,7 @@
         project_id:projectId,operation_type_id:Number($('operationTypeSelect').value),
         property_id:propertyId||null,parent_contract_id:history.parent.id
       })});
-      activeOperation={id:created.operation_id,project_id:projectId,version:created.version,status:created.status,workflow_state:created.workflow_state,parent_contract_id:history.parent.id,contract_number:history.parent.contract_number};
+      activeOperation={id:created.operation_id,project_id:projectId,operation_type_id:created.operation_type_id,version:created.version,status:created.status,workflow_state:created.workflow_state,parent_contract_id:history.parent.id,contract_number:history.parent.contract_number};
       $('operationWorkspace').classList.remove('hidden');
       $('operationCreateStatus').textContent='عملیات شماره '+activeOperation.id+' ایجاد شد.';
       await refreshOperationWorkspace();
@@ -612,8 +613,8 @@
       $('operationActionStatus').textContent='طرف عملیات با موفقیت ثبت شد.';
     }catch(err){showError(err.message)}finally{button.disabled=false}
   });
-  $('operationStartButton').addEventListener('click',()=>advanceOperation('IN_PROGRESS','شروع رسیدگی'));
-  $('operationReadyButton').addEventListener('click',()=>advanceOperation('READY_FOR_FINALIZATION','آماده نهایی‌سازی'));
+  $('operationTypeSelect').addEventListener('change',()=>loadOperationWorkflowStates(selectedProjectId(),Number($('operationTypeSelect').value)).catch(err=>showError(err.message)));
+  $('operationNextStateButton').addEventListener('click',advanceToNextConfiguredState);
   $('operationFinalizeButton').addEventListener('click',async()=>{
     if(!activeOperation)return;
     const button=$('operationFinalizeButton');button.disabled=true;
@@ -671,6 +672,21 @@
     if(activeOperation)await refreshOperationWorkspace();
     await loadOperationsList();
   }
+  async function loadOperationWorkflowStates(projectId,operationTypeId){
+    activeWorkflowStates=[];activeWorkflowValid=false;
+    if(!operationTypeId)return;
+    const data=await api('/projects/'+projectId+'/operation-types/'+operationTypeId+'/workflow-states');
+    activeWorkflowStates=data.items||[];
+    activeWorkflowValid=Boolean(data.valid&&activeWorkflowStates.length);
+    if(!activeWorkflowValid)showError('پیکربندی مراحل گردش کار این نوع عملیات معتبر یا کامل نیست.');
+  }
+  async function advanceToNextConfiguredState(){
+    if(!activeOperation)return;
+    const currentIndex=activeWorkflowStates.findIndex(state=>state.state_code===activeOperation.workflow_state);
+    const nextState=currentIndex>=0?activeWorkflowStates[currentIndex+1]:null;
+    if(!activeWorkflowValid||!nextState){showError('مرحله بعدی معتبر در پیکربندی گردش کار پیدا نشد.');return;}
+    await advanceOperation(nextState.state_code,'مرحله '+nextState.state_code);
+  }
   async function loadOperationsList(){
     const projectId=selectedProjectId();
     const data=await api('/operations?'+query({project_id:projectId,limit:100,offset:0}));
@@ -693,12 +709,14 @@
   }
   async function openOperation(item){
     activeOperation={
-      id:item.operation_id,project_id:selectedProjectId(),version:item.version,status:item.status,
+      id:item.operation_id,project_id:selectedProjectId(),operation_type_id:item.operation_type_id,version:item.version,status:item.status,
       workflow_state:item.workflow_state,parent_contract_id:item.parent_contract_id,
       contract_number:item.parent_contract_number||null
     };
     if(item.parent_contract_number)$('operationParentNumber').value=item.parent_contract_number;
     if(item.property_id)$('operationPropertySelect').value=String(item.property_id);
+    $('operationTypeSelect').value=String(item.operation_type_id);
+    await loadOperationWorkflowStates(selectedProjectId(),item.operation_type_id);
     $('operationWorkspace').classList.remove('hidden');
     $('operationActionStatus').textContent='عملیات '+item.operation_id+' برای ادامه بارگذاری شد.';
     await refreshOperationWorkspace();
@@ -723,13 +741,15 @@
     $('operationPersonSelect').disabled=finalized;
     $('operationRoleSelect').disabled=finalized;
     $('addOperationPartyButton').disabled=finalized;
-    $('operationStartButton').disabled=finalized||activeOperation.workflow_state!=='DRAFT';
-    $('operationReadyButton').disabled=finalized||activeOperation.workflow_state!=='IN_PROGRESS';
+    const currentIndex=activeWorkflowStates.findIndex(state=>state.state_code===activeOperation.workflow_state);
+    const nextState=currentIndex>=0?activeWorkflowStates[currentIndex+1]:null;
+    $('operationNextStateButton').disabled=finalized||!activeWorkflowValid||!nextState;
+    $('operationNextStateButton').textContent=nextState?'مرحله بعد: '+nextState.state_code:'مرحله بعدی در گردش کار موجود نیست';
     $('operationFinalizeButton').disabled=finalized||activeOperation.workflow_state!=='READY_FOR_FINALIZATION';
   }
   async function advanceOperation(targetState,label){
     if(!activeOperation)return;
-    const button=targetState==='IN_PROGRESS'?$('operationStartButton'):$('operationReadyButton');button.disabled=true;
+    const button=$('operationNextStateButton');button.disabled=true;
     try{
       const result=await api('/operations/'+activeOperation.id+'/transition',{method:'POST',body:JSON.stringify({
         target_state:targetState,expected_version:activeOperation.version,reason:label
