@@ -270,3 +270,70 @@ def test_project_party_role_list_requires_authentication_and_operation_view_perm
         headers={"Authorization": f"Bearer {login.json()['access_token']}"},
     )
     assert denied.status_code == 403
+
+
+def test_project_workflow_state_endpoint_returns_effective_ordered_project_configuration(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "workflow-state-project", "name": "پروژه گردش کار", "contract_code": "85"},
+    )
+    project_id = created.json()["id"]
+    operation_types = client.get(f"/projects/{project_id}/operation-types", headers=headers)
+    transfer_type = next(item for item in operation_types.json()["items"] if item["code"] == "TRANSFER")
+
+    response = client.get(
+        f"/projects/{project_id}/operation-types/{transfer_type['id']}/workflow-states",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source"] == "project"
+    assert body["valid"] is True
+    assert body["items"] == [
+        {"state_code": "DRAFT", "sequence_no": 1},
+        {"state_code": "IN_PROGRESS", "sequence_no": 2},
+        {"state_code": "READY_FOR_FINALIZATION", "sequence_no": 3},
+    ]
+
+
+def test_project_workflow_state_endpoint_falls_back_to_global_configuration(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "workflow-global-fallback", "name": "پروژه گردش کار عمومی", "contract_code": "86"},
+    )
+    project_id = created.json()["id"]
+    with Session(engine) as db:
+        operation_type = db.scalar(select(OperationType).where(OperationType.code == "TRANSFER"))
+        db.query(OperationTypeWorkflow).filter_by(
+            project_id=project_id, operation_type_id=operation_type.id
+        ).delete()
+        db.add_all([
+            OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=None,
+                                  state_code="DRAFT", sequence_no=1, active=True),
+            OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=None,
+                                  state_code="IN_PROGRESS", sequence_no=2, active=True),
+            OperationTypeWorkflow(operation_type_id=operation_type.id, project_id=None,
+                                  state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
+        ])
+        db.commit()
+
+    response = client.get(
+        f"/projects/{project_id}/operation-types/{operation_type.id}/workflow-states",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["source"] == "global"
+    assert response.json()["valid"] is True
+    assert [item["state_code"] for item in response.json()["items"]] == [
+        "DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION",
+    ]
