@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
 from app.auth.authorization import AuthorizationContext, authorize
-from app.db.models import OperationType, Project, ProjectOperationType, User
+from app.db.models import OperationType, PartyRole, Project, ProjectOperationType, User
 from app.projects.service import (
     ProjectConflictError,
     ProjectValidationError,
@@ -125,3 +125,25 @@ def list_project_operation_types_endpoint(
     ).order_by(OperationType.name, OperationType.id)).all()
     return {"items": [{"id": item.id, "code": item.code, "name": item.name} for item in items]}
 
+
+
+@router.get("/{project_id}/party-roles")
+def list_project_party_roles_endpoint(
+    project_id: int,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """List active party roles for an authorized project operation workspace."""
+    project = db.get(Project, project_id)
+    if project is None or project.status != "ACTIVE":
+        raise HTTPException(status_code=404, detail="project_not_found")
+    try:
+        authorize(db, user, "operation.view", AuthorizationContext(project_id=project_id))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail="Forbidden") from exc
+    items = db.scalars(
+        select(PartyRole)
+        .where(PartyRole.active.is_(True), PartyRole.retired_at.is_(None))
+        .order_by(PartyRole.name, PartyRole.id)
+    ).all()
+    return {"items": [{"id": item.id, "code": item.code, "name": item.name} for item in items]}
