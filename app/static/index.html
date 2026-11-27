@@ -22,13 +22,15 @@
     .btn{border:0;border-radius:9px;padding:11px 15px;background:#183b56;color:white;cursor:pointer;font-weight:700}.btn.secondary{background:#edf2f7;color:#263b50}.btn:disabled{opacity:.5;cursor:not-allowed}
     .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.metric{padding:17px}.metric span{display:block;color:#667085;font-size:12px}.metric strong{display:block;font-size:27px;margin-top:12px;font-weight:800;color:#173d57}
     .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,td{padding:12px 10px;text-align:right;border-bottom:1px solid #edf0f4}th{color:#667085;font-weight:700;background:#f9fafb}
-    .date-control{position:relative}.date-control input{cursor:pointer;background:#fff;padding-left:38px}.time-selects{display:flex;align-items:center;gap:6px}.time-selects select{min-width:0;flex:1;padding:10px;border:1px solid #d0d8e2;border-radius:9px;background:#fff;color:#182230;font:inherit}.date-picker-popover{position:fixed;z-index:1000;width:290px;padding:14px;background:#fff;border:1px solid #d0d8e2;border-radius:14px;box-shadow:0 14px 40px #172b4d24}.date-picker-heading,.date-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.date-picker-heading strong{font-size:14px}.date-picker-heading .btn,.date-picker-footer .btn{padding:7px 10px}.date-picker-weekdays,.date-picker-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px;text-align:center}.date-picker-weekdays{font-size:11px;color:#667085}.date-picker-days button{border:0;border-radius:8px;padding:8px 0;background:#f5f7fa;color:#182230;cursor:pointer}.date-picker-days button:hover,.date-picker-days button:focus{background:#dcecf4;outline:2px solid #7199ae}.date-picker-days button.selected{background:#183b56;color:white}.date-picker-days button.today{box-shadow:inset 0 0 0 1px #183b56}.date-picker-days .empty{min-height:32px}.date-picker-footer{margin-top:12px}.muted{color:#667085;font-size:12px}.error{color:#b42318;background:#fff1f0;border-radius:9px;padding:10px;margin-bottom:12px;display:none}.success{color:#067647}.hidden{display:none!important}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{max-width:250px}
+    .date-control{position:relative}.date-control input{cursor:pointer;background:#fff;padding-left:38px}.time-selects{display:flex;align-items:center;gap:6px}.time-selects select{min-width:0;flex:1;padding:10px;border:1px solid #d0d8e2;border-radius:9px;background:#fff;color:#182230;font:inherit}.date-picker-popover{position:fixed;z-index:10000;width:290px;padding:14px;background:#fff;border:1px solid #d0d8e2;border-radius:14px;box-shadow:0 14px 40px #172b4d24}.date-picker-heading,.date-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.date-picker-heading strong{font-size:14px}.date-picker-heading .btn,.date-picker-footer .btn{padding:7px 10px}.date-picker-weekdays,.date-picker-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px;text-align:center}.date-picker-weekdays{font-size:11px;color:#667085}.date-picker-days button{border:0;border-radius:8px;padding:8px 0;background:#f5f7fa;color:#182230;cursor:pointer}.date-picker-days button:hover,.date-picker-days button:focus{background:#dcecf4;outline:2px solid #7199ae}.date-picker-days button.selected{background:#183b56;color:white}.date-picker-days button.today{box-shadow:inset 0 0 0 1px #183b56}.date-picker-days .empty{min-height:32px}.date-picker-footer{margin-top:12px}.muted{color:#667085;font-size:12px}.error{color:#b42318;background:#fff1f0;border-radius:9px;padding:10px;margin-bottom:12px;display:none}.success{color:#067647}.hidden{display:none!important}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row input{max-width:250px}
     .login{max-width:520px;margin:48px auto}.login .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.login .fields .full{grid-column:1/-1}
     .section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+    .first-project{max-width:900px;margin:24px auto}.first-project-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.first-project-grid .full{grid-column:1/-1}.first-project .btn{min-width:180px}
     footer{color:#98a2b3;font-size:11px;text-align:center;padding:10px}
     @media(max-width:950px){.layout{grid-template-columns:1fr}nav{position:static;display:grid;grid-template-columns:repeat(2,1fr)}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:560px){.shell{padding:12px}header{align-items:flex-start}.metrics{gap:8px}.metric{padding:12px}.metric strong{font-size:22px}.filters,.login .fields{grid-template-columns:1fr}.login .fields .full{grid-column:auto}.panel{padding:14px}nav{grid-template-columns:1fr 1fr}}
   </style>
+  <link rel="stylesheet" href="/portal/koko-ui.css">
 </head>
 <body>
   <div id="loginView" class="shell login">
@@ -46,81 +48,254 @@
   <div id="appView" class="shell hidden">
     <header>
       <div class="brand"><div class="logo">س</div><div><h1>پرتال مدیریتی SABT</h1><p>نمای وضعیت، گردش کار و سوابق قرارداد</p></div></div>
-      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="logoutButton" class="btn secondary">خروج</button></div>
+      <div class="row"><span id="sessionStatus" class="status">متصل</span><button id="navToggle" class="btn secondary nav-toggle" type="button" aria-label="باز و بسته کردن منوی اصلی" aria-controls="sabtNav" aria-expanded="false">منو</button><button id="logoutButton" class="btn secondary">خروج</button></div>
     </header>
-    <div class="layout">
-      <nav aria-label="منوی گزارش‌ها">
+    <section id="projectSetupPanel" class="panel first-project hidden" aria-labelledby="projectSetupTitle">
+      <div class="koko-section-heading"><div><span class="koko-eyebrow">SABT · FIRST RUN</span><h2 id="projectSetupTitle">ساخت اولین پروژه</h2><p>برای شروع کار، مشخصات پروژه و کد دو رقمی قرارداد را ثبت کنید. دسترسی مدیر اولیه به این پروژه به‌صورت خودکار فعال می‌شود.</p></div></div>
+      <div id="projectSetupError" class="error" role="alert"></div>
+      <form id="projectSetupForm" class="first-project-grid">
+        <div class="koko-field"><label for="setupProjectName">نام پروژه</label><input id="setupProjectName" class="koko-control" maxlength="200" required></div>
+        <div class="koko-field"><label for="setupProjectCode">شناسه داخلی پروژه</label><input id="setupProjectCode" class="koko-control" minlength="2" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_-]+" placeholder="project-01" required><small class="muted">شناسه یکتای لاتین برای استفاده داخلی سامانه</small></div>
+        <div class="koko-field"><label for="setupContractCode">کد دو رقمی قرارداد</label><input id="setupContractCode" class="koko-control" inputmode="numeric" minlength="2" maxlength="2" pattern="[1-9][0-9]" placeholder="۱۰ تا ۹۹" required><small class="muted">این کد ابتدای شماره قراردادهای مادر قرار می‌گیرد.</small></div>
+        <div class="koko-field"><label for="setupProjectTimezone">منطقه زمانی پروژه</label><input id="setupProjectTimezone" class="koko-control" value="Asia/Tehran" maxlength="64" required><small class="muted">نمونه: Asia/Tehran</small></div>
+        <div class="koko-field full"><label for="setupProjectDescription">توضیحات (اختیاری)</label><input id="setupProjectDescription" class="koko-control" maxlength="4000"></div>
+        <div class="full"><button id="createFirstProjectButton" class="btn" type="submit">ایجاد پروژه و ورود به سامانه</button></div>
+      </form>
+    </section>
+    <div id="appWorkspace" class="layout">
+      <nav id="sabtNav" aria-label="منوی گزارش‌ها">
         <button class="active" data-page="dashboard">نمای مدیریتی</button>
         <button data-page="workflow">گزارش گردش کار</button>
         <button data-page="events">رخدادهای گردش کار</button>
         <button data-page="contract">گردش قرارداد</button>
+        <button data-page="contractCreate">ثبت قرارداد مادر</button>
         <button data-page="contractImport">ورود گروهی قراردادها</button>
+        <button data-page="people">اشخاص پروژه</button>
+        <button data-page="properties">املاک پروژه</button>
+        <button data-page="operations">ثبت و پیگیری عملیات</button>
       </nav>
       <main>
+        <div id="koko-workspace-tabs" class="koko-workspace-tabs" role="group" aria-label="صفحه‌های باز"></div>
         <div id="globalError" class="error"></div>
-        <section class="panel">
-          <div class="section-title"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
-          <div class="filters">
-            <div><label for="projectId">شناسه پروژه</label><input id="projectId" type="number" min="1" step="1" value="1" required></div>
-            <div><label for="startAt">از تاریخ شمسی</label><div class="date-control"><input id="startAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="startHour">ساعت شروع (۲۴ ساعته)</label><div class="time-selects"><select id="startHour" aria-label="ساعت شروع"></select><span>:</span><select id="startMinute" aria-label="دقیقه شروع"></select></div></div>
-            <div><label for="endAt">تا تاریخ شمسی</label><div class="date-control"><input id="endAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="endHour">ساعت پایان (۲۴ ساعته)</label><div class="time-selects"><select id="endHour" aria-label="ساعت پایان"></select><span>:</span><select id="endMinute" aria-label="دقیقه پایان"></select></div></div>
-            <div><p id="dateInputHelp" class="muted">تاریخ را از تقویم شمسی انتخاب کنید و ساعت را از فهرست ساعت و دقیقه برگزینید؛ منطقه زمانی پروژه اعمال می‌شود.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
+        <section class="panel koko-form-section koko-report-range">
+          <div class="koko-section-heading"><div><h2>محدوده گزارش</h2><p>تاریخ و ساعت بر اساس منطقه زمانی پروژه تفسیر می‌شود؛ بازه شامل شروع و فاقد زمان پایان است.</p></div></div>
+          <div class="filters koko-form-grid is-four-columns">
+            <div class="koko-field"><label for="projectId">شناسه پروژه</label><input id="projectId" class="koko-control" type="number" min="1" step="1" value="1" required></div>
+            <div class="koko-field"><label for="startAt">از تاریخ شمسی</label><div class="date-control"><input class="koko-control" id="startAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="startHour">ساعت شروع (۲۴ ساعته)</label><div class="time-selects"><select id="startHour" aria-label="ساعت شروع"></select><span>:</span><select id="startMinute" aria-label="دقیقه شروع"></select></div></div>
+            <div class="koko-field"><label for="endAt">تا تاریخ شمسی</label><div class="date-control"><input class="koko-control" id="endAt" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" aria-describedby="dateInputHelp" aria-haspopup="dialog" aria-expanded="false" readonly required></div><label for="endHour">ساعت پایان (۲۴ ساعته)</label><div class="time-selects"><select id="endHour" aria-label="ساعت پایان"></select><span>:</span><select id="endMinute" aria-label="دقیقه پایان"></select></div></div>
+            <div class="koko-field"><p id="dateInputHelp" class="muted">تاریخ را از تقویم شمسی انتخاب کنید و ساعت را از فهرست ساعت و دقیقه برگزینید؛ منطقه زمانی پروژه اعمال می‌شود.</p><button id="loadButton" class="btn">دریافت گزارش</button></div>
           </div>
         </section>
         <section id="dashboardPage" class="page">
+          <section class="koko-welcome">
+            <div><span class="koko-eyebrow">SABT · CONTRACT MANAGEMENT</span><h2>نمای کلی سامانه ثبت</h2><p>مدیریت گردش قراردادها، عملیات و انتقال‌ها در یک نگاه</p></div>
+            <div class="koko-welcome-mark" aria-hidden="true">⌂</div>
+          </section>
+          <section class="koko-section-heading"><div><h2>دسترسی سریع</h2><p>ورود مستقیم به بخش‌های اصلی مدیریت قرارداد</p></div></section>
+          <section class="koko-sabt-actions">
+            <button class="koko-action koko-card-blue" data-page="contract"><span class="koko-action-icon">⌕</span><strong>جست‌وجوی قرارداد</strong><small>مشاهده زنجیره انتقال</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-mint" data-page="contractImport"><span class="koko-action-icon">⇧</span><strong>ورود گروهی قرارداد</strong><small>بارگذاری Excel و CSV</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-lilac" data-page="workflow"><span class="koko-action-icon">▤</span><strong>گزارش گردش کار</strong><small>پیگیری عملیات سامانه</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-peach" data-page="events"><span class="koko-action-icon">◷</span><strong>رخدادها</strong><small>تاریخچه تغییرات ثبت‌شده</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-blue" data-page="people"><span class="koko-action-icon">♙</span><strong>اشخاص پروژه</strong><small>ثبت و جست‌وجوی اشخاص</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-mint" data-page="properties"><span class="koko-action-icon">⌂</span><strong>املاک پروژه</strong><small>ثبت و جست‌وجوی واحدها</small><span class="koko-action-arrow">←</span></button>
+            <button class="koko-action koko-card-peach" data-page="operations"><span class="koko-action-icon">⇄</span><strong>ثبت انتقال مالکیت</strong><small>ثبت طرفین و نهایی‌سازی</small><span class="koko-action-arrow">←</span></button>
+          </section>
           <div class="row" style="margin-bottom:14px"><button id="summaryExportXlsx" class="btn secondary">خروجی Excel شاخص‌ها</button><button id="summaryPrint" class="btn secondary">چاپ / ذخیره PDF</button></div>
-          <div class="metrics">
-            <div class="metric"><span>عملیات ایجادشده در بازه</span><strong id="createdMetric">—</strong></div>
-            <div class="metric"><span>عملیات نهایی‌شده در بازه</span><strong id="finalizedMetric">—</strong></div>
-            <div class="metric"><span>عملیات باز در حال حاضر</span><strong id="openMetric">—</strong></div>
-            <div class="metric"><span>انتقال نهایی‌شده در بازه</span><strong id="transfersMetric">—</strong></div>
+          <div class="metrics koko-sabt-metrics">
+            <div class="metric koko-metric koko-card-lilac"><span>عملیات ایجادشده در بازه</span><strong id="createdMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-mint"><span>عملیات نهایی‌شده در بازه</span><strong id="finalizedMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-blue"><span>عملیات باز در حال حاضر</span><strong id="openMetric">—</strong></div>
+            <div class="metric koko-metric koko-card-peach"><span>انتقال نهایی‌شده در بازه</span><strong id="transfersMetric">—</strong></div>
           </div>
           <section class="panel"><h2>عملیات ایجادشده به تفکیک وضعیت</h2><div id="statusMetrics" class="row muted">برای دریافت شاخص‌ها، «دریافت گزارش» را انتخاب کنید.</div></section>
           <section class="panel"><h2>توضیحات و حدود داده</h2><p>شاخص‌ها فقط از رکوردهای ذخیره‌شده محاسبه می‌شوند. زمان رسیدگی و مدت حضور در هر وضعیت تا زمانی که تمام رخدادهای لازم ثبت نشده باشند محاسبه نمی‌شوند.</p></section>
         </section>
         <section id="workflowPage" class="page hidden">
-          <section class="panel">
-            <div class="section-title"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
-            <div class="filters">
-              <div><label for="statusFilter">وضعیت</label><select id="statusFilter"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
-              <div><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" type="number" min="1"></div>
-              <div><label for="contractFilter">شماره قرارداد مادر</label><input id="contractFilter" inputmode="numeric" maxlength="6" placeholder="مثلاً 760123"></div>
-              <div><label for="creatorFilter">شناسه ثبت‌کننده</label><input id="creatorFilter" type="number" min="1"></div>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>گزارش عملیات</h2><p>مرتب‌سازی از جدیدترین عملیات؛ حداکثر ۱۰۰ ردیف در هر صفحه.</p></div><div class="row"><button id="workflowExport" class="btn secondary">خروجی CSV</button><button id="workflowExportXlsx" class="btn secondary">خروجی Excel</button><button id="workflowPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="workflowRefresh" class="btn secondary">اعمال فیلتر</button></div></div>
+            <div class="filters koko-form-grid is-four-columns">
+              <div class="koko-field"><label for="statusFilter">وضعیت</label><select id="statusFilter" class="koko-control"><option value="">همه وضعیت‌ها</option><option>DRAFT</option><option>FINALIZED</option><option>CANCELLED</option><option>REJECTED</option></select></div>
+              <div class="koko-field"><label for="operationTypeFilter">شناسه نوع عملیات</label><input id="operationTypeFilter" class="koko-control" type="number" min="1"></div>
+              <div class="koko-field"><label for="contractFilter">شماره قرارداد مادر</label><input id="contractFilter" class="koko-control" inputmode="numeric" maxlength="6" placeholder="مثلاً 760123"></div>
+              <div class="koko-field"><label for="creatorFilter">شناسه ثبت‌کننده</label><input id="creatorFilter" class="koko-control" type="number" min="1"></div>
             </div>
           </section>
-          <section class="panel"><div id="workflowMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>ثبت‌کننده</th><th>تاریخ ایجاد</th><th>نهایی‌شدن</th></tr></thead><tbody id="workflowRows"><tr><td colspan="8">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div><div class="row" style="margin-top:14px"><button id="prevPage" class="btn secondary">قبلی</button><span id="pageMeta" class="muted"></span><button id="nextPage" class="btn secondary">بعدی</button></div></section>
+          <section class="panel koko-form-section"><div id="workflowMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>ثبت‌کننده</th><th>تاریخ ایجاد</th><th>نهایی‌شدن</th></tr></thead><tbody id="workflowRows"><tr><td colspan="8">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div><div class="row" style="margin-top:14px"><button id="prevPage" class="btn secondary">قبلی</button><span id="pageMeta" class="muted"></span><button id="nextPage" class="btn secondary">بعدی</button></div></section>
         </section>
         <section id="eventsPage" class="page hidden">
-          <section class="panel">
-            <div class="section-title"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
-            <div class="filters"><div><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" type="number" min="1"></div><div><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" type="number" min="1"></div></div>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>رخدادهای ثبت‌شده</h2><p>این جدول فقط رخدادهایی را نشان می‌دهد که واقعاً در سامانه ذخیره شده‌اند.</p></div><div class="row"><button id="eventsExport" class="btn secondary">خروجی CSV</button><button id="eventsExportXlsx" class="btn secondary">خروجی Excel</button><button id="eventsPrint" class="btn secondary">چاپ / ذخیره PDF</button><button id="eventsRefresh" class="btn secondary">به‌روزرسانی</button></div></div>
+            <div class="filters koko-form-grid is-three-columns"><div class="koko-field"><label for="eventTypeFilter">نوع رخداد</label><select id="eventTypeFilter" class="koko-control"><option value="">همه رخدادها</option><option>OPERATION_CREATED</option><option>PARTY_ADDED</option><option>OPERATION_FINALIZED</option></select></div><div class="koko-field"><label for="eventOperationFilter">شناسه عملیات</label><input id="eventOperationFilter" class="koko-control" type="number" min="1"></div><div class="koko-field"><label for="eventActorFilter">شناسه کاربر</label><input id="eventActorFilter" class="koko-control" type="number" min="1"></div></div>
           </section>
-          <section class="panel"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
+          <section class="panel koko-form-section"><div id="eventsMeta" class="muted" style="margin-bottom:10px"></div><div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>زمان رخداد</th><th>نوع رخداد</th><th>شناسه عملیات</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>کاربر</th><th>وضعیت قبل/بعد</th></tr></thead><tbody id="eventRows"><tr><td colspan="7">هنوز گزارشی دریافت نشده است.</td></tr></tbody></table></div></section>
         </section>
         <section id="contractPage" class="page hidden">
-          <section class="panel"><h2>جست‌وجوی گردش قرارداد</h2><p style="margin-bottom:14px">شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p><form id="contractForm" class="row"><input id="contractNumber" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required><button class="btn" type="submit">جست‌وجو</button></form></section>
-          <section id="contractResult" class="panel hidden"><div class="row" style="justify-content:flex-end;margin-bottom:12px"><button id="contractPrint" class="btn secondary">چاپ / ذخیره PDF</button></div><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
+          <section class="panel koko-form-section">
+            <header><h2>جست‌وجوی گردش قرارداد</h2></header>
+            <p>شماره مادر شش‌رقمی را وارد کنید تا تاریخچه انتقال و مالک فعلی نمایش داده شود.</p>
+            <form id="contractForm" class="koko-form">
+              <div class="koko-form-grid is-three-columns">
+                <label class="koko-field">شماره قرارداد مادر
+                  <input id="contractNumber" class="koko-control" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="شماره مادر، مانند 760123" required>
+                </label>
+              </div>
+              <div class="koko-form-actions"><button class="koko-button" type="submit">جست‌وجو</button></div>
+            </form>
+          </section>
+          <section id="contractResult" class="panel koko-form-section hidden">
+            <div class="koko-form-actions"><button id="contractPrint" class="koko-button is-secondary" type="button">چاپ / ذخیره PDF</button></div>
+            <div id="contractSummary"></div>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div>
+          </section>
+        </section>
+
+        <section id="contractCreatePage" class="page hidden">
+          <section class="koko-welcome">
+            <div><span class="koko-eyebrow">SABT · PARENT CONTRACT</span><h2>ثبت قرارداد مادر</h2><p>ثبت تکی قرارداد و تعیین شخص اولیه در پروژه انتخاب‌شده</p></div>
+            <div class="koko-welcome-mark" aria-hidden="true">＋</div>
+          </section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>اطلاعات قرارداد</h2><p>اشخاص و املاک فقط از موارد فعال و مرتبط با پروژه انتخاب‌شده دریافت می‌شوند.</p></div></div>
+            <form id="parentContractCreateForm" class="koko-form">
+              <div class="koko-form-grid is-two-columns">
+                <label class="koko-field" for="parentContractProjectCode">کد دو رقمی پروژه
+                  <input id="parentContractProjectCode" class="koko-control" readonly aria-readonly="true">
+                </label>
+                <label class="koko-field" for="parentContractSuffix">چهار رقم پایانی شماره قرارداد
+                  <input id="parentContractSuffix" class="koko-control" type="text" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" placeholder="مثلاً 0123" required>
+                </label>
+                <label class="koko-field" for="parentContractPerson">شخص اولیه / مالک اولیه
+                  <select id="parentContractPerson" class="koko-control" required><option value="">ابتدا پروژه را بارگذاری کنید</option></select>
+                </label>
+                <label class="koko-field" for="parentContractProperty">واحد / ملک (اختیاری)
+                  <select id="parentContractProperty" class="koko-control"><option value="">بدون انتخاب ملک</option></select>
+                </label>
+              </div>
+              <div class="panel" style="margin-top:14px">
+                <span class="muted">شماره نهایی قرارداد</span>
+                <strong id="parentContractNumberPreview" style="display:block;font-size:24px;letter-spacing:2px;margin-top:8px" aria-live="polite">—</strong>
+              </div>
+              <div class="koko-form-actions">
+                <button id="parentContractCreateButton" class="koko-button" type="submit" disabled>ثبت قرارداد مادر</button>
+                <button id="parentContractReloadOptions" class="koko-button is-secondary" type="button">بارگذاری مجدد اشخاص و املاک</button>
+              </div>
+              <p id="parentContractCreateMessage" class="error" role="alert"></p>
+            </form>
+          </section>
+          <section id="parentContractCreatedPanel" class="panel koko-form-section hidden" aria-live="polite">
+            <div class="koko-section-heading"><div><h2>قرارداد با موفقیت ثبت شد</h2><p id="parentContractCreatedSummary"></p></div></div>
+            <div class="koko-form-actions"><button id="parentContractViewButton" class="koko-button is-secondary" type="button">مشاهده گردش قرارداد</button></div>
+          </section>
         </section>
 
         <section id="contractImportPage" class="page hidden">
-          <section class="panel">
-            <h2>ورود گروهی قراردادهای مادر</h2>
-            <p style="margin-bottom:14px">فایل CSV یا Excel با ستون‌های suffix و initial_person_id و ستون اختیاری property_id انتخاب کنید. ابتدا پیش‌نمایش و خطاها را بررسی کنید؛ تا زمان تأیید نهایی هیچ قراردادی ثبت نمی‌شود.</p>
-            <div class="row">
-              <input id="contractImportFile" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها">
-              <button id="contractImportPreview" class="btn">بارگذاری و پیش‌نمایش</button>
-              <button id="contractImportRevalidate" class="btn" disabled>اعتبارسنجی مجدد پس از اصلاح</button>
-              <button id="contractImportConfirm" class="btn" disabled>تأیید و ثبت همه قراردادها</button>
+          <section class="panel koko-form-section">
+            <header><h2>ورود گروهی قراردادهای مادر</h2></header>
+            <p>فایل CSV یا Excel با ستون‌های suffix و initial_person_id و ستون اختیاری property_id انتخاب کنید. ابتدا پیش‌نمایش و خطاها را بررسی کنید؛ تا زمان تأیید نهایی هیچ قراردادی ثبت نمی‌شود.</p>
+            <div class="koko-form">
+              <div class="koko-field"><label for="contractImportFile">فایل قراردادها (CSV یا Excel)</label><input id="contractImportFile" class="koko-control" type="file" accept=".csv,.xlsx" aria-label="فایل قراردادها"></div>
+              <div class="koko-form-actions">
+                <button id="contractImportPreview" class="koko-button" type="button">بارگذاری و پیش‌نمایش</button>
+                <button id="contractImportRevalidate" class="koko-button is-secondary" type="button" disabled>اعتبارسنجی مجدد پس از اصلاح</button>
+                <button id="contractImportConfirm" class="koko-button is-success" type="button" disabled>تأیید و ثبت همه قراردادها</button>
+              </div>
             </div>
-            <p id="contractImportMeta" class="muted" style="margin-top:12px"></p>
-            <div id="contractImportIssues" class="error"></div>
+            <p id="contractImportMeta" class="muted"></p>
+            <div id="contractImportIssues" class="error" role="alert"></div>
           </section>
-          <section id="contractImportPreviewPanel" class="panel hidden">
-            <h2>پیش‌نمایش ردیف‌ها</h2>
-            <div class="table-wrap"><table><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
+          <section id="contractImportPreviewPanel" class="panel koko-form-section hidden">
+            <header><h2>پیش‌نمایش ردیف‌ها</h2></header>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>ردیف</th><th>شماره قرارداد مادر</th><th>پسوند</th><th>شناسه شخص اولیه</th><th>شناسه ملک</th><th>اعتبارسنجی</th></tr></thead><tbody id="contractImportRows"></tbody></table></div>
           </section>
         </section>
-      </main>
+              <section id="peoplePage" class="page hidden">
+          <section class="koko-welcome"><div><span class="koko-eyebrow">SABT · PEOPLE</span><h2>اشخاص پروژه</h2><p>ثبت و جست‌وجوی اشخاص؛ هر شخص به‌صورت رکورد مستقل نگهداری و به پروژه متصل می‌شود.</p></div><div class="koko-welcome-mark" aria-hidden="true">♙</div></section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>ثبت شخص جدید</h2><p>در صورت مشاهده شناسه تکراری، سامانه هشدار می‌دهد و رکوردها را خودکار ادغام نمی‌کند.</p></div></div>
+            <form id="personForm">
+              <div class="koko-form-grid is-three-columns">
+                <div class="koko-field"><label for="personFirstName">نام *</label><input id="personFirstName" class="koko-control" maxlength="100" required></div>
+                <div class="koko-field"><label for="personLastName">نام خانوادگی *</label><input id="personLastName" class="koko-control" maxlength="100" required></div>
+                <div class="koko-field"><label for="personFatherName">نام پدر</label><input id="personFatherName" class="koko-control" maxlength="100"></div>
+                <div class="koko-field"><label for="personNationalId">کد ملی / شناسه</label><input id="personNationalId" class="koko-control" inputmode="numeric" maxlength="32"></div>
+                <div class="koko-field"><label for="personMobile">تلفن همراه</label><input id="personMobile" class="koko-control" inputmode="tel" maxlength="32"></div>
+                <div class="koko-field"><label for="personAddress">نشانی</label><input id="personAddress" class="koko-control" maxlength="4000"></div>
+                <div class="koko-field" style="grid-column:1/-1"><label for="personNotes">توضیحات</label><textarea id="personNotes" class="koko-control" rows="2" maxlength="4000"></textarea></div>
+              </div>
+              <div class="koko-form-actions"><button id="personSubmit" type="submit" class="btn">ثبت شخص</button><span id="peopleStatus" class="muted" aria-live="polite"></span></div>
+            </form>
+          </section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>فهرست اشخاص</h2><p>فقط اشخاص متصل به پروژه انتخاب‌شده نمایش داده می‌شوند.</p></div></div>
+            <div class="filters koko-form-grid is-three-columns"><div class="koko-field"><label for="peopleSearch">جست‌وجو</label><input id="peopleSearch" class="koko-control" type="search" placeholder="نام، کد ملی یا تلفن"></div><div class="koko-field"><label>&nbsp;</label><button id="peopleRefresh" type="button" class="btn secondary">جست‌وجو / تازه‌سازی</button></div></div>
+            <div id="peopleMeta" class="muted" style="margin-bottom:10px" aria-live="polite"></div>
+            <div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>نام و نام خانوادگی</th><th>نام پدر</th><th>کد ملی / شناسه</th><th>تلفن همراه</th></tr></thead><tbody id="peopleRows"><tr><td colspan="4">برای نمایش اشخاص، پروژه را انتخاب کنید.</td></tr></tbody></table></div>
+          </section>
+        </section>
+        <section id="propertiesPage" class="page hidden">
+          <section class="koko-welcome"><div><span class="koko-eyebrow">SABT · PROPERTIES</span><h2>املاک و واحدهای پروژه</h2><p>ثبت و جست‌وجوی واحدها و اتصال رکورد ملک به پروژه.</p></div><div class="koko-welcome-mark" aria-hidden="true">⌂</div></section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>ثبت ملک / واحد جدید</h2><p>حداقل یکی از شماره واحد، کد واحد یا پلاک باید ثبت شود.</p></div></div>
+            <form id="propertyForm">
+              <div class="koko-form-grid is-three-columns">
+                <div class="koko-field"><label for="propertyBlock">بلوک / برج</label><input id="propertyBlock" class="koko-control" maxlength="100"></div>
+                <div class="koko-field"><label for="propertyFloor">طبقه</label><input id="propertyFloor" class="koko-control" maxlength="32"></div>
+                <div class="koko-field"><label for="propertyOrientation">جهت / موقعیت</label><input id="propertyOrientation" class="koko-control" maxlength="64"></div>
+                <div class="koko-field"><label for="propertyUnitNumber">شماره واحد</label><input id="propertyUnitNumber" class="koko-control" maxlength="64"></div>
+                <div class="koko-field"><label for="propertyUnitCode">کد واحد</label><input id="propertyUnitCode" class="koko-control" maxlength="128"></div>
+                <div class="koko-field"><label for="propertyPlaque">شماره پلاک</label><input id="propertyPlaque" class="koko-control" maxlength="64"></div>
+                <div class="koko-field" style="grid-column:1/-1"><label for="propertyAddress">نشانی</label><input id="propertyAddress" class="koko-control" maxlength="4000"></div>
+                <div class="koko-field" style="grid-column:1/-1"><label for="propertyNotes">توضیحات</label><textarea id="propertyNotes" class="koko-control" rows="2" maxlength="4000"></textarea></div>
+              </div>
+              <div class="koko-form-actions"><button id="propertySubmit" type="submit" class="btn">ثبت ملک</button><span id="propertiesStatus" class="muted" aria-live="polite"></span></div>
+            </form>
+          </section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>فهرست املاک</h2><p>فقط املاک متصل به پروژه انتخاب‌شده نمایش داده می‌شوند.</p></div></div>
+            <div class="filters koko-form-grid is-three-columns"><div class="koko-field"><label for="propertiesSearch">جست‌وجو</label><input id="propertiesSearch" class="koko-control" type="search" placeholder="بلوک، طبقه، واحد، کد یا پلاک"></div><div class="koko-field"><label>&nbsp;</label><button id="propertiesRefresh" type="button" class="btn secondary">جست‌وجو / تازه‌سازی</button></div></div>
+            <div id="propertiesMeta" class="muted" style="margin-bottom:10px" aria-live="polite"></div>
+            <div class="table-wrap koko-table-wrap"><table class="koko-table"><thead><tr><th>بلوک / برج</th><th>طبقه</th><th>شماره واحد</th><th>کد واحد</th><th>پلاک</th><th>نشانی</th></tr></thead><tbody id="propertiesRows"><tr><td colspan="6">برای نمایش املاک، پروژه را انتخاب کنید.</td></tr></tbody></table></div>
+          </section>
+        </section>
+
+        <section id="operationsPage" class="page hidden">
+          <section class="koko-welcome"><div><span class="koko-eyebrow">SABT · OPERATIONS</span><h2>ثبت و پیگیری انتقال مالکیت</h2><p>ایجاد عملیات انتقال برای قرارداد مادر، ثبت خریدار / منتقل‌الیه مورد تأیید و طی‌کردن مراحل گردش کار.</p></div><div class="koko-welcome-mark" aria-hidden="true">⇄</div></section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>عملیات ثبت‌شده در پروژه</h2><p>عملیات‌های قبلی را باز کنید و ادامه دهید؛ این فهرست پس از راه‌اندازی مجدد نیز از دیتابیس بازیابی می‌شود.</p></div><button id="operationsRefreshButton" type="button" class="koko-button is-secondary">به‌روزرسانی فهرست</button></div>
+            <div id="operationsListMeta" class="muted" aria-live="polite"></div>
+            <div class="koko-table-wrap"><table class="koko-table"><thead><tr><th>شناسه</th><th>نوع عملیات</th><th>وضعیت</th><th>مرحله</th><th>قرارداد مادر</th><th>شماره انتقال</th><th>تاریخ ایجاد</th><th>اقدام</th></tr></thead><tbody id="operationsRows"><tr><td colspan="8">برای نمایش عملیات، پروژه را انتخاب کنید.</td></tr></tbody></table></div>
+          </section>
+          <section class="panel koko-form-section">
+            <div class="koko-section-heading"><div><h2>۱. ایجاد عملیات جدید</h2><p>ابتدا قرارداد مادر را با شماره شش‌رقمی پیدا کنید. عملیات و ارتباط آن با قرارداد در یک تراکنش ذخیره می‌شود.</p></div></div>
+            <form id="operationForm">
+              <div class="koko-form-grid is-three-columns">
+                <div class="koko-field"><label for="operationTypeSelect">نوع عملیات *</label><select id="operationTypeSelect" class="koko-control" required></select></div>
+                <div class="koko-field"><label for="operationParentNumber">شماره قرارداد مادر *</label><input id="operationParentNumber" class="koko-control" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" placeholder="مانند 760123" required></div>
+                <div class="koko-field"><label for="operationPropertySelect">ملک / واحد (اختیاری)</label><select id="operationPropertySelect" class="koko-control"><option value="">بدون انتخاب ملک</option></select></div>
+              </div>
+              <div class="koko-form-actions"><button id="createOperationButton" class="koko-button" type="submit">ایجاد عملیات</button><span id="operationCreateStatus" class="muted" aria-live="polite"></span></div>
+            </form>
+          </section>
+          <section id="operationWorkspace" class="panel koko-form-section hidden">
+            <div class="koko-section-heading"><div><h2>۲. تکمیل طرفین و گردش کار</h2><p id="operationSummary" class="muted" aria-live="polite"></p></div></div>
+            <form id="operationPartyForm">
+              <div class="koko-form-grid is-three-columns">
+                <div class="koko-field"><label for="operationPersonSelect">شخص / خریدار *</label><select id="operationPersonSelect" class="koko-control" required></select></div>
+                <div class="koko-field"><label for="operationRoleSelect">نقش در عملیات *</label><select id="operationRoleSelect" class="koko-control" required></select></div>
+                <div class="koko-field"><label>&nbsp;</label><button id="addOperationPartyButton" class="koko-button is-secondary" type="submit">افزودن طرف عملیات</button></div>
+              </div>
+            </form>
+            <div class="koko-table-wrap" style="margin-top:14px"><table class="koko-table"><thead><tr><th>شخص</th><th>نقش</th><th>ترتیب</th></tr></thead><tbody id="operationPartyRows"><tr><td colspan="3">هنوز طرفی ثبت نشده است.</td></tr></tbody></table></div>
+            <div class="koko-section-heading" style="margin-top:18px"><div><h3>۳. مراحل گردش کار</h3><p>هر مرحله فقط پس از ثبت موفق مرحله قبل فعال می‌شود.</p></div></div>
+            <div class="koko-form-actions">
+              <button id="operationNextStateButton" class="koko-button is-secondary" type="button" disabled>مرحله بعدی گردش کار</button>
+              <button id="operationFinalizeButton" class="koko-button" type="button">نهایی‌سازی انتقال</button>
+            </div>
+            <p id="operationActionStatus" class="muted" aria-live="polite"></p>
+          </section>
+        </section>
+</main>
     </div>
     <footer>SABT · نسخه اولیه پرتال گزارش‌ها · تمام داده‌ها از API مجاز سامانه دریافت می‌شوند.</footer>
   </div>
@@ -130,7 +305,12 @@
   const $ = id => document.getElementById(id);
   let token = sessionStorage.getItem('sabt_token') || '';
   let page = 0, limit = 50, activePage = 'dashboard';
-  let stagedContractImport = null;
+  let stagedContractImport = null;\n  let parentContractOptions = null;
+  let activeOperation = null;
+  let operationsProjectId = null;
+  let operationsCache = [];
+  let activeWorkflowStates = [];
+  let activeWorkflowValid = false;
   let lastContractHistory = null;
   let projectTimezone = 'Asia/Tehran', contextProjectId = null, defaultsInitialized = false;
   const fmt = value => value ? new Intl.DateTimeFormat('fa-IR', {
@@ -213,10 +393,12 @@
   }
   let jalaliPickerTarget = null;
   let jalaliPickerMonth = null;
-  function closeJalaliPicker() {
+  function closeJalaliPicker(restoreFocus = true) {
+    const target = jalaliPickerTarget;
     $('jalaliPicker').classList.add('hidden');
-    if (jalaliPickerTarget) $(jalaliPickerTarget).setAttribute('aria-expanded','false');
+    if (target) $(target).setAttribute('aria-expanded','false');
     jalaliPickerTarget = null;
+    if (restoreFocus && target) $(target).focus();
   }
   function renderJalaliPicker() {
     if (!jalaliPickerMonth) return;
@@ -311,6 +493,22 @@
   }
   function showLogin(){ $('loginView').classList.remove('hidden'); $('appView').classList.add('hidden'); }
   function showApp(){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); }
+  async function initializeProjects(){
+    const data=await api('/projects');
+    const projects=data.items||[];
+    if(!projects.length){
+      $('projectSetupPanel').classList.remove('hidden');
+      $('appWorkspace').classList.add('hidden');
+      return false;
+    }
+    $('projectSetupPanel').classList.add('hidden');
+    $('appWorkspace').classList.remove('hidden');
+    const current=projects.find(project=>String(project.id)===$('projectId').value);
+    $('projectId').value=String((current||projects[0]).id);
+    contextProjectId=null;
+    defaultsInitialized=false;
+    return true;
+  }
   function period() {
     const start=$('startAt').value, end=$('endAt').value;
     if(!start||!end) throw new Error('تاریخ شروع و پایان را از تقویم انتخاب کنید.');
@@ -349,12 +547,132 @@
   $('jalaliNext').addEventListener('click',()=>{if(!jalaliPickerMonth)return;if(jalaliPickerMonth.month===12){jalaliPickerMonth.month=1;jalaliPickerMonth.year++}else jalaliPickerMonth.month++;renderJalaliPicker()});
   $('jalaliToday').addEventListener('click',()=>{if(jalaliPickerTarget){const p=projectJalaliToday();$(jalaliPickerTarget).value=toPersianDigits(formatJalali(p.year,p.month,p.day));closeJalaliPicker()}});
   $('jalaliClose').addEventListener('click',closeJalaliPicker);
-  document.addEventListener('pointerdown',e=>{if(!$('jalaliPicker').contains(e.target)&&e.target!==$('startAt')&&e.target!==$('endAt'))closeJalaliPicker()});
+  document.addEventListener('pointerdown',e=>{if(!$('jalaliPicker').contains(e.target)&&e.target!==$('startAt')&&e.target!==$('endAt'))closeJalaliPicker(false)});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeJalaliPicker()});
-  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();await loadActivePage()}catch(err){showError(err.message,'loginError')}});
+  $('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearError('loginError');try{const r=await api('/auth/login',{method:'POST',headers:{Authorization:'Basic '+btoa(unescape(encodeURIComponent($('username').value+':'+$('password').value)))}});token=r.access_token;sessionStorage.setItem('sabt_token',token);showApp();if(await initializeProjects())await loadActivePage()}catch(err){showError(err.message,'loginError')}});
+  $('projectSetupForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    clearError('projectSetupError');
+    const button=$('createFirstProjectButton');
+    button.disabled=true;
+    try{
+      const project=await api('/projects',{method:'POST',body:JSON.stringify({
+        code:$('setupProjectCode').value,
+        name:$('setupProjectName').value,
+        contract_code:$('setupContractCode').value,
+        description:$('setupProjectDescription').value,
+        timezone:$('setupProjectTimezone').value
+      })});
+      $('projectId').value=String(project.id);
+      if(await initializeProjects())await loadActivePage();
+    }catch(err){
+      showError(err.message,'projectSetupError');
+    }finally{
+      button.disabled=false;
+    }
+  });
   $('logoutButton').addEventListener('click',async()=>{try{await api('/auth/logout',{method:'POST'})}catch{}token='';sessionStorage.removeItem('sabt_token');showLogin()});
-  document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===button));activePage=button.dataset.page;document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));$(activePage+'Page').classList.remove('hidden');clearError();loadActivePage()}));
+  function navigateToPage(target){
+    const navButton=document.querySelector('nav button[data-page="'+target+'"]');
+    if(!navButton||!$(target+'Page'))return false;
+    document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===navButton));
+    activePage=target;
+    document.querySelectorAll('.page').forEach(el=>el.classList.add('hidden'));
+    $(activePage+'Page').classList.remove('hidden');
+    clearError();
+    loadActivePage();
+    return true;
+  }
+  window.sabtNavigatePage=navigateToPage;
+  const navToggle=$('navToggle'),navHost=$('sabtNav');
+  function setNavOpen(open,returnFocus=false){
+    navHost.classList.toggle('is-open',open);
+    navToggle.setAttribute('aria-expanded',String(open));
+    if(open)navHost.querySelector('button[data-page]')?.focus();
+    else if(returnFocus)navToggle.focus();
+  }
+  navToggle.addEventListener('click',()=>setNavOpen(!navHost.classList.contains('is-open')));
+  navHost.addEventListener('click',event=>{
+    if(event.target.closest('button[data-page]'))setNavOpen(false,true);
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&navHost.classList.contains('is-open'))setNavOpen(false,true);
+  });
+  document.addEventListener('pointerdown',event=>{
+    if(!navHost.classList.contains('is-open'))return;
+    if(navHost.contains(event.target)||navToggle.contains(event.target))return;
+    setNavOpen(false,true);
+  });
+  document.querySelectorAll('#sabtNav button').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
+  document.querySelectorAll('.koko-sabt-actions [data-page]').forEach(button=>button.addEventListener('click',()=>navigateToPage(button.dataset.page)));
   $('loadButton').addEventListener('click',()=>loadActivePage());
+  $('personForm').addEventListener('submit',async event=>{event.preventDefault();$('personSubmit').disabled=true;$('peopleStatus').textContent='';try{const result=await api('/people',{method:'POST',body:JSON.stringify({project_id:selectedProjectId(),first_name:$('personFirstName').value,last_name:$('personLastName').value,father_name:$('personFatherName').value||null,national_id:$('personNationalId').value||null,mobile:$('personMobile').value||null,address:$('personAddress').value||null,notes:$('personNotes').value||null})});$('personForm').reset();$('peopleStatus').textContent=result.possible_duplicate_warning?'شخص ثبت شد؛ احتمال رکورد مشابه با شناسه‌های '+result.possible_duplicate_ids.join('، ')+' وجود دارد. ادغامی انجام نشد.':'شخص با موفقیت ثبت شد.';await loadPeoplePage()}catch(err){showError(err.message)}finally{$('personSubmit').disabled=false}});
+  $('peopleRefresh').addEventListener('click',()=>loadPeoplePage().catch(err=>showError(err.message)));
+  $('peopleSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();loadPeoplePage().catch(err=>showError(err.message))}});
+  $('propertyForm').addEventListener('submit',async event=>{event.preventDefault();$('propertySubmit').disabled=true;$('propertiesStatus').textContent='';try{const result=await api('/properties',{method:'POST',body:JSON.stringify({project_id:selectedProjectId(),block_tower:$('propertyBlock').value||null,floor:$('propertyFloor').value||null,orientation:$('propertyOrientation').value||null,unit_number:$('propertyUnitNumber').value||null,unit_code:$('propertyUnitCode').value||null,plaque_number:$('propertyPlaque').value||null,address:$('propertyAddress').value||null,notes:$('propertyNotes').value||null})});$('propertyForm').reset();$('propertiesStatus').textContent=result.possible_duplicate_warning?'ملک ثبت شد؛ احتمال رکورد مشابه با شناسه‌های '+result.possible_duplicate_ids.join('، ')+' وجود دارد. ادغامی انجام نشد.':'ملک با موفقیت ثبت شد.';await loadPropertiesPage()}catch(err){showError(err.message)}finally{$('propertySubmit').disabled=false}});
+  $('propertiesRefresh').addEventListener('click',()=>loadPropertiesPage().catch(err=>showError(err.message)));
+  $('propertiesSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();loadPropertiesPage().catch(err=>showError(err.message))}});
+
+  $('operationForm').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const button=$('createOperationButton');button.disabled=true;$('operationCreateStatus').textContent='';
+    try{
+      const projectId=selectedProjectId();
+      await loadOperationWorkflowStates(projectId,Number($('operationTypeSelect').value));
+      if(!activeWorkflowValid)throw new Error('پیکربندی مراحل گردش کار انتقال معتبر نیست.');
+      const contractNumber=$('operationParentNumber').value.trim();
+      const history=await api('/contracts/parent/'+encodeURIComponent(contractNumber)+'/history');
+      if(history.parent.project_id!==projectId)throw new Error('این قرارداد مادر متعلق به پروژه انتخاب‌شده نیست.');
+      let propertyId=$('operationPropertySelect').value?Number($('operationPropertySelect').value):history.parent.property_id;
+      if(propertyId&&!Array.from($('operationPropertySelect').options).some(option=>Number(option.value)===propertyId)){
+        const option=document.createElement('option');option.value=String(propertyId);option.textContent='ملک متصل به قرارداد · شناسه '+propertyId;$('operationPropertySelect').appendChild(option);
+      }
+      if(propertyId)$('operationPropertySelect').value=String(propertyId);
+      const created=await api('/operations',{method:'POST',body:JSON.stringify({
+        project_id:projectId,operation_type_id:Number($('operationTypeSelect').value),
+        property_id:propertyId||null,parent_contract_id:history.parent.id
+      })});
+      activeOperation={id:created.operation_id,project_id:projectId,operation_type_id:created.operation_type_id,version:created.version,status:created.status,workflow_state:created.workflow_state,parent_contract_id:history.parent.id,contract_number:history.parent.contract_number};
+      $('operationWorkspace').classList.remove('hidden');
+      $('operationCreateStatus').textContent='عملیات شماره '+activeOperation.id+' ایجاد شد.';
+      await refreshOperationWorkspace();
+      await loadOperationsList();
+    }catch(err){showError(err.message)}finally{button.disabled=false}
+  });
+  $('operationPartyForm').addEventListener('submit',async event=>{
+    event.preventDefault();if(!activeOperation)return;
+    const button=$('addOperationPartyButton');button.disabled=true;
+    try{
+      const current=await api('/operations/'+activeOperation.id);
+      activeOperation.version=current.version;
+      const parties=await api('/operations/'+activeOperation.id+'/parties');
+      await api('/operations/'+activeOperation.id+'/parties',{method:'POST',body:JSON.stringify({
+        person_id:Number($('operationPersonSelect').value),role_id:Number($('operationRoleSelect').value),
+        sequence_no:(parties.parties||[]).length+1,expected_version:activeOperation.version
+      })});
+      await refreshOperationWorkspace();
+      await loadOperationsList();
+      $('operationActionStatus').textContent='طرف عملیات با موفقیت ثبت شد.';
+    }catch(err){showError(err.message)}finally{button.disabled=false}
+  });
+  $('operationTypeSelect').addEventListener('change',()=>{
+    if(activeOperation){$('operationTypeSelect').value=String(activeOperation.operation_type_id);return;}
+    loadOperationWorkflowStates(selectedProjectId(),Number($('operationTypeSelect').value)).catch(err=>showError(err.message));
+  });
+  $('operationNextStateButton').addEventListener('click',advanceToNextConfiguredState);
+  $('operationFinalizeButton').addEventListener('click',async()=>{
+    if(!activeOperation)return;
+    const button=$('operationFinalizeButton');button.disabled=true;
+    try{
+      const result=await api('/operations/'+activeOperation.id+'/finalize',{method:'POST',body:JSON.stringify({expected_version:activeOperation.version,reason:'انتقال پس از بررسی و تأیید طرفین نهایی شد.'})});
+      activeOperation={...activeOperation,...result};
+      $('operationActionStatus').textContent=result.child_contract_number?'انتقال نهایی شد؛ شماره قرارداد فرزند: '+result.child_contract_number:'عملیات با موفقیت نهایی شد.';
+      await refreshOperationWorkspace();
+      await loadOperationsList();
+    }catch(err){showError(err.message)}finally{button.disabled=false}
+  });
+
+  $('projectId').addEventListener('change',()=>{contextProjectId=null;loadActivePage()});
   $('workflowRefresh').addEventListener('click',async()=>{page=0;try{await loadProjectContext();await loadWorkflow()}catch(err){showError(err.message)}});
   $('eventsRefresh').addEventListener('click',async()=>{try{await loadProjectContext();await loadEvents()}catch(err){showError(err.message)}});
   $('workflowExport').addEventListener('click',async()=>{try{await loadProjectContext();await downloadFile('/reports/workflow/export.csv',workflowFilters())}catch(err){showError(err.message)}});
@@ -369,7 +687,127 @@
 
 
   $('prevPage').addEventListener('click',()=>{if(page>0){page--;loadWorkflow()}});$('nextPage').addEventListener('click',()=>{page++;loadWorkflow()});
-  async function loadActivePage(){if(!token)return;clearError();try{await loadProjectContext();if(activePage==='dashboard')await loadSummary();else if(activePage==='workflow')await loadWorkflow();else if(activePage==='events')await loadEvents()}catch(err){showError(err.message)}}
+  function selectedProjectId(){const raw=$('projectId').value;if(!raw||!Number.isInteger(Number(raw))||Number(raw)<1)throw new Error('شناسه پروژه معتبر نیست.');return Number(raw)}
+  function renderTextRows(bodyId,items,fields,emptyText){const body=$(bodyId);body.replaceChildren();if(!items.length){const row=document.createElement('tr');const cell=document.createElement('td');cell.colSpan=fields.length;cell.textContent=emptyText;row.appendChild(cell);body.appendChild(row);return;}items.forEach(item=>{const row=document.createElement('tr');fields.forEach(field=>{const cell=document.createElement('td');const value=typeof field==='function'?field(item):item[field];cell.textContent=value===null||value===undefined||value===''?'—':String(value);row.appendChild(cell)});body.appendChild(row)})}
+  async function loadPeoplePage(){const data=await api('/people?'+query({project_id:selectedProjectId(),q:$('peopleSearch').value,limit:100}));const items=data.items||[];renderTextRows('peopleRows',items,[item=>item.first_name+' '+item.last_name,'father_name','national_id','mobile'],'شخصی برای این پروژه ثبت نشده است.');$('peopleMeta').textContent=items.length+' شخص در این صفحه';}
+
+  function setSelectOptions(id,items,placeholder,labelFor){
+    const select=$(id);select.replaceChildren();
+    const empty=document.createElement('option');empty.value='';empty.textContent=placeholder;select.appendChild(empty);
+    items.forEach(item=>{const option=document.createElement('option');option.value=String(item.id);option.textContent=labelFor(item);select.appendChild(option)});
+  }
+  async function loadOperationsPage(){
+    const projectId=selectedProjectId();
+    if(operationsProjectId!==projectId){activeOperation=null;activeWorkflowStates=[];activeWorkflowValid=false;operationsProjectId=projectId;$('operationWorkspace').classList.add('hidden')}
+    const [types,people,properties,roles]=await Promise.all([
+      api('/projects/'+projectId+'/operation-types'),
+      api('/people?'+query({project_id:projectId,limit:100})),
+      api('/properties?'+query({project_id:projectId,limit:100})),
+      api('/projects/'+projectId+'/party-roles')
+    ]);
+    const transferTypes=(types.items||[]).filter(item=>item.code==='TRANSFER');
+    setSelectOptions('operationTypeSelect',transferTypes,'انتقال مالکیت',item=>item.name+' ('+item.code+')');
+    setSelectOptions('operationPersonSelect',people.items||[],'انتخاب شخص',item=>item.first_name+' '+item.last_name+' · '+item.id);
+    setSelectOptions('operationPropertySelect',properties.items||[],'بدون انتخاب ملک',item=>[item.block_tower,item.unit_number,item.unit_code,item.plaque_number].filter(Boolean).join(' · ')+' · '+item.id);
+    setSelectOptions('operationRoleSelect',roles.items||[],'انتخاب نقش',item=>item.name);
+    const buyer=(roles.items||[]).find(item=>item.code==='BUYER_TRANSFEREE');
+    if(buyer)$('operationRoleSelect').value=String(buyer.id);
+    $('createOperationButton').disabled=!transferTypes.length;
+    $('addOperationPartyButton').disabled=!(people.items||[]).length||!(roles.items||[]).length;
+    if(activeOperation)await refreshOperationWorkspace();
+    await loadOperationsList();
+  }
+  async function loadOperationWorkflowStates(projectId,operationTypeId){
+    activeWorkflowStates=[];activeWorkflowValid=false;
+    if(!operationTypeId)return;
+    const data=await api('/projects/'+projectId+'/operation-types/'+operationTypeId+'/workflow-states');
+    activeWorkflowStates=data.items||[];
+    activeWorkflowValid=Boolean(data.valid&&activeWorkflowStates.length);
+    if(!activeWorkflowValid)showError('پیکربندی مراحل گردش کار این نوع عملیات معتبر یا کامل نیست.');
+  }
+  async function advanceToNextConfiguredState(){
+    if(!activeOperation)return;
+    const currentIndex=activeWorkflowStates.findIndex(state=>state.state_code===activeOperation.workflow_state);
+    const nextState=currentIndex>=0&&activeOperation.workflow_state!=='READY_FOR_FINALIZATION'?activeWorkflowStates[currentIndex+1]:null;
+    if(!activeWorkflowValid||!nextState){showError('مرحله بعدی معتبر در پیکربندی گردش کار پیدا نشد.');return;}
+    await advanceOperation(nextState.state_code,'مرحله '+nextState.state_code);
+  }
+  async function loadOperationsList(){
+    const projectId=selectedProjectId();
+    const data=await api('/operations?'+query({project_id:projectId,limit:100,offset:0}));
+    operationsCache=data.items||[];
+    const body=$('operationsRows');body.replaceChildren();
+    if(!operationsCache.length){
+      const row=document.createElement('tr');const cell=document.createElement('td');cell.colSpan=8;cell.textContent='هنوز عملیاتی برای این پروژه ثبت نشده است.';row.appendChild(cell);body.appendChild(row);
+    }else{
+      operationsCache.forEach(item=>{
+        const row=document.createElement('tr');
+        [item.operation_id,item.operation_type_name,item.status,item.workflow_state,item.parent_contract_number||'—',item.child_contract_number||'—',fmt(item.created_at)].forEach(value=>{
+          const cell=document.createElement('td');cell.textContent=value??'—';row.appendChild(cell);
+        });
+        const actionCell=document.createElement('td');const button=document.createElement('button');
+        button.type='button';button.className='koko-button is-secondary';button.dataset.operationId=String(item.operation_id);
+        button.textContent='بازکردن / ادامه';actionCell.appendChild(button);row.appendChild(actionCell);body.appendChild(row);
+      });
+    }
+    $('operationsListMeta').textContent='تعداد عملیات: '+(data.pagination?.total??operationsCache.length);
+  }
+  async function openOperation(item){
+    activeOperation={
+      id:item.operation_id,project_id:selectedProjectId(),operation_type_id:item.operation_type_id,version:item.version,status:item.status,
+      workflow_state:item.workflow_state,parent_contract_id:item.parent_contract_id,
+      contract_number:item.parent_contract_number||null
+    };
+    if(item.parent_contract_number)$('operationParentNumber').value=item.parent_contract_number;
+    if(item.property_id)$('operationPropertySelect').value=String(item.property_id);
+    $('operationTypeSelect').value=String(item.operation_type_id);
+    await loadOperationWorkflowStates(selectedProjectId(),item.operation_type_id);
+    $('operationWorkspace').classList.remove('hidden');
+    $('operationActionStatus').textContent='عملیات '+item.operation_id+' برای ادامه بارگذاری شد.';
+    await refreshOperationWorkspace();
+  }
+  $('operationsRefreshButton').addEventListener('click',()=>loadOperationsList().catch(err=>showError(err.message)));
+  $('operationsRows').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-operation-id]');
+    if(!button)return;
+    const item=operationsCache.find(entry=>String(entry.operation_id)===button.dataset.operationId);
+    if(item)openOperation(item).catch(err=>showError(err.message));
+  });
+  async function refreshOperationWorkspace(){
+    if(!activeOperation)return;
+    const [operation,parties]=await Promise.all([
+      api('/operations/'+activeOperation.id),
+      api('/operations/'+activeOperation.id+'/parties')
+    ]);
+    activeOperation={...activeOperation,...operation};
+    $('operationSummary').textContent='عملیات '+activeOperation.id+' · قرارداد '+(activeOperation.contract_number||'—')+' · وضعیت '+activeOperation.status+' · مرحله '+activeOperation.workflow_state+' · نسخه '+activeOperation.version;
+    renderTextRows('operationPartyRows',parties.parties||[],[item=>item.first_name+' '+item.last_name,'role_name','sequence_no'],'هنوز طرفی ثبت نشده است.');
+    const finalized=activeOperation.status==='FINALIZED';
+    $('operationPersonSelect').disabled=finalized;
+    $('operationRoleSelect').disabled=finalized;
+    $('addOperationPartyButton').disabled=finalized;
+    const currentIndex=activeWorkflowStates.findIndex(state=>state.state_code===activeOperation.workflow_state);
+    const nextState=currentIndex>=0&&activeOperation.workflow_state!=='READY_FOR_FINALIZATION'?activeWorkflowStates[currentIndex+1]:null;
+    $('operationNextStateButton').disabled=finalized||!activeWorkflowValid||!nextState;
+    $('operationNextStateButton').textContent=nextState?'مرحله بعد: '+nextState.state_code:'مرحله بعدی در گردش کار موجود نیست';
+    $('operationFinalizeButton').disabled=finalized||activeOperation.workflow_state!=='READY_FOR_FINALIZATION';
+  }
+  async function advanceOperation(targetState,label){
+    if(!activeOperation)return;
+    const button=$('operationNextStateButton');button.disabled=true;
+    try{
+      const result=await api('/operations/'+activeOperation.id+'/transition',{method:'POST',body:JSON.stringify({
+        target_state:targetState,expected_version:activeOperation.version,reason:label
+      })});
+      activeOperation={...activeOperation,...result};
+      await refreshOperationWorkspace();
+      await loadOperationsList();
+      $('operationActionStatus').textContent='مرحله «'+label+'» با موفقیت ثبت شد.';
+    }catch(err){showError(err.message)}finally{button.disabled=false;await refreshOperationWorkspace().catch(()=>{})}
+  }
+
+  async function loadPropertiesPage(){const data=await api('/properties?'+query({project_id:selectedProjectId(),q:$('propertiesSearch').value,limit:100}));const items=data.items||[];renderTextRows('propertiesRows',items,['block_tower','floor','unit_number','unit_code','plaque_number','address'],'ملکی برای این پروژه ثبت نشده است.');$('propertiesMeta').textContent=items.length+' ملک در این صفحه';}
+  async function loadActivePage(){if(!token)return;clearError();try{if(activePage==='contractCreate'){await loadParentContractOptions();return;}if(['dashboard','workflow','events'].includes(activePage))await loadProjectContext();if(activePage==='dashboard')await loadSummary();else if(activePage==='workflow')await loadWorkflow();else if(activePage==='events')await loadEvents();else if(activePage==='people')await loadPeoplePage();else if(activePage==='properties')await loadPropertiesPage();else if(activePage==='operations')await loadOperationsPage()}catch(err){showError(err.message)}}
   async function loadSummary(){await loadProjectContext();const p=period();const data=await api('/reports/management/summary?'+query(p));const m=data.indicators;$('createdMetric').textContent=m.created_operations;$('finalizedMetric').textContent=m.finalized_operations;$('openMetric').textContent=m.currently_open_operations;$('transfersMetric').textContent=m.transfers_finalized;$('statusMetrics').innerHTML='';if(!m.created_operations_by_status.length){$('statusMetrics').textContent='در این بازه عملیاتی ایجاد نشده است.'}else m.created_operations_by_status.forEach(x=>{const el=document.createElement('span');el.className='status';el.textContent=x.status+': '+x.count;$('statusMetrics').appendChild(el)});}
   function workflowFilters(){return {...period(),status:$('statusFilter').value,operation_type_id:$('operationTypeFilter').value,parent_contract_number:$('contractFilter').value,created_by:$('creatorFilter').value};}
   function eventFilters(){return {...period(),event_type:$('eventTypeFilter').value,operation_id:$('eventOperationFilter').value,actor_user_id:$('eventActorFilter').value};}
@@ -571,9 +1009,85 @@
     }
   });
 
+  async function loadParentContractOptions() {
+    const projectId=selectedProjectId();
+    const submit=$('parentContractCreateButton');
+    submit.disabled=true;
+    $('parentContractCreateMessage').textContent='';
+    $('parentContractCreatedPanel').classList.add('hidden');
+    const data=await api('/contracts/parent/options?'+query({project_id:projectId}));
+    parentContractOptions=data;
+    $('parentContractProjectCode').value=data.project.contract_code||'';
+    const people=$('parentContractPerson');
+    people.replaceChildren();
+    const personPlaceholder=document.createElement('option');
+    personPlaceholder.value='';
+    personPlaceholder.textContent='انتخاب شخص اولیه';
+    people.appendChild(personPlaceholder);
+    for(const person of data.people||[]){
+      const option=document.createElement('option');
+      option.value=String(person.id);
+      option.textContent=[person.first_name,person.last_name].filter(Boolean).join(' ')+' · شناسه '+person.id+(person.national_id?' · کد ملی '+person.national_id:'');
+      people.appendChild(option);
+    }
+    const properties=$('parentContractProperty');
+    properties.replaceChildren();
+    const propertyPlaceholder=document.createElement('option');
+    propertyPlaceholder.value='';
+    propertyPlaceholder.textContent='بدون انتخاب ملک';
+    properties.appendChild(propertyPlaceholder);
+    for(const property of data.properties||[]){
+      const option=document.createElement('option');
+      option.value=String(property.id);
+      const label=[property.block_tower,property.floor?'طبقه '+property.floor:'',property.unit_number?'واحد '+property.unit_number:'',property.unit_code].filter(Boolean).join(' · ');
+      option.textContent=(label||'ملک')+' · شناسه '+property.id;
+      properties.appendChild(option);
+    }
+    submit.disabled=!data.project.contract_code||!(data.people||[]).length;
+    if(!data.project.contract_code)throw new Error('برای این پروژه کد دو رقمی قرارداد تعریف نشده است.');
+    if(!(data.people||[]).length)throw new Error('برای این پروژه شخص فعال و مرتبطی ثبت نشده است.');
+    updateParentContractPreview();
+  }
+  function updateParentContractPreview() {
+    const code=parentContractOptions?.project?.contract_code||'';
+    const suffix=$('parentContractSuffix').value.replace(/[^0-9]/g,'').slice(0,4);
+    $('parentContractSuffix').value=suffix;
+    $('parentContractNumberPreview').textContent=code&&/^\d{4}$/.test(suffix)?code+suffix:'—';
+  }
+  $('parentContractSuffix').addEventListener('input',updateParentContractPreview);
+  $('parentContractReloadOptions').addEventListener('click',()=>loadParentContractOptions().catch(err=>showError(err.message,'parentContractCreateMessage')));
+  $('projectId').addEventListener('change',()=>{parentContractOptions=null;if(activePage==='contractCreate')loadParentContractOptions().catch(err=>showError(err.message,'parentContractCreateMessage'));});
+  $('parentContractCreateForm').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const code=parentContractOptions?.project?.contract_code||'';
+    const suffix=$('parentContractSuffix').value.trim();
+    if(!/^\d{4}$/.test(suffix)){showError('چهار رقم پایانی را دقیقاً وارد کنید.','parentContractCreateMessage');return;}
+    if(!parentContractOptions||!$('parentContractPerson').value){showError('شخص اولیه را انتخاب کنید.','parentContractCreateMessage');return;}
+    if(!window.confirm('قرارداد '+code+suffix+' ثبت شود؟'))return;
+    const button=$('parentContractCreateButton');
+    button.disabled=true;
+    try{
+      const result=await api('/contracts/parent',{method:'POST',body:JSON.stringify({
+        project_id:selectedProjectId(),suffix,
+        initial_person_id:Number($('parentContractPerson').value),
+        property_id:$('parentContractProperty').value?Number($('parentContractProperty').value):null
+      })});
+      $('parentContractCreatedPanel').classList.remove('hidden');
+      $('parentContractCreatedSummary').textContent='شماره قرارداد '+result.contract_number+' با شناسه '+result.id+' ثبت شد.';
+      $('parentContractNumber').value=result.contract_number;
+      $('parentContractSuffix').value='';
+      updateParentContractPreview();
+      $('parentContractViewButton').onclick=()=>{navigateToPage('contract');$('contractForm').requestSubmit();};
+      $('parentContractCreateMessage').textContent='';
+    }catch(err){showError(err.message,'parentContractCreateMessage');}
+    finally{button.disabled=false;}
+  });
+
   $('contractForm').addEventListener('submit',async e=>{e.preventDefault();clearError();try{const number=$('contractNumber').value.trim();const data=await api('/contracts/parent/'+encodeURIComponent(number)+'/history');lastContractHistory=data;$('contractResult').classList.remove('hidden');$('contractSummary').innerHTML='';const p=data.parent,o=data.current_owner;const lines=[['شماره قرارداد مادر',p.contract_number],['شناسه پروژه',p.project_id],['وضعیت',p.status],['مبنای مالک فعلی',o.source==='initial_contract'?'قرارداد اولیه':'آخرین انتقال نهایی معتبر']];lines.forEach(([label,value])=>{const el=document.createElement('p');el.textContent=label+' : '+(value??'—');$('contractSummary').appendChild(el)});const people=o.people||[];people.forEach(person=>{const el=document.createElement('p');el.textContent='مالک فعلی: '+[person.first_name,person.last_name].filter(Boolean).join(' ');$('contractSummary').appendChild(el)});$('contractRows').innerHTML='';data.transfers.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.child_contract_number,x.status,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('contractRows').appendChild(tr)});if(!data.transfers.length)$('contractRows').innerHTML='<tr><td colspan="5">هنوز انتقالی برای این قرارداد ثبت نشده است.</td></tr>';}catch(err){showError(err.message)}})
-  if(token){showApp();loadActivePage().catch(()=>showLogin())}else showLogin();
+  if(token){showApp();initializeProjects().then(hasProjects=>{if(hasProjects)return loadActivePage()}).catch(()=>showLogin())}else showLogin();
 })();
 </script>
+  <script src="/portal/koko-workspace-tabs.js" defer></script>
+  <script src="/portal/koko-theme-engine.js" defer></script>
 </body>
 </html>
