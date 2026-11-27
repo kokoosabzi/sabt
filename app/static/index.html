@@ -635,7 +635,7 @@
     const code=parentContractOptions?.project?.contract_code||'';
     const suffix=$('parentContractSuffix').value.replace(/[^0-9]/g,'').slice(0,4);
     $('parentContractSuffix').value=suffix;
-    $('parentContractNumberPreview').textContent=code&&/^\\d{4}$/.test(suffix)?code+suffix:'—';
+    $('parentContractNumberPreview').textContent=code&&/^\d{4}$/.test(suffix)?code+suffix:'—';
   }
   $('parentContractSuffix').addEventListener('input',updateParentContractPreview);
   $('parentContractReloadOptions').addEventListener('click',()=>loadParentContractOptions().catch(err=>showError(err.message,'parentContractCreateMessage')));
@@ -647,7 +647,7 @@
     e.preventDefault();
     const code=parentContractOptions?.project?.contract_code||'';
     const suffix=$('parentContractSuffix').value.trim();
-    if(!/^\\d{4}$/.test(suffix)){showError('چهار رقم پایانی را دقیقاً وارد کنید.','parentContractCreateMessage');return;}
+    if(!/^\d{4}$/.test(suffix)){showError('چهار رقم پایانی را دقیقاً وارد کنید.','parentContractCreateMessage');return;}
     if(!parentContractOptions||!$('parentContractPerson').value){showError('شخص اولیه را انتخاب کنید.','parentContractCreateMessage');return;}
     if(!window.confirm('قرارداد '+code+suffix+' ثبت شود؟'))return;
     $('parentContractCreateButton').disabled=true;
