@@ -10,7 +10,7 @@ from app.auth.dependencies import current_user, get_db
 from app.db.base import Base
 from app.db.models import (
     ParentContract, Permission, Person, Project, ProjectAccess, ProjectPerson,
-    Role, RolePermission, User, UserRole,
+    Property, ProjectProperty, Role, RolePermission, User, UserRole,
 )
 from app.main import app
 
@@ -108,3 +108,64 @@ def test_manual_parent_contract_creation_requires_authentication(api_context):
     })
     assert response.status_code == 401
     assert db.scalar(select(func.count()).select_from(ParentContract)) == 0
+
+def test_parent_contract_options_returns_only_active_project_associations(api_context):
+    client, db, _, project, person, _, _ = api_context
+    now = datetime.now(timezone.utc)
+    active_property = Property(
+        block_tower="Tower A", floor="2", unit_number="12",
+        created_at=now, updated_at=now, version=1, is_active=True,
+    )
+    inactive_property = Property(
+        block_tower="Tower B", floor="1", unit_number="3",
+        created_at=now, updated_at=now, version=1, is_active=False,
+    )
+    inactive_person = Person(
+        first_name="Inactive", last_name="Person",
+        created_at=now, updated_at=now, version=1, is_active=True,
+    )
+    db.add_all([active_property, inactive_property, inactive_person])
+    db.flush()
+    db.add_all([
+        ProjectProperty(
+            project_id=project.id, property_id=active_property.id, active=True,
+            created_at=now, updated_at=now,
+        ),
+        ProjectProperty(
+            project_id=project.id, property_id=inactive_property.id, active=True,
+            created_at=now, updated_at=now,
+        ),
+        ProjectPerson(
+            project_id=project.id, person_id=inactive_person.id, active=False,
+            created_at=now, updated_at=now,
+        ),
+    ])
+    db.commit()
+
+    response = client.get(f"/contracts/parent/options?project_id={project.id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["project"] == {
+        "id": project.id, "name": project.name, "contract_code": "76",
+    }
+    assert [item["id"] for item in payload["people"]] == [person.id]
+    assert [item["id"] for item in payload["properties"]] == [active_property.id]
+
+
+def test_parent_contract_options_requires_project_create_permission(api_context):
+    client, db, _, project, _, role, permission = api_context
+    db.delete(db.get(RolePermission, (role.id, permission.id)))
+    db.commit()
+
+    response = client.get(f"/contracts/parent/options?project_id={project.id}")
+
+    assert response.status_code == 403
+
+
+def test_parent_contract_options_rejects_missing_project(api_context):
+    client, _, _, _, _, _, _ = api_context
+
+    response = client.get("/contracts/parent/options?project_id=999999")
+
+    assert response.status_code == 404
