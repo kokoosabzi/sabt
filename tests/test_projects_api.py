@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.auth.passwords import hash_password
 from app.bootstrap import create_initial_admin
 from app.db.base import Base
-from app.db.models import Project, ProjectAccess, User
+from app.db.models import OperationType, OperationTypeWorkflow, PartyRole, Project, ProjectAccess, ProjectOperationType, User
 from app.auth.dependencies import get_db
 from app.main import app
 
@@ -96,7 +96,7 @@ def test_project_list_contains_only_projects_with_active_membership(api_client):
     created = client.post(
         "/projects",
         headers=headers,
-        json={"code": "visible-project", "name": "پروژه قابل مشاهده"},
+        json={"code": "visible-project", "name": "پروژه قابل مشاهده", "contract_code": "71"},
     )
     assert created.status_code == 201
 
@@ -111,7 +111,7 @@ def test_project_creation_requires_authentication_and_project_create_permission(
 
     assert client.post(
         "/projects",
-        json={"code": "unauthenticated", "name": "بدون ورود"},
+        json={"code": "unauthenticated", "name": "بدون ورود", "contract_code": "72"},
     ).status_code == 401
 
     now = datetime.now(timezone.utc)
@@ -137,7 +137,7 @@ def test_project_creation_requires_authentication_and_project_create_permission(
     denied = client.post(
         "/projects",
         headers=headers,
-        json={"code": "forbidden-project", "name": "نباید ساخته شود"},
+        json={"code": "forbidden-project", "name": "نباید ساخته شود", "contract_code": "73"},
     )
     assert denied.status_code == 403
 
@@ -157,6 +157,13 @@ def test_project_creation_rejects_invalid_contract_code_and_duplicate_codes(api_
     )
     assert invalid.status_code == 422
 
+    invalid_timezone = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "bad-timezone", "name": "منطقه زمانی نامعتبر", "contract_code": "78", "timezone": "Not/A_Real_Zone"},
+    )
+    assert invalid_timezone.status_code == 422
+
     first = client.post(
         "/projects",
         headers=headers,
@@ -167,7 +174,7 @@ def test_project_creation_rejects_invalid_contract_code_and_duplicate_codes(api_
     duplicate_internal = client.post(
         "/projects",
         headers=headers,
-        json={"code": "SAME-CODE", "name": "تکرار کد"},
+        json={"code": "SAME-CODE", "name": "تکرار کد", "contract_code": "77"},
     )
     assert duplicate_internal.status_code == 409
 
@@ -177,3 +184,185 @@ def test_project_creation_rejects_invalid_contract_code_and_duplicate_codes(api_
         json={"code": "different-code", "name": "تکرار کد قرارداد", "contract_code": "76"},
     )
     assert duplicate_contract.status_code == 409
+
+def test_new_project_receives_default_transfer_type_workflow_and_approved_buyer_role(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        '/projects',
+        headers=headers,
+        json={'code': 'transfer-defaults', 'name': 'پروژه انتقال', 'contract_code': '82'},
+    )
+    assert created.status_code == 201
+    project_id = created.json()['id']
+    with Session(engine) as db:
+        transfer_type = db.scalar(select(OperationType).where(OperationType.code == 'TRANSFER'))
+        buyer_role = db.scalar(select(PartyRole).where(PartyRole.code == 'BUYER_TRANSFEREE'))
+        project_type = db.scalar(select(ProjectOperationType).where(
+            ProjectOperationType.project_id == project_id,
+            ProjectOperationType.operation_type_id == transfer_type.id,
+        ))
+        states = set(db.scalars(select(OperationTypeWorkflow.state_code).where(
+            OperationTypeWorkflow.project_id == project_id,
+            OperationTypeWorkflow.operation_type_id == transfer_type.id,
+            OperationTypeWorkflow.active.is_(True),
+        )).all())
+        assert transfer_type is not None and transfer_type.active is True
+        assert buyer_role is not None and buyer_role.active is True
+        assert buyer_role.name == 'خریدار / منتقل‌الیه مورد تأیید'
+        assert project_type is not None and project_type.enabled is True
+        assert states == {'DRAFT', 'IN_PROGRESS', 'READY_FOR_FINALIZATION'}
+    operation_types = client.get(f'/projects/{project_id}/operation-types', headers=headers)
+    assert operation_types.status_code == 200
+    assert any(item['code'] == 'TRANSFER' for item in operation_types.json()['items'])
+
+
+
+def test_project_party_role_list_returns_active_approved_buyer_role(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "party-role-project", "name": "پروژه نقش طرفین", "contract_code": "83"},
+    )
+    assert created.status_code == 201
+    project_id = created.json()["id"]
+
+    response = client.get(f"/projects/{project_id}/party-roles", headers=headers)
+
+    assert response.status_code == 200
+    buyer = next(item for item in response.json()["items"] if item["code"] == "BUYER_TRANSFEREE")
+    assert buyer["name"] == "خریدار / منتقل‌الیه مورد تأیید"
+    assert buyer["id"] > 0
+
+
+def test_project_party_role_list_requires_authentication_and_operation_view_permission(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    admin_headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=admin_headers,
+        json={"code": "party-role-security", "name": "پروژه کنترل دسترسی", "contract_code": "84"},
+    )
+    project_id = created.json()["id"]
+
+    assert client.get(f"/projects/{project_id}/party-roles").status_code == 401
+
+    now = datetime.now(timezone.utc)
+    with Session(engine) as db:
+        db.add(User(
+            username="role.reader",
+            password_hash=hash_password("a role reader password"),
+            display_name="کاربر بدون مجوز",
+            active=True,
+            created_at=now,
+            updated_at=now,
+            version=1,
+        ))
+        db.commit()
+    login = client.post("/auth/login", auth=("role.reader", "a role reader password"))
+    denied = client.get(
+        f"/projects/{project_id}/party-roles",
+        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+    )
+    assert denied.status_code == 403
+
+
+def test_project_workflow_state_endpoint_returns_effective_ordered_project_configuration(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "workflow-state-project", "name": "پروژه گردش کار", "contract_code": "85"},
+    )
+    project_id = created.json()["id"]
+    operation_types = client.get(f"/projects/{project_id}/operation-types", headers=headers)
+    transfer_type = next(item for item in operation_types.json()["items"] if item["code"] == "TRANSFER")
+
+    response = client.get(
+        f"/projects/{project_id}/operation-types/{transfer_type['id']}/workflow-states",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source"] == "project"
+    assert body["valid"] is True
+    assert body["items"] == [
+        {"state_code": "DRAFT", "sequence_no": 1},
+        {"state_code": "IN_PROGRESS", "sequence_no": 2},
+        {"state_code": "READY_FOR_FINALIZATION", "sequence_no": 3},
+    ]
+
+
+def test_project_workflow_state_endpoint_falls_back_to_global_configuration(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "workflow-global-fallback", "name": "پروژه گردش کار عمومی", "contract_code": "86"},
+    )
+    project_id = created.json()["id"]
+    with Session(engine) as db:
+        operation_type = db.scalar(select(OperationType).where(OperationType.code == "TRANSFER"))
+        operation_type_id = operation_type.id
+        db.query(OperationTypeWorkflow).filter_by(
+            project_id=project_id, operation_type_id=operation_type_id
+        ).delete()
+        db.add_all([
+            OperationTypeWorkflow(operation_type_id=operation_type_id, project_id=None,
+                                  state_code="DRAFT", sequence_no=1, active=True),
+            OperationTypeWorkflow(operation_type_id=operation_type_id, project_id=None,
+                                  state_code="IN_PROGRESS", sequence_no=2, active=True),
+            OperationTypeWorkflow(operation_type_id=operation_type_id, project_id=None,
+                                  state_code="READY_FOR_FINALIZATION", sequence_no=3, active=True),
+        ])
+        db.commit()
+
+    response = client.get(
+        f"/projects/{project_id}/operation-types/{operation_type_id}/workflow-states",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["source"] == "global"
+    assert response.json()["valid"] is True
+    assert [item["state_code"] for item in response.json()["items"]] == [
+        "DRAFT", "IN_PROGRESS", "READY_FOR_FINALIZATION",
+    ]
+
+
+def test_project_workflow_state_endpoint_flags_ambiguous_sequence_numbers(api_client):
+    client, engine = api_client
+    _create_admin(engine)
+    headers = _login(client)
+    created = client.post(
+        "/projects",
+        headers=headers,
+        json={"code": "workflow-invalid", "name": "پروژه گردش کار نامعتبر", "contract_code": "87"},
+    )
+    project_id = created.json()["id"]
+    with Session(engine) as db:
+        operation_type = db.scalar(select(OperationType).where(OperationType.code == "TRANSFER"))
+        db.add(OperationTypeWorkflow(
+            operation_type_id=operation_type.id, project_id=project_id,
+            state_code="AMBIGUOUS_STAGE", sequence_no=2, active=True,
+        ))
+        operation_type_id = operation_type.id
+        db.commit()
+
+    response = client.get(
+        f"/projects/{project_id}/operation-types/{operation_type_id}/workflow-states",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["valid"] is False
