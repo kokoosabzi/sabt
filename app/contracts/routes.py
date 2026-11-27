@@ -1,14 +1,102 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
+from app.auth.authorization import AuthorizationContext, authorize
 from app.contracts.service import (
+    ParentContractConflictError,
     ParentContractNotFoundError,
     ParentContractValidationError,
+    create_parent_contract,
     get_parent_contract_history,
 )
+from app.db.models import Person, Project, ProjectPerson, ProjectProperty, Property
 
 router = APIRouter(prefix="/contracts/parent", tags=["contracts"])
+
+
+class ParentContractCreate(BaseModel):
+    project_id: int = Field(gt=0)
+    suffix: str = Field(min_length=4, max_length=4)
+    initial_person_id: int = Field(gt=0)
+    property_id: int | None = Field(default=None, gt=0)
+
+
+@router.get("/options")
+def parent_contract_options(
+    project_id: int,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return active people and properties associated with an authorized project."""
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="project_not_found")
+    try:
+        authorize(db, user, "parent_contract.create", AuthorizationContext(project_id=project_id))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    people = db.execute(
+        select(Person).join(
+            ProjectPerson,
+            (ProjectPerson.person_id == Person.id) & (ProjectPerson.project_id == project_id),
+        ).where(Person.is_active.is_(True), ProjectPerson.active.is_(True))
+        .order_by(Person.last_name, Person.first_name, Person.id)
+    ).scalars().all()
+    properties = db.execute(
+        select(Property).join(
+            ProjectProperty,
+            (ProjectProperty.property_id == Property.id) & (ProjectProperty.project_id == project_id),
+        ).where(Property.is_active.is_(True), ProjectProperty.active.is_(True))
+        .order_by(Property.block_tower, Property.floor, Property.unit_number, Property.id)
+    ).scalars().all()
+    return {
+        "project": {"id": project.id, "name": project.name, "contract_code": project.contract_code},
+        "people": [{"id": p.id, "first_name": p.first_name, "last_name": p.last_name,
+                    "national_id": p.national_id, "mobile": p.mobile} for p in people],
+        "properties": [{"id": p.id, "block_tower": p.block_tower, "floor": p.floor,
+                        "unit_number": p.unit_number, "unit_code": p.unit_code,
+                        "plaque_number": p.plaque_number} for p in properties],
+    }
+
+
+@router.post("")
+def create_parent_contract_endpoint(
+    payload: ParentContractCreate,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Create one parent contract through the existing domain service."""
+    try:
+        record = create_parent_contract(
+            db, user, payload.project_id, payload.suffix,
+            payload.initial_person_id, payload.property_id,
+        )
+        db.commit()
+        db.refresh(record)
+        return {
+            "id": record.id, "project_id": record.project_id,
+            "contract_number": record.contract_number, "suffix": record.suffix,
+            "initial_person_id": record.initial_person_id, "property_id": record.property_id,
+            "status": record.status, "version": record.version,
+        }
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ParentContractNotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ParentContractValidationError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ParentContractConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/{contract_number}/history")

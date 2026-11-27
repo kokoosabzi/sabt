@@ -298,3 +298,26 @@ def test_browser_jalali_picker_today_close_escape_and_month_year_boundaries(brow
     }""")
     expected_today_fa = "".join("۰۱۲۳۴۵۶۷۸۹"[int(d)] if d.isdigit() else d for d in expected_today)
     expect(start).to_have_value(expected_today_fa)
+
+
+def test_browser_single_parent_contract_creation_uses_project_people_and_preview(browser_app, page: Page):
+    page.goto(browser_app["base_url"] + "/portal/")
+    page.get_by_label("نام کاربری").fill("browser-import-admin")
+    page.get_by_label("گذرواژه").fill("e2e-test-password")
+    page.get_by_role("button", name="ورود امن").click()
+
+    page.get_by_role("button", name="ثبت قرارداد مادر").click()
+    person_select = page.locator("#parentContractPerson")
+    expect(person_select.locator("option")).to_have_count(2)
+    expect(page.locator("#parentContractProjectCode")).to_have_value("76")
+    person_select.select_option(str(browser_app["person_id"]))
+    page.locator("#parentContractSuffix").fill("0123")
+    expect(page.locator("#parentContractNumberPreview")).to_have_text("760123")
+
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.locator("#parentContractCreateButton").click()
+    expect(page.locator("#parentContractCreatedPanel")).to_be_visible()
+    expect(page.locator("#parentContractCreatedSummary")).to_contain_text("760123")
+    assert browser_app["db"].scalar(
+        select(ParentContract.contract_number).where(ParentContract.project_id == browser_app["project_id"])
+    ) == "760123"

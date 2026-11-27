@@ -54,6 +54,7 @@
         <button data-page="workflow">گزارش گردش کار</button>
         <button data-page="events">رخدادهای گردش کار</button>
         <button data-page="contract">گردش قرارداد</button>
+        <button data-page="contractCreate">ثبت قرارداد مادر</button>
         <button data-page="contractImport">ورود گروهی قراردادها</button>
       </nav>
       <main>
@@ -102,6 +103,35 @@
           <section id="contractResult" class="panel hidden"><div class="row" style="justify-content:flex-end;margin-bottom:12px"><button id="contractPrint" class="btn secondary">چاپ / ذخیره PDF</button></div><div id="contractSummary"></div><div class="table-wrap" style="margin-top:16px"><table><thead><tr><th>شناسه عملیات</th><th>شماره انتقال</th><th>وضعیت</th><th>تاریخ ایجاد</th><th>تاریخ نهایی‌شدن</th></tr></thead><tbody id="contractRows"></tbody></table></div></section>
         </section>
 
+        <section id="contractCreatePage" class="page hidden">
+          <section class="panel">
+            <h2>ثبت تکی قرارداد مادر</h2>
+            <p style="margin-bottom:14px">ابتدا پروژه را در بخش «شناسه پروژه» انتخاب کنید. اشخاص و املاک فقط از موارد فعال و مرتبط با همان پروژه بارگذاری می‌شوند.</p>
+            <form id="parentContractCreateForm">
+              <div class="filters">
+                <div><label for="parentContractProjectCode">کد دو رقمی پروژه</label><input id="parentContractProjectCode" readonly></div>
+                <div><label for="parentContractSuffix">چهار رقم پایانی شماره قرارداد</label><input id="parentContractSuffix" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="مثلاً 0123" required></div>
+                <div><label for="parentContractPerson">شخص اولیه / مالک اولیه</label><select id="parentContractPerson" required><option value="">ابتدا پروژه را بارگذاری کنید</option></select></div>
+                <div><label for="parentContractProperty">واحد / ملک (اختیاری)</label><select id="parentContractProperty"><option value="">بدون انتخاب ملک</option></select></div>
+              </div>
+              <div class="panel" style="margin-top:14px;background:#f8fafc">
+                <span class="muted">شماره نهایی قرارداد</span>
+                <strong id="parentContractNumberPreview" style="display:block;font-size:24px;letter-spacing:2px;margin-top:8px">—</strong>
+              </div>
+              <div class="row">
+                <button id="parentContractCreateButton" class="btn" type="submit" disabled>ثبت قرارداد مادر</button>
+                <button id="parentContractReloadOptions" class="btn secondary" type="button">بارگذاری مجدد اشخاص و املاک</button>
+              </div>
+              <div id="parentContractCreateMessage" class="error" style="margin-top:14px"></div>
+            </form>
+          </section>
+          <section id="parentContractCreatedPanel" class="panel hidden">
+            <h2>قرارداد با موفقیت ثبت شد</h2>
+            <p id="parentContractCreatedSummary"></p>
+            <button id="parentContractViewButton" class="btn secondary" type="button">مشاهده گردش قرارداد</button>
+          </section>
+        </section>
+
         <section id="contractImportPage" class="page hidden">
           <section class="panel">
             <h2>ورود گروهی قراردادهای مادر</h2>
@@ -132,6 +162,7 @@
   let page = 0, limit = 50, activePage = 'dashboard';
   let stagedContractImport = null;
   let lastContractHistory = null;
+  let parentContractOptions = null;
   let projectTimezone = 'Asia/Tehran', contextProjectId = null, defaultsInitialized = false;
   const fmt = value => value ? new Intl.DateTimeFormat('fa-IR', {
     timeZone: projectTimezone, dateStyle: 'short', timeStyle: 'medium'
@@ -369,7 +400,7 @@
 
 
   $('prevPage').addEventListener('click',()=>{if(page>0){page--;loadWorkflow()}});$('nextPage').addEventListener('click',()=>{page++;loadWorkflow()});
-  async function loadActivePage(){if(!token)return;clearError();try{await loadProjectContext();if(activePage==='dashboard')await loadSummary();else if(activePage==='workflow')await loadWorkflow();else if(activePage==='events')await loadEvents()}catch(err){showError(err.message)}}
+  async function loadActivePage(){if(!token)return;clearError();try{if(activePage==='contractCreate'){await loadParentContractOptions();return;}await loadProjectContext();if(activePage==='dashboard')await loadSummary();else if(activePage==='workflow')await loadWorkflow();else if(activePage==='events')await loadEvents()}catch(err){showError(err.message)}}
   async function loadSummary(){await loadProjectContext();const p=period();const data=await api('/reports/management/summary?'+query(p));const m=data.indicators;$('createdMetric').textContent=m.created_operations;$('finalizedMetric').textContent=m.finalized_operations;$('openMetric').textContent=m.currently_open_operations;$('transfersMetric').textContent=m.transfers_finalized;$('statusMetrics').innerHTML='';if(!m.created_operations_by_status.length){$('statusMetrics').textContent='در این بازه عملیاتی ایجاد نشده است.'}else m.created_operations_by_status.forEach(x=>{const el=document.createElement('span');el.className='status';el.textContent=x.status+': '+x.count;$('statusMetrics').appendChild(el)});}
   function workflowFilters(){return {...period(),status:$('statusFilter').value,operation_type_id:$('operationTypeFilter').value,parent_contract_number:$('contractFilter').value,created_by:$('creatorFilter').value};}
   function eventFilters(){return {...period(),event_type:$('eventTypeFilter').value,operation_id:$('eventOperationFilter').value,actor_user_id:$('eventActorFilter').value};}
@@ -569,6 +600,72 @@
       showError(err.message);
       $('contractImportConfirm').disabled = false;
     }
+  });
+
+  async function loadParentContractOptions() {
+    const projectId=Number($('projectId').value);
+    if(!Number.isInteger(projectId)||projectId<1)throw new Error('شناسه پروژه معتبر نیست.');
+    $('parentContractCreateButton').disabled=true;
+    $('parentContractCreateMessage').style.display='none';
+    const data=await api('/contracts/parent/options?'+query({project_id:projectId}));
+    parentContractOptions=data;
+    $('parentContractProjectCode').value=data.project.contract_code||'';
+    const personSelect=$('parentContractPerson');
+    personSelect.innerHTML='<option value="">انتخاب شخص اولیه</option>';
+    data.people.forEach(person=>{
+      const option=document.createElement('option');option.value=String(person.id);
+      const name=[person.first_name,person.last_name].filter(Boolean).join(' ');
+      option.textContent=name+' · شناسه '+person.id+(person.national_id?' · کد ملی '+person.national_id:'');
+      personSelect.appendChild(option);
+    });
+    const propertySelect=$('parentContractProperty');
+    propertySelect.innerHTML='<option value="">بدون انتخاب ملک</option>';
+    data.properties.forEach(property=>{
+      const option=document.createElement('option');option.value=String(property.id);
+      const label=[property.block_tower,property.floor?'طبقه '+property.floor:'',property.unit_number?'واحد '+property.unit_number:'',property.unit_code].filter(Boolean).join(' · ');
+      option.textContent=(label||'ملک')+' · شناسه '+property.id;
+      propertySelect.appendChild(option);
+    });
+    $('parentContractCreateButton').disabled=!data.project.contract_code||data.people.length===0;
+    if(!data.project.contract_code)throw new Error('برای این پروژه کد دو رقمی قرارداد تعریف نشده است.');
+    if(!data.people.length)throw new Error('برای این پروژه شخص فعال و مرتبطی ثبت نشده است.');
+    updateParentContractPreview();
+  }
+  function updateParentContractPreview() {
+    const code=parentContractOptions?.project?.contract_code||'';
+    const suffix=$('parentContractSuffix').value.replace(/[^0-9]/g,'').slice(0,4);
+    $('parentContractSuffix').value=suffix;
+    $('parentContractNumberPreview').textContent=code&&/^\d{4}$/.test(suffix)?code+suffix:'—';
+  }
+  $('parentContractSuffix').addEventListener('input',updateParentContractPreview);
+  $('parentContractReloadOptions').addEventListener('click',()=>loadParentContractOptions().catch(err=>showError(err.message,'parentContractCreateMessage')));
+  $('projectId').addEventListener('change',()=>{
+    contextProjectId=null;parentContractOptions=null;
+    if(activePage==='contractCreate')loadParentContractOptions().catch(err=>showError(err.message,'parentContractCreateMessage'));
+  });
+  $('parentContractCreateForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const code=parentContractOptions?.project?.contract_code||'';
+    const suffix=$('parentContractSuffix').value.trim();
+    if(!/^\d{4}$/.test(suffix)){showError('چهار رقم پایانی را دقیقاً وارد کنید.','parentContractCreateMessage');return;}
+    if(!parentContractOptions||!$('parentContractPerson').value){showError('شخص اولیه را انتخاب کنید.','parentContractCreateMessage');return;}
+    if(!window.confirm('قرارداد '+code+suffix+' ثبت شود؟'))return;
+    $('parentContractCreateButton').disabled=true;
+    try{
+      const result=await api('/contracts/parent',{method:'POST',body:JSON.stringify({
+        project_id:Number($('projectId').value),suffix,
+        initial_person_id:Number($('parentContractPerson').value),
+        property_id:$('parentContractProperty').value?Number($('parentContractProperty').value):null
+      })});
+      $('parentContractCreatedPanel').classList.remove('hidden');
+      $('parentContractCreatedSummary').textContent='شماره قرارداد '+result.contract_number+' با شناسه '+result.id+' ثبت شد.';
+      $('parentContractNumber').value=result.contract_number;
+      $('parentContractViewButton').onclick=()=>{document.querySelector('[data-page="contract"]').click();$('contractForm').requestSubmit();};
+      $('parentContractSuffix').value='';
+      updateParentContractPreview();
+      $('parentContractCreateMessage').style.display='none';
+    }catch(err){showError(err.message,'parentContractCreateMessage');}
+    finally{$('parentContractCreateButton').disabled=false;}
   });
 
   $('contractForm').addEventListener('submit',async e=>{e.preventDefault();clearError();try{const number=$('contractNumber').value.trim();const data=await api('/contracts/parent/'+encodeURIComponent(number)+'/history');lastContractHistory=data;$('contractResult').classList.remove('hidden');$('contractSummary').innerHTML='';const p=data.parent,o=data.current_owner;const lines=[['شماره قرارداد مادر',p.contract_number],['شناسه پروژه',p.project_id],['وضعیت',p.status],['مبنای مالک فعلی',o.source==='initial_contract'?'قرارداد اولیه':'آخرین انتقال نهایی معتبر']];lines.forEach(([label,value])=>{const el=document.createElement('p');el.textContent=label+' : '+(value??'—');$('contractSummary').appendChild(el)});const people=o.people||[];people.forEach(person=>{const el=document.createElement('p');el.textContent='مالک فعلی: '+[person.first_name,person.last_name].filter(Boolean).join(' ');$('contractSummary').appendChild(el)});$('contractRows').innerHTML='';data.transfers.forEach(x=>{const tr=document.createElement('tr');[x.operation_id,x.child_contract_number,x.status,fmt(x.created_at),fmt(x.finalized_at)].forEach(v=>{const td=document.createElement('td');td.textContent=v??'—';tr.appendChild(td)});$('contractRows').appendChild(tr)});if(!data.transfers.length)$('contractRows').innerHTML='<tr><td colspan="5">هنوز انتقالی برای این قرارداد ثبت نشده است.</td></tr>';}catch(err){showError(err.message)}})
