@@ -475,3 +475,15 @@ Continue Phase 0 foundation audit: verify authorization/project isolation across
 - [x] Added a service regression test simulating a competing version change after validation; stale finalization must raise `stale_operation` and persist no finalization version, property snapshot, or finalization event.
 - Verification pending: exact-head CI for finalization concurrency changes.
 - PR #58 remains open and unmerged.
+
+
+## Single Parent Contract creation — 2026-11-27
+
+- [x] Created isolated branch `feature/parent-contract-single-create` from `main`; no merge or changes to `main`.
+- [x] Added authenticated `POST /contracts/parent` using the existing `create_parent_contract` domain service, preserving project authorization, six-digit numbering, association validation, duplicate protection, and transactional commit/rollback.
+- [x] Added `GET /contracts/parent/options?project_id=...` to return only active people and properties associated with the authorized project; the endpoint requires the same project-scoped `parent_contract.create` permission.
+- [x] Added a Persian RTL portal form with project-code display, four-digit suffix input, project-associated person/property selectors, live six-digit number preview, explicit confirmation, and success feedback.
+- [x] Added API regression tests for project options, successful creation, duplicate conflict, missing permission, and invalid suffix; added a Chromium browser acceptance test for the end-to-end single-create flow.
+- [ ] Run the exact-head CI suite, including API tests, Chromium browser E2E, and fresh SQLite migration upgrade/downgrade/re-upgrade.
+- [ ] Review the feature branch diff and resolve any CI or browser-test failures before considering this milestone stable.
+- [ ] Perform a real-data acceptance run after the application is available on Windows; verify the created contract can be searched and its history displayed.
