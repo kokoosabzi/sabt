@@ -1,17 +1,18 @@
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
 from app.auth.authorization import AuthorizationContext, authorize
-from app.db.models import Operation, OperationParty, PartyRole, Person
+from app.db.models import Operation, OperationParty, OperationType, ParentContract, PartyRole, Person, Project
 from app.operations.service import (
     ConflictError,
     NotFoundError,
     ValidationError,
     add_party,
     create_operation,
+    finalize_operation,
     transition_operation,
 )
 
@@ -35,6 +36,11 @@ class OperationPartyCreateRequest(BaseModel):
 
 class OperationTransitionRequest(BaseModel):
     target_state: str = Field(min_length=1, max_length=64)
+    expected_version: int = Field(ge=1)
+    reason: str | None = Field(default=None, max_length=2000)
+
+
+class OperationFinalizeRequest(BaseModel):
     expected_version: int = Field(ge=1)
     reason: str | None = Field(default=None, max_length=2000)
 
@@ -135,6 +141,49 @@ def transition_operation_endpoint(
         "workflow_state": operation.current_workflow_state,
         "version": operation.version,
         "updated_at": operation.updated_at.isoformat(),
+    }
+
+
+@router.post("/{operation_id}/finalize")
+def finalize_operation_endpoint(
+    operation_id: int,
+    payload: OperationFinalizeRequest,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Finalize a ready operation and commit snapshots, numbering and events atomically."""
+    try:
+        version = finalize_operation(db, user, operation_id, payload.expected_version, payload.reason)
+        db.commit()
+        db.refresh(version)
+        operation = db.get(Operation, operation_id)
+        db.refresh(operation)
+    except NotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValidationError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
+
+    return {
+        "operation_id": operation.id,
+        "status": operation.status,
+        "workflow_state": operation.current_workflow_state,
+        "version": operation.version,
+        "operation_version_id": version.id,
+        "version_number": version.version_number,
+        "child_contract_number": operation.child_contract_number,
+        "transfer_sequence": operation.transfer_sequence,
+        "finalized_at": operation.finalized_at.isoformat() if operation.finalized_at else None,
     }
 
 
@@ -268,4 +317,77 @@ def get_operation_endpoint(
         "created_at": operation.created_at.isoformat(),
         "updated_at": operation.updated_at.isoformat(),
         "finalized_at": operation.finalized_at.isoformat() if operation.finalized_at else None,
+    }
+
+
+
+@router.get("")
+def list_operations_endpoint(
+    project_id: int = Query(ge=1),
+    status: str | None = Query(default=None, min_length=1, max_length=32),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """List project operations for an authorized resumable workflow workspace."""
+    project = db.get(Project, project_id)
+    if project is None or project.status != "ACTIVE":
+        raise HTTPException(status_code=404, detail="project_not_found")
+    try:
+        authorize(
+            db,
+            user,
+            "operation.view",
+            AuthorizationContext(project_id=project_id),
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail="forbidden") from exc
+
+    conditions = [Operation.project_id == project_id]
+    if status is not None:
+        conditions.append(Operation.status == status)
+    total = db.scalar(
+        select(func.count()).select_from(Operation).where(*conditions)
+    ) or 0
+    rows = db.execute(
+        select(Operation, OperationType.name, ParentContract.contract_number)
+        .join(OperationType, OperationType.id == Operation.operation_type_id)
+        .outerjoin(
+            ParentContract,
+            (ParentContract.id == Operation.parent_contract_id)
+            & (ParentContract.project_id == Operation.project_id),
+        )
+        .where(*conditions)
+        .order_by(Operation.created_at.desc(), Operation.id.desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+    return {
+        "project_id": project_id,
+        "pagination": {
+            "limit": limit,
+            "offset": offset,
+            "total": total,
+            "has_more": offset + len(rows) < total,
+        },
+        "items": [
+            {
+                "operation_id": operation.id,
+                "operation_type_id": operation.operation_type_id,
+                "operation_type_name": operation_type_name,
+                "property_id": operation.property_id,
+                "parent_contract_id": operation.parent_contract_id,
+                "parent_contract_number": parent_contract_number,
+                "child_contract_number": operation.child_contract_number,
+                "transfer_sequence": operation.transfer_sequence,
+                "status": operation.status,
+                "workflow_state": operation.current_workflow_state,
+                "version": operation.version,
+                "created_at": operation.created_at.isoformat(),
+                "updated_at": operation.updated_at.isoformat(),
+                "finalized_at": operation.finalized_at.isoformat() if operation.finalized_at else None,
+            }
+            for operation, operation_type_name, parent_contract_number in rows
+        ],
     }

@@ -39,6 +39,9 @@ def test_online_backup_captures_committed_wal_data(tmp_path):
 
         backup = create_backup(source, tmp_path / "backups")
         assert backup.is_file()
+        with sqlite3.connect(backup) as snapshot:
+            assert snapshot.execute("PRAGMA journal_mode").fetchone()[0].lower() == "delete"
+        assert not Path(f"{backup}-wal").exists()
         assert _read_value(backup) == "committed in WAL"
     finally:
         connection.close()
@@ -60,10 +63,10 @@ def test_restore_replaces_database_and_creates_pre_restore_safety_copy(tmp_path)
 
     assert safety is not None and safety.is_file()
     assert safety.name.startswith("sabt-pre-restore-")
-    assert _read_value(safety) == "current live data"
-    assert _read_value(target) == "from backup"
     assert not Path(f"{target}-wal").exists()
     assert not Path(f"{target}-shm").exists()
+    assert _read_value(safety) == "current live data"
+    assert _read_value(target) == "from backup"
 
 
 def test_restore_refuses_to_run_while_server_pid_file_exists(tmp_path):
