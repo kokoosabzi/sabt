@@ -252,3 +252,87 @@ def test_contract_import_confirm_requires_project_create_permission():
         assert db.scalar(select(ParentContract.id)) is None
     finally:
         close_import_api_context(context)
+
+
+def test_single_parent_contract_api_creates_and_returns_project_options():
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    try:
+        options = client.get(f"/contracts/parent/options?project_id={project.id}")
+        assert options.status_code == 200
+        body = options.json()
+        assert body["project"]["contract_code"] == "76"
+        assert [item["id"] for item in body["people"]] == [person.id]
+        assert body["properties"] == []
+
+        response = client.post(
+            "/contracts/parent",
+            json={
+                "project_id": project.id,
+                "suffix": "0123",
+                "initial_person_id": person.id,
+                "property_id": None,
+            },
+        )
+        assert response.status_code == 200
+        created = response.json()
+        assert created["contract_number"] == "760123"
+        assert created["suffix"] == "0123"
+        assert created["initial_person_id"] == person.id
+        assert db.scalar(select(ParentContract.contract_number)) == "760123"
+
+        duplicate = client.post(
+            "/contracts/parent",
+            json={
+                "project_id": project.id,
+                "suffix": "0123",
+                "initial_person_id": person.id,
+                "property_id": None,
+            },
+        )
+        assert duplicate.status_code == 409
+        assert db.query(ParentContract).count() == 1
+    finally:
+        close_import_api_context(context)
+
+
+def test_single_parent_contract_api_requires_project_create_permission():
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    try:
+        db.query(RolePermission).delete()
+        db.commit()
+        response = client.post(
+            "/contracts/parent",
+            json={
+                "project_id": project.id,
+                "suffix": "0123",
+                "initial_person_id": person.id,
+                "property_id": None,
+            },
+        )
+        assert response.status_code == 403
+        assert db.scalar(select(ParentContract.id)) is None
+        options = client.get(f"/contracts/parent/options?project_id={project.id}")
+        assert options.status_code == 403
+    finally:
+        close_import_api_context(context)
+
+
+def test_single_parent_contract_api_rejects_invalid_suffix_without_writes():
+    context = import_api_context()
+    engine, db, client, user, project, person = context
+    try:
+        response = client.post(
+            "/contracts/parent",
+            json={
+                "project_id": project.id,
+                "suffix": "123",
+                "initial_person_id": person.id,
+                "property_id": None,
+            },
+        )
+        assert response.status_code == 422
+        assert db.scalar(select(ParentContract.id)) is None
+    finally:
+        close_import_api_context(context)
