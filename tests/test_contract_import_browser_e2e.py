@@ -315,7 +315,7 @@ def test_browser_single_parent_contract_creation_uses_project_people_and_preview
     expect(page.locator("#parentContractNumberPreview")).to_have_text("760123")
 
     page.once("dialog", lambda dialog: dialog.accept())
-    page.get_by_role("button", name="ثبت قرارداد مادر").click()
+    page.locator("#parentContractCreateButton").click()
     expect(page.locator("#parentContractCreatedPanel")).to_be_visible()
     expect(page.locator("#parentContractCreatedSummary")).to_contain_text("760123")
     assert browser_app["db"].scalar(
