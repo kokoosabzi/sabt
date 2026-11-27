@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user, get_db
+from app.auth.authorization import AuthorizationContext, authorize
+from app.db.models import Person, Project, ProjectPerson, ProjectProperty, Property
 from app.contracts.service import (
     ParentContractConflictError,
     ParentContractNotFoundError,
@@ -12,6 +15,77 @@ from app.contracts.service import (
 )
 
 router = APIRouter(prefix="/contracts/parent", tags=["contracts"])
+
+
+@router.get("/options")
+def parent_contract_options(
+    project_id: int,
+    user=Depends(current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return active people and properties associated with an authorized project."""
+    project = db.get(Project, project_id)
+    if project is None or project.status != "ACTIVE":
+        raise HTTPException(status_code=404, detail="project_not_found")
+    try:
+        authorize(
+            db, user, "parent_contract.create",
+            AuthorizationContext(project_id=project_id),
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    people = db.execute(
+        select(Person)
+        .join(
+            ProjectPerson,
+            (ProjectPerson.person_id == Person.id)
+            & (ProjectPerson.project_id == project_id),
+        )
+        .where(Person.is_active.is_(True), ProjectPerson.active.is_(True))
+        .order_by(Person.last_name, Person.first_name, Person.id)
+    ).scalars().all()
+    properties = db.execute(
+        select(Property)
+        .join(
+            ProjectProperty,
+            (ProjectProperty.property_id == Property.id)
+            & (ProjectProperty.project_id == project_id),
+        )
+        .where(Property.is_active.is_(True), ProjectProperty.active.is_(True))
+        .order_by(
+            Property.block_tower, Property.floor,
+            Property.unit_number, Property.id,
+        )
+    ).scalars().all()
+    return {
+        "project": {
+            "id": project.id,
+            "name": project.name,
+            "contract_code": project.contract_code,
+        },
+        "people": [
+            {
+                "id": person.id,
+                "first_name": person.first_name,
+                "last_name": person.last_name,
+                "national_id": person.national_id,
+                "mobile": person.mobile,
+            }
+            for person in people
+        ],
+        "properties": [
+            {
+                "id": prop.id,
+                "block_tower": prop.block_tower,
+                "floor": prop.floor,
+                "unit_number": prop.unit_number,
+                "unit_code": prop.unit_code,
+                "plaque_number": prop.plaque_number,
+            }
+            for prop in properties
+        ],
+    }
 
 
 class ParentContractCreateRequest(BaseModel):
